@@ -1,0 +1,2647 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مشغل القرآن الكريم</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            direction: rtl;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        /* الوضع الداكن */
+        body.dark-mode {
+            /* Lighten the dark theme so it feels softer on the eyes.  The gradient
+               colours have been adjusted upward to reduce the overall darkness. */
+            /* استخدم درجات أفتح من الرمادي لتهدئة حدة اللون الأسود في الوضع المظلم */
+            background: linear-gradient(135deg, #4a4a4a 0%, #363636 100%);
+            color: #eee;
+        }
+        body.dark-mode .container {
+            /* Lighten the container background as well */
+            /* اجعل خلفية الحاوية أفتح قليلاً عن باقي الصفحة */
+            background: rgba(60, 60, 60, 0.95);
+            color: #eee;
+        }
+        body.dark-mode h1 {
+            color: #fff;
+        }
+        body.dark-mode .status {
+            /* Lighten the status message colours */
+            /* خفف لون شريط الحالة */
+            background: linear-gradient(135deg, #546e7a 0%, #455a64 100%);
+            border-color: #90a4ae;
+            color: #f5f9fc;
+        }
+        body.dark-mode .download-info {
+            /* Lighten the download section */
+            /* خفف ألوان قسم التحميل */
+            background: linear-gradient(135deg, #616161 0%, #414141 100%);
+            border-color: #ffcd7b;
+            color: #ffe8c3;
+        }
+        body.dark-mode .all-surahs-section {
+            /* Lighten the background for the all surahs list */
+            /* خفف ألوان قسم جميع السور */
+            background: linear-gradient(135deg, #5246c5 0%, #3e4ab1 100%);
+            border-color: #ab90d8;
+            color: #f5f5f5;
+        }
+        body.dark-mode .surah-link {
+            /* Lighten surah link colours */
+            /* خفف خلفية الروابط في الوضع الداكن */
+            background: linear-gradient(135deg, #6b44c9 0%, #4a3eb1 100%);
+        }
+        body.dark-mode .surah-link:hover {
+            background: linear-gradient(135deg, #4d3bb3 0%, #333a97 100%);
+        }
+        body.dark-mode .controls button,
+        body.dark-mode .navigation button,
+        body.dark-mode .download-controls button,
+        body.dark-mode .small-btn {
+            color: #fff;
+        }
+
+        /* أقسام إضافية للعلامات المرجعية والإحصائيات */
+        .bookmarks-section, .stats-section, .countdown-control {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            border: 1px solid #00acc1;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: right;
+        }
+        body.dark-mode .bookmarks-section,
+        body.dark-mode .stats-section,
+        body.dark-mode .countdown-control {
+            /* خفف ألوان أقسام العلامات المرجعية والإحصائيات والعد التنازلي */
+            background: linear-gradient(135deg, #546e7a 0%, #607d8b 100%);
+            border-color: #00c2d8;
+            color: #e6f0f3;
+        }
+        .bookmarks-section h3,
+        .stats-section h3,
+        .countdown-control h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+            color: #00796b;
+        }
+        body.dark-mode .bookmarks-section h3,
+        body.dark-mode .stats-section h3,
+        body.dark-mode .countdown-control h3 {
+            /* خفف لون عناوين الأقسام في الوضع الداكن */
+            color: #a7eae4;
+        }
+        .bookmark-item {
+            background: linear-gradient(135deg, #4db6ac 0%, #00897b 100%);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 8px;
+            margin: 5px 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .bookmark-item:hover {
+            background: linear-gradient(135deg, #00897b 0%, #00695c 100%);
+        }
+        .bookmark-item span {
+            flex: 1;
+            margin-left: 5px;
+        }
+        .bookmark-remove {
+            background: transparent;
+            border: none;
+            color: #ffeb3b;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .stats-section p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .countdown-control .inline-elements {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .countdown-control input[type="number"] {
+            padding: 6px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 70px;
+        }
+        body.dark-mode .countdown-control input[type="number"] {
+            /* Lighten countdown inputs */
+            background: #505050;
+            color: #f5f5f5;
+            border-color: #6f6f6f;
+        }
+        .countdown-display {
+            font-weight: bold;
+            font-size: 20px;
+            color: #d32f2f;
+            text-align: center;
+            margin-top: 10px;
+        }
+        body.dark-mode .countdown-display {
+            /* Lighten countdown display colour */
+            color: #ff7070;
+        }
+
+        /* زر تبديل الثيم وزر اللغة في أعلى الصفحة */
+        .top-controls {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .top-controls button {
+            padding: 6px 10px;
+            font-size: 14px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            color: white;
+        }
+        .theme-btn {
+            background: linear-gradient(135deg, #ffca28 0%, #ffa000 100%);
+        }
+        .language-btn {
+            background: linear-gradient(135deg, #26a69a 0%, #00897b 100%);
+        }
+        body.dark-mode .theme-btn {
+            /* Lighten the dark theme button colours */
+            background: linear-gradient(135deg, #ff9800 0%, #fb8c00 100%);
+        }
+        body.dark-mode .language-btn {
+            background: linear-gradient(135deg, #009688 0%, #00695c 100%);
+        }
+
+        /* ضبط عنصر التحكم في السرعة ليكون في سطر واحد مثل التحكم في الصوت.  
+         * تمت إزالة التكرار هنا لأن تعريف .speed-control موجود لاحقاً في الملف مع كل الخصائص المطلوبة. */
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+
+        /* في الوضع اليسار‑إلى‑اليمين (اللغة الإنجليزية)، قم بمحاذاة العناصر إلى اليسار بدلاً من اليمين */
+        html[dir="ltr"] .form-group {
+            /* override the default right alignment for form groups when using LTR */
+            text-align: left;
+        }
+        /* Override the container's centre alignment for the controls under LTR.  Without
+           this, the colon appears at the wrong edge when English is selected. */
+        html[dir="ltr"] .volume-control,
+        html[dir="ltr"] .speed-control,
+        html[dir="ltr"] .stop-control,
+        html[dir="ltr"] .surah-row,
+        html[dir="ltr"] .search-control {
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /*
+         * عند اللغة الإنجليزية، اجعل محاذاة نص الملصقات إلى اليسار بدلاً من اليمين.
+         */
+        html[dir="ltr"] label {
+            text-align: left;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .status {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #2196f3;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #1976d2;
+            font-weight: bold;
+        }
+
+        .audio-controls {
+            margin: 20px 0;
+        }
+
+        audio {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .volume-control input[type="range"] {
+            flex: 1;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .navigation {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .download-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .play-btn {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        }
+
+        .play-btn:hover {
+            background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+            transform: translateY(-2px);
+        }
+
+        .repeat-btn {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+
+        .repeat-btn:hover {
+            background: linear-gradient(135deg, #f57c00 0%, #ef6c00 100%);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+        }
+
+        .nav-btn:hover {
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+            transform: translateY(-2px);
+        }
+
+        .prev-btn {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        }
+
+        .prev-btn:hover {
+            background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+            transform: translateY(-2px);
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(135deg, #0097a7 0%, #00838f 100%);
+            transform: translateY(-2px);
+        }
+
+        .download-all-btn {
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+        }
+
+        .download-all-btn:hover {
+            background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%);
+            transform: translateY(-2px);
+        }
+
+        .download-link {
+            display: block;
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .download-link:hover {
+            background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+            transform: translateY(-2px);
+        }
+
+        .download-info {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border: 1px solid #ff9800;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #f57c00;
+            font-size: 14px;
+        }
+
+        .all-surahs-section {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            border: 1px solid #9c27b0;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .surah-link {
+            display: block;
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            margin: 5px 0;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .surah-link:hover {
+            background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%);
+            transform: translateY(-1px);
+        }
+
+        /* عناصر التحكم للبحث عن السورة */
+        .search-control {
+            margin: 15px 0;
+            text-align: right;
+        }
+        .search-control input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        .search-control input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        .search-note {
+            display: block;
+            font-size: 12px;
+            color: #777;
+            margin-top: 5px;
+        }
+
+        /* زر عشوائي صغير */
+        .small-btn {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            margin-right: 5px;
+        }
+        .small-btn:hover {
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+            transform: translateY(-2px);
+        }
+
+        /* زر المعلومات لعرض اختصارات لوحة المفاتيح */
+        .info-btn {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
+        }
+        .info-btn:hover {
+            background: linear-gradient(135deg, #0097a7 0%, #00796b 100%);
+            transform: translateY(-2px);
+        }
+        body.dark-mode .info-btn {
+            background: linear-gradient(135deg, #00796b 0%, #004d40 100%);
+        }
+
+        /* لوحة اختصارات لوحة المفاتيح */
+        /*
+         * لوحة اختصارات لوحة المفاتيح. يتم عرضها ضمن عنصر .info-wrapper بحيث تظهر
+         * أسفل زر المعلومات مباشرة. عند عدم وجود عنصر أب لن يكون لها موضع ثابت.
+         * قم بإعطاءها خصائص العرض والتنسيق المشترك هنا، وسيتم تعديل الموضع في
+         * .info-wrapper .shortcuts-info أدناه.
+         */
+        .shortcuts-info {
+            background: #fff;
+            color: #333;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            /* لا تضبط العرض تلقائيًا بناءً على عنصر الأب لأن الغلاف صغير. استخدم عرضًا ثابتًا
+               أو أدنى عرض لضمان أن النص يظهر بشكل واضح. */
+            min-width: 220px;
+            width: 260px;
+            display: none;
+        }
+        body.dark-mode .shortcuts-info {
+            background: #525252;
+            color: #eee;
+            border: 1px solid #6f6f6f;
+        }
+        .shortcuts-info h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        .shortcuts-info ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .shortcuts-info li {
+            margin: 4px 0;
+            font-size: 14px;
+        }
+        .shortcuts-info b {
+            margin-right: 5px;
+        }
+
+        /*
+         * غلاف لزر المعلومات ولوحة الاختصارات. يجعل هذا العنصر نسبياً بحيث تُعرض
+         * اللوحة كقائمة منبثقة صغيرة أسفل الزر مباشرة. يستخدم فى .top-controls.
+         */
+        .info-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        /* عند وجود لوحة الاختصارات داخل الغلاف، يتم تحديد موقعها تحت الزر */
+        .info-wrapper .shortcuts-info {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 5px;
+            z-index: 1000;
+        }
+
+        /* التحكم في سرعة القراءة */
+        .speed-control {
+            /* عرض عناصر التحكم في السرعة في صف واحد مثل التحكم في الصوت */
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .speed-control label {
+            margin-bottom: 0;
+            display: inline-block;
+            font-weight: bold;
+            color: #555;
+        }
+        body.dark-mode .speed-control label {
+            color: #ccc;
+        }
+        .speed-control input[type="range"] {
+            flex: 1;
+        }
+        .speed-label {
+            display: inline-block;
+            width: 40px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* عناصر محاذاة أفقية */
+        .inline-elements {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* صف لعرض قائمة السور والبحث والزر العشوائي */
+        .surah-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .surah-row select,
+        .surah-row input[type="text"] {
+            flex: 1;
+        }
+        .surah-row button {
+            flex: 0 0 auto;
+        }
+
+        /*
+         * توحيد ارتفاع مربع البحث وقائمة السور داخل صف السور، وإعطائهما نفس خصائص
+         * التحديد والنص مثل عناصر الإدخال الأخرى. كذلك إضافة تنسيق التركيز.
+         */
+        .surah-row select,
+        .surah-row input[type="text"] {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            transition: all 0.3s ease;
+            /* unify height between the select element and the search input.  Setting a
+               fixed height ensures that both controls line up visually regardless
+               of their internal styling across browsers. */
+            height: 44px;
+            line-height: 20px;
+        }
+        .surah-row select:focus,
+        .surah-row input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        body.dark-mode .surah-row select,
+        body.dark-mode .surah-row input[type="text"] {
+            /* Lighten the search and select boxes in dark mode */
+            background: #505050;
+            color: #e0e0e0;
+            border-color: #717171;
+        }
+
+        /*
+         * عند الوضع الداكن، طبّق نفس الألوان الداكنة اللطيفة على جميع عناصر الاختيار والنص
+         * وليس فقط عناصر صف السور. هذا يشمل قوائم القراء والمصاحف والعد التنازلي وما إلى ذلك.
+         */
+        body.dark-mode select {
+            background: #505050;
+            color: #e0e0e0;
+            border-color: #717171;
+        }
+        body.dark-mode select option {
+            background: #505050;
+            color: #e0e0e0;
+        }
+        body.dark-mode input[type="text"] {
+            background: #505050;
+            color: #e0e0e0;
+            border-color: #717171;
+        }
+        body.dark-mode input[type="number"] {
+            background: #505050;
+            color: #e0e0e0;
+            border-color: #717171;
+        }
+        body.dark-mode select:focus,
+        body.dark-mode input[type="text"]:focus,
+        body.dark-mode input[type="number"]:focus {
+            outline: none;
+            border-color: #8890e8;
+            box-shadow: 0 0 10px rgba(136, 144, 232, 0.4);
+        }
+
+        /*
+         * خصائص مشغل الصوت في الوضع الداكن: بعض المتصفحات لا تغير لون واجهة التحكم
+         * تلقائياً، لذا نضيف خلفية غامقة لتنسجم مع بقية الواجهة. لا يمكن التحكم
+         * الكامل في عناصر التحكم المدمجة في جميع المتصفحات، لكن هذه التغييرات تساعد في
+         * دمجها بصرياً مع التصميم العام.
+         */
+        body.dark-mode audio {
+            background: #444;
+            border-radius: 8px;
+            /* استخدم مخطط ألوان داكن لأدوات التشغيل المدمجة في المتصفح عند الإمكان */
+            color-scheme: dark;
+        }
+
+        /* تسمية مستوى الصوت بعد شريط التحكم */
+        .volume-label {
+            display: inline-block;
+            width: 50px;
+            text-align: center;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        /* عناصر التحكم في الإيقاف */
+        .stop-control {
+            margin: 15px 0;
+            text-align: right;
+        }
+        .stop-control label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .stop-control select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        .stop-control select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+            }
+
+            .navigation {
+                grid-template-columns: 1fr;
+            }
+
+            .download-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- عناصر التحكم العلوية: تبديل الثيم واللغة -->
+        <div class="top-controls">
+            <!-- غلاف يضم زر المعلومات ولوحة الاختصارات كمجموعة منبثقة -->
+            <div class="info-wrapper">
+                <!-- زر المعلومات للاختصارات -->
+                <button id="infoBtn" class="info-btn" title="اختصارات لوحة المفاتيح">ℹ️</button>
+                <!-- لوحة الاختصارات، ستكون مخفية افتراضيًا وتظهر عند النقر على الزر -->
+                <div id="shortcutsInfo" class="shortcuts-info" style="display: none;">
+                    <div class="shortcuts-content" data-lang="ar">
+                        <h3>تصميم م/ عامر الحلحلي</h3>
+                        <h3>اختصارات لوحة المفاتيح</h3>
+                        <ul>
+                            <li><b>Space</b>: تشغيل/إيقاف مؤقت</li>
+                            <li><b>→</b>: السورة التالية</li>
+                            <li><b>←</b>: السورة السابقة</li>
+                            <li><b>R</b>: تغيير وضع التكرار</li>
+                            <li><b>+</b> أو <b>=</b>: زيادة مستوى الصوت</li>
+                            <li><b>-</b> أو <b>_</b>: خفض مستوى الصوت</li>
+                            <li><b>S</b>: البحث في السور</li>
+                        </ul>
+                    </div>
+                    <div class="shortcuts-content" data-lang="en" style="display: none;">
+						<h3>Designed by Eng. Amer Al-Halahi</h3>
+						<h3>Keyboard Shortcuts</h3>
+
+                        <ul>
+                            <li><b>Space</b>: Play/Pause</li>
+                            <li><b>→</b>: Next surah</li>
+                            <li><b>←</b>: Previous surah</li>
+                            <li><b>R</b>: Change repeat mode</li>
+                            <li><b>+</b> or <b>=</b>: Increase volume</li>
+                            <li><b>-</b> or <b>_</b>: Decrease volume</li>
+                            <li><b>S</b>: Search surahs</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- بقية عناصر التحكم العليا: زر الثيم وزر اللغة -->
+            <button id="themeToggleBtn" class="theme-btn" title="الوضع الداكن/الفاتح">🌙</button>
+            <button id="languageToggleBtn" class="language-btn" title="تغيير اللغة">EN</button>
+        </div>
+        <!-- استبدال رمز الموسيقى برمز مصحف ليتماشى مع المحتوى -->
+        <h1 id="pageTitle">📖 مشغل القرآن الكريم</h1>
+        
+        <div class="form-group">
+            <label for="reciter" id="reciterLabel">اختر القارئ:</label>
+            <!-- استخدم صف أفقي لعرض قائمة القراء وزر الاختيار العشوائي وزر القارئ المفضل -->
+            <div class="inline-elements">
+                <select id="reciter">
+                    <option value="">اختر القارئ</option>
+                </select>
+                <!-- زر اختيار قارئ عشوائي -->
+                <button id="randomReciterBtn" class="small-btn" title="عشوائي">🎲</button>
+                <!-- زر تعيين القارئ المفضل -->
+                <button id="favoriteReciterBtn" class="small-btn" title="القارئ المفضل">⭐</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="moshaf" id="moshafLabel">اختر المصحف:</label>
+            <select id="moshaf">
+                <option value="">اختر المصحف</option>
+            </select>
+        </div>
+
+        <!-- اختيار السورة مع البحث وزر عشوائي في صف واحد -->
+        <div class="form-group">
+            <label for="surah" id="surahLabel">اختر السورة:</label>
+            <div class="surah-row">
+                <select id="surah">
+                    <option value="">اختر السورة</option>
+                </select>
+                <input type="text" id="surahSearch" placeholder="🔍 ابحث عن سورة...">
+                <!-- زر اختيار سورة عشوائية في نفس الصف -->
+                <button id="randomSurahBtn" class="small-btn" title="سورة عشوائية">🎲</button>
+            </div>
+            <span class="search-note">💡 اكتب حرف أو حرفين أو الاسم الكامل للتصفية</span>
+        </div>
+
+        <div class="status" id="status">
+            الرجاء اختيار القارئ والمصحف والسورة.
+        </div>
+
+        <div class="audio-controls">
+            <audio id="audioPlayer" controls style="width: 100%;">
+                متصفحك لا يدعم تشغيل الملفات الصوتية.
+            </audio>
+        </div>
+
+        <div class="volume-control">
+            <label>🔊 التحكم بالصوت:</label>
+            <input type="range" id="volumeControl" min="0" max="100" value="50">
+            <span id="volumeLabel" class="volume-label">50</span>
+        </div>
+
+        <!-- التحكم في سرعة القراءة -->
+        <div class="speed-control">
+            <label for="speedControl" id="speedControlLabel">سرعة القراءة:</label>
+            <input type="range" id="speedControl" min="0.5" max="2" step="0.25" value="1">
+            <span id="speedLabel" class="speed-label">1x</span>
+        </div>
+
+        <!-- التحكم في إيقاف التشغيل بعد مدة أو بعد نهاية السورة/المصحف -->
+        <div class="stop-control">
+            <label for="stopAfter" id="stopAfterLabel">إيقاف بعد:</label>
+            <select id="stopAfter">
+                <option value="none">لا يوجد</option>
+                <option value="endSurah">انتهاء السورة</option>
+                <option value="endMoshaf">انتهاء المصحف</option>
+                <option value="5">5 دقائق</option>
+                <option value="10">10 دقائق</option>
+                <option value="15">15 دقيقة</option>
+                <option value="20">20 دقيقة</option>
+                <option value="30">30 دقيقة</option>
+                <option value="45">45 دقيقة</option>
+                <option value="60">ساعة</option>
+                <option value="120">ساعتان</option>
+                <option value="180">ثلاث ساعات</option>
+                <option value="240">أربع ساعات</option>
+                <option value="300">خمس ساعات</option>
+                <option value="360">ست ساعات</option>
+                <option value="420">سبع ساعات</option>
+            </select>
+        </div>
+
+        <div class="controls">
+            <button class="play-btn" id="playBtn">▶️ تشغيل</button>
+            <button class="repeat-btn" id="repeatBtn">🔄 تكرار: 0</button>
+        </div>
+
+        <div class="navigation">
+            <button class="prev-btn" id="prevBtn">⏮️ السورة السابقة</button>
+            <button class="nav-btn" id="nextBtn">⏭️ السورة التالية</button>
+        </div>
+
+        <div class="download-controls">
+            <button class="download-btn" id="downloadBtn">📥 تحميل السورة</button>
+            <button class="download-all-btn" id="downloadAllBtn">📚 جميع السور</button>
+        </div>
+        
+        <div id="downloadSection" style="display: none;">
+            <div class="download-info">
+                💡 انقر على الرابط أدناه لتحميل السورة مباشرة.
+            </div>
+            <a id="downloadLink" class="download-link" href="#" target="_blank">
+                📥 تحميل: السورة - القارئ
+            </a>
+        </div>
+
+        <div id="allSurahsSection" style="display: none;" class="all-surahs-section">
+            <h3 style="color: #7b1fa2; margin-bottom: 15px;">📚 جميع السور للتحميل</h3>
+            <div id="allSurahsList"></div>
+        </div>
+
+        <!-- قسم العلامات المرجعية -->
+        <div class="bookmark-control" style="text-align: right; margin-top: 10px;">
+            <button id="bookmarkBtn" class="small-btn" title="إضافة إشارة مرجعية">📑</button>
+        </div>
+        <div id="bookmarksSection" class="bookmarks-section" style="display: none;">
+            <h3 id="bookmarksHeader">الإشارات المرجعية</h3>
+            <div id="bookmarksList"></div>
+        </div>
+
+        <!-- قسم الإحصائيات الشخصية -->
+        <div id="statsSection" class="stats-section" style="display: none;">
+            <h3 id="statsHeader">إحصائيات الاستماع</h3>
+            <p id="statsSurahCountLabel">عدد السور: <span id="statsSurahCount">0</span></p>
+            <p id="statsTopSurahLabel">أكثر السور استماعًا: <span id="statsTopSurah">-</span></p>
+            <p id="statsTotalTimeLabel">مدة الاستماع الكلية: <span id="statsTotalTime">0</span></p>
+        </div>
+
+        <!-- قسم مؤقّت العدّ التنازلي المرئي -->
+        <div id="countdownSection" class="countdown-control" style="display: none;">
+            <h3 id="countdownHeader">مؤقّت عدّ تنازلي</h3>
+            <div class="inline-elements">
+                <input type="number" id="countdownMinutes" min="0" placeholder="دقائق">
+                <span>:</span>
+                <input type="number" id="countdownSeconds" min="0" max="59" placeholder="ثوانٍ">
+                <button id="startCountdownBtn" class="small-btn" title="ابدأ العد التنازلي">⏱️</button>
+            </div>
+            <div id="countdownDisplay" class="countdown-display" style="display:none;">00:00</div>
+        </div>
+        <!-- تم نقل لوحة الاختصارات إلى داخل .top-controls ضمن .info-wrapper -->
+    </div>
+
+    <script>
+        // بيانات السور
+        // قائمة السور، سيتم تحديث الأسماء بناءً على اختيار اللغة
+        let surahs = [
+            { number: 1, name: "الفاتحة" },
+            { number: 2, name: "البقرة" },
+            { number: 3, name: "آل عمران" },
+            { number: 4, name: "النساء" },
+            { number: 5, name: "المائدة" },
+            { number: 6, name: "الأنعام" },
+            { number: 7, name: "الأعراف" },
+            { number: 8, name: "الأنفال" },
+            { number: 9, name: "التوبة" },
+            { number: 10, name: "يونس" },
+            { number: 11, name: "هود" },
+            { number: 12, name: "يوسف" },
+            { number: 13, name: "الرعد" },
+            { number: 14, name: "إبراهيم" },
+            { number: 15, name: "الحجر" },
+            { number: 16, name: "النحل" },
+            { number: 17, name: "الإسراء" },
+            { number: 18, name: "الكهف" },
+            { number: 19, name: "مريم" },
+            { number: 20, name: "طه" },
+            { number: 21, name: "الأنبياء" },
+            { number: 22, name: "الحج" },
+            { number: 23, name: "المؤمنون" },
+            { number: 24, name: "النور" },
+            { number: 25, name: "الفرقان" },
+            { number: 26, name: "الشعراء" },
+            { number: 27, name: "النمل" },
+            { number: 28, name: "القصص" },
+            { number: 29, name: "العنكبوت" },
+            { number: 30, name: "الروم" },
+            { number: 31, name: "لقمان" },
+            { number: 32, name: "السجدة" },
+            { number: 33, name: "الأحزاب" },
+            { number: 34, name: "سبأ" },
+            { number: 35, name: "فاطر" },
+            { number: 36, name: "يس" },
+            { number: 37, name: "الصافات" },
+            { number: 38, name: "ص" },
+            { number: 39, name: "الزمر" },
+            { number: 40, name: "غافر" },
+            { number: 41, name: "فصلت" },
+            { number: 42, name: "الشورى" },
+            { number: 43, name: "الزخرف" },
+            { number: 44, name: "الدخان" },
+            { number: 45, name: "الجاثية" },
+            { number: 46, name: "الأحقاف" },
+            { number: 47, name: "محمد" },
+            { number: 48, name: "الفتح" },
+            { number: 49, name: "الحجرات" },
+            { number: 50, name: "ق" },
+            { number: 51, name: "الذاريات" },
+            { number: 52, name: "الطور" },
+            { number: 53, name: "النجم" },
+            { number: 54, name: "القمر" },
+            { number: 55, name: "الرحمن" },
+            { number: 56, name: "الواقعة" },
+            { number: 57, name: "الحديد" },
+            { number: 58, name: "المجادلة" },
+            { number: 59, name: "الحشر" },
+            { number: 60, name: "الممتحنة" },
+            { number: 61, name: "الصف" },
+            { number: 62, name: "الجمعة" },
+            { number: 63, name: "المنافقون" },
+            { number: 64, name: "التغابن" },
+            { number: 65, name: "الطلاق" },
+            { number: 66, name: "التحريم" },
+            { number: 67, name: "الملك" },
+            { number: 68, name: "القلم" },
+            { number: 69, name: "الحاقة" },
+            { number: 70, name: "المعارج" },
+            { number: 71, name: "نوح" },
+            { number: 72, name: "الجن" },
+            { number: 73, name: "المزمل" },
+            { number: 74, name: "المدثر" },
+            { number: 75, name: "القيامة" },
+            { number: 76, name: "الإنسان" },
+            { number: 77, name: "المرسلات" },
+            { number: 78, name: "النبأ" },
+            { number: 79, name: "النازعات" },
+            { number: 80, name: "عبس" },
+            { number: 81, name: "التكوير" },
+            { number: 82, name: "الانفطار" },
+            { number: 83, name: "المطففين" },
+            { number: 84, name: "الانشقاق" },
+            { number: 85, name: "البروج" },
+            { number: 86, name: "الطارق" },
+            { number: 87, name: "الأعلى" },
+            { number: 88, name: "الغاشية" },
+            { number: 89, name: "الفجر" },
+            { number: 90, name: "البلد" },
+            { number: 91, name: "الشمس" },
+            { number: 92, name: "الليل" },
+            { number: 93, name: "الضحى" },
+            { number: 94, name: "الشرح" },
+            { number: 95, name: "التين" },
+            { number: 96, name: "العلق" },
+            { number: 97, name: "القدر" },
+            { number: 98, name: "البينة" },
+            { number: 99, name: "الزلزلة" },
+            { number: 100, name: "العاديات" },
+            { number: 101, name: "القارعة" },
+            { number: 102, name: "التكاثر" },
+            { number: 103, name: "العصر" },
+            { number: 104, name: "الهمزة" },
+            { number: 105, name: "الفيل" },
+            { number: 106, name: "قريش" },
+            { number: 107, name: "الماعون" },
+            { number: 108, name: "الكوثر" },
+            { number: 109, name: "الكافرون" },
+            { number: 110, name: "النصر" },
+            { number: 111, name: "المسد" },
+            { number: 112, name: "الإخلاص" },
+            { number: 113, name: "الفلق" },
+            { number: 114, name: "الناس" }
+        ];
+
+        /**
+         * تحميل أسماء السور حسب اللغة الحالية من واجهة MP3Quran API. سيتم تحديث مصفوفة السور
+         * وإعادة تحديث قائمة السور في الواجهة. إذا تعذّر التحميل أو لم تتوفر البيانات،
+         * تبقى الأسماء القديمة كما هي.
+         */
+        async function loadSurahNames() {
+            // استخدم نقطة النهاية المخصصة للغة الحالية إذا كانت متوفرة
+            const endpoint = (apiEndpoints[currentLanguage] && apiEndpoints[currentLanguage].surah) || `https://mp3quran.net/api/v3/suwar?language=${currentLanguage === 'ar' ? 'ar' : 'eng'}`;
+            try {
+                const response = await fetch(endpoint);
+                const data = await response.json();
+                let list = null;
+                // بعض النسخ من API تستخدم خاصية suwar أو swar للاحتفاظ بالسور
+                if (data.suwar) {
+                    list = data.suwar;
+                } else if (data.suwar) {
+                    list = data.suwar;
+                } else if (Array.isArray(data)) {
+                    list = data;
+                } else if (data.data) {
+                    list = data.data;
+                }
+                if (list && Array.isArray(list)) {
+                    // تحديث مصفوفة السور
+                    surahs = list.map(item => {
+                        const num = parseInt(item.id || item.number || item.index || item.id);
+                        const name = item.name || item.english_name || item.surah_name || item.native;
+                        return { number: num, name: name };
+                    });
+                    // إعادة تحديث القائمة المرئية إذا كانت البيانات موجودة
+                    updateSurahList();
+                }
+            } catch (e) {
+                console.warn('Error loading surah names:', e);
+            }
+        }
+
+        // متغيرات التحكم
+        let recitersData = [];
+        let currentReciterIndex = null;
+        let currentMoshafIndex = null;
+        let currentSurahIndex = null;
+        let repeatMode = 0; // 0: لا تكرار, 1: مرة واحدة, 2: مرتان, 3: ثلاث مرات, 4: دائماً
+        let repeatCount = 0;
+        let autoNext = true;
+
+        // قاموس الترجمة لدعم اللغتين العربية والإنجليزية
+        const translations = {
+            ar: {
+                play: '▶️ تشغيل',
+                pause: '⏸️ إيقاف مؤقت',
+                repeatLabel: '🔄 تكرار: ',
+                repeatModes: ['0', '1', '2', '3', '∞'],
+                statusDefault: 'الرجاء اختيار القارئ والمصحف والسورة.',
+                readyStatus: (surah, reciter, moshaf) => `🎧 ${surah} - ${reciter} (${moshaf})`,
+                downloadLinkPrefix: '📥 تحميل: ',
+                searchPlaceholder: '🔍 ابحث عن سورة...',
+                searchNote: '💡 اكتب حرف أو حرفين أو الاسم الكامل للتصفية',
+                reciterLabel: 'اختر القارئ:',
+                moshafLabel: 'اختر المصحف:',
+                surahLabel: 'اختر السورة:',
+                volumeLabel: '🔊 التحكم بالصوت:',
+                speedLabel: 'سرعة القراءة:',
+                stopLabel: 'إيقاف بعد:',
+                stopOptions: {
+                    none: 'لا يوجد',
+                    endSurah: 'انتهاء السورة',
+                    endMoshaf: 'انتهاء المصحف',
+                    '5': '5 دقائق',
+                    '10': '10 دقائق',
+                    '15': '15 دقيقة',
+                    '20': '20 دقيقة',
+                    '30': '30 دقيقة',
+                    '45': '45 دقيقة',
+                    '60': 'ساعة',
+                    '120': 'ساعتان',
+                    '180': 'ثلاث ساعات',
+                    '240': 'أربع ساعات',
+                    '300': 'خمس ساعات',
+                    '360': 'ست ساعات',
+                    '420': 'سبع ساعات'
+                },
+                randomReciterTitle: 'عشوائي',
+                randomSurahTitle: 'سورة عشوائية',
+                favoriteTitle: 'القارئ المفضل',
+                bookmarkTitle: 'إضافة إشارة مرجعية',
+                bookmarksHeader: 'الإشارات المرجعية',
+                statsHeader: 'إحصائيات الاستماع',
+                statsSurahCountLabel: 'عدد السور: ',
+                statsTopSurahLabel: 'أكثر السور استماعًا: ',
+                statsTotalTimeLabel: 'مدة الاستماع الكلية: ',
+                countdownHeader: 'مؤقّت عدّ تنازلي',
+                minutesPlaceholder: 'دقائق',
+                secondsPlaceholder: 'ثوانٍ',
+                startCountdownTitle: 'ابدأ العد التنازلي',
+                notificationSurahFinished: (name) => `انتهت تلاوة سورة ${name}`,
+                notificationTimerFinished: 'انتهى المؤقّت.',
+                bookmarkPrompt: 'أدخل ملاحظة أو رقم آية (اختياري):',
+                bookmarkAdded: 'تم إضافة إشارة مرجعية.',
+                favoriteSet: 'تم تعيين القارئ المفضل.',
+                favoriteUnset: 'تم إزالة القارئ المفضل.',
+                // أزرار التنقل والتنزيل
+                prevSurah: '⏮️ السورة السابقة',
+                nextSurah: '⏭️ السورة التالية',
+                downloadSurah: '📥 تحميل السورة',
+                allSurahs: '📚 جميع السور',
+                hideDownload: '🔼 إخفاء التحميل',
+                hideList: '🔼 إخفاء القائمة'
+            },
+            en: {
+                play: '▶️ Play',
+                pause: '⏸️ Pause',
+                repeatLabel: '🔄 Repeat: ',
+                repeatModes: ['0', '1', '2', '3', '∞'],
+                statusDefault: 'Please select reciter, moshaf and surah.',
+                readyStatus: (surah, reciter, moshaf) => `🎧 ${surah} - ${reciter} (${moshaf})`,
+                downloadLinkPrefix: '📥 Download: ',
+                searchPlaceholder: '🔍 Search surah...',
+                searchNote: '💡 Type a letter or full name to filter',
+                reciterLabel: 'Select reciter',
+                moshafLabel: 'Select moshaf',
+                surahLabel: 'Select surah',
+                volumeLabel: '🔊 Volume:',
+                speedLabel: 'Speed:',
+                stopLabel: 'Stop after:',
+                stopOptions: {
+                    none: 'None',
+                    endSurah: 'End of surah',
+                    endMoshaf: 'End of moshaf',
+                    '5': '5 minutes',
+                    '10': '10 minutes',
+                    '15': '15 minutes',
+                    '20': '20 minutes',
+                    '30': '30 minutes',
+                    '45': '45 minutes',
+                    '60': '1 hour',
+                    '120': '2 hours',
+                    '180': '3 hours',
+                    '240': '4 hours',
+                    '300': '5 hours',
+                    '360': '6 hours',
+                    '420': '7 hours'
+                },
+                randomReciterTitle: 'Random reciter',
+                randomSurahTitle: 'Random surah',
+                favoriteTitle: 'Favorite reciter',
+                bookmarkTitle: 'Add bookmark',
+                bookmarksHeader: 'Bookmarks',
+                statsHeader: 'Listening stats',
+                statsSurahCountLabel: 'Number of surahs: ',
+                statsTopSurahLabel: 'Most listened surah: ',
+                statsTotalTimeLabel: 'Total listening time: ',
+                countdownHeader: 'Countdown timer',
+                minutesPlaceholder: 'Minutes',
+                secondsPlaceholder: 'Seconds',
+                startCountdownTitle: 'Start countdown',
+                notificationSurahFinished: (name) => `Finished reciting ${name}`,
+                notificationTimerFinished: 'Timer finished.',
+                bookmarkPrompt: 'Enter a note or verse number (optional):',
+                bookmarkAdded: 'Bookmark added.',
+                favoriteSet: 'Favorite reciter set.',
+                favoriteUnset: 'Favorite reciter removed.',
+                // Navigation and download buttons
+                prevSurah: '⏮️ Previous Surah',
+                nextSurah: '⏭️ Next Surah',
+                downloadSurah: '📥 Download Surah',
+                allSurahs: '📚 All Surahs',
+                hideDownload: '🔼 Hide download',
+                hideList: '🔼 Hide list'
+            }
+        };
+
+        /**
+         * قائمة نقاط النهاية لكل لغة للبيانات التي يتم تحميلها عبر API. هذه القيم مشتقة من
+         * الملف الذي تم تزويده في متطلبات المستخدم. يمكن إضافة لغات أخرى بسهولة هنا.
+         */
+        const apiEndpoints = {
+            ar: {
+                surah: 'https://www.mp3quran.net/api/v3/suwar?language=ar',
+                reciters: 'https://www.mp3quran.net/api/v3/reciters?language=ar'
+            },
+            en: {
+                surah: 'https://www.mp3quran.net/api/v3/suwar?language=eng',
+                reciters: 'https://www.mp3quran.net/api/v3/reciters?language=eng'
+            }
+        };
+
+        // الحالة الحالية للغة والثيم والخصائص الأخرى
+        let currentLanguage = 'ar';
+        let currentTheme = 'light';
+        let favoriteReciterIndex = null;
+        let favoriteMoshafIndex = null;
+        let bookmarks = [];
+        let stats = { surahCount: 0, surahTimes: {}, totalTime: 0 };
+        let countdownInterval = null;
+        let countdownRemaining = 0;
+
+        /**
+         * التحقق مما إذا كان هناك سورة تالية في المصحف الحالي.
+         * @returns {boolean}
+         */
+        function hasNextSurah() {
+            if (currentSurahIndex === null || currentReciterIndex === null || currentMoshafIndex === null) return false;
+            const reciter = recitersData[currentReciterIndex];
+            const moshaf = reciter.moshaf[currentMoshafIndex];
+            const availableSurahs = moshaf.surah_list.split(',').map(num => parseInt(num));
+            const currentSurahNumber = surahs[currentSurahIndex].number;
+            for (let i = currentSurahNumber + 1; i <= 114; i++) {
+                if (availableSurahs.includes(i)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * تحقق مما إذا كانت السورة الحالية هي الأخيرة في المصحف الحالي.
+         * @returns {boolean}
+         */
+        function isLastSurahInMoshaf() {
+            return !hasNextSurah();
+        }
+
+        /**
+         * تحقق مما إذا كان هناك قارئ تالٍ في القائمة.
+         * @returns {boolean}
+         */
+        function hasNextReciter() {
+            return currentReciterIndex !== null && currentReciterIndex < recitersData.length - 1;
+        }
+
+        /**
+         * الانتقال إلى القارئ التالي واختيار أول مصحف وسورة متاحين له.
+         * @returns {boolean} true إذا تم الانتقال بنجاح، false إذا لم يكن هناك قارئ تالٍ.
+         */
+        function nextReciter() {
+            if (!hasNextReciter()) return false;
+            currentReciterIndex++;
+            reciterSelect.value = currentReciterIndex;
+            updateMoshafList();
+            // اختيار أول مصحف
+            if (moshafSelect.options.length > 1) {
+                moshafSelect.value = moshafSelect.options[1].value;
+                currentMoshafIndex = parseInt(moshafSelect.value);
+                updateSurahList();
+                // اختيار أول سورة متاحة
+                const availableOptions = Array.from(surahSelect.options).filter((opt, idx) => idx > 0 && opt.style.display !== 'none');
+                if (availableOptions.length > 0) {
+                    const firstOption = availableOptions[0];
+                    surahSelect.value = firstOption.value;
+                    currentSurahIndex = parseInt(firstOption.value);
+                    updateStatus();
+                    updateDownloadLink();
+                    saveSettings();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * تطبيق حالة الإيقاف بعد المدة أو حسب اختيار المستخدم.
+         */
+        function applyStopCondition() {
+            // مسح أي مؤقت سابق
+            if (stopTimer) {
+                clearTimeout(stopTimer);
+                stopTimer = null;
+            }
+            autoNext = true; // الوضع الافتراضي هو الانتقال التلقائي للسورة التالية
+            const val = stopAfterSelect ? stopAfterSelect.value : 'none';
+            if (val === 'none') {
+                // لا يوجد شرط إيقاف، استمر بالتنقل التلقائي عبر السور والمصاحف
+                return;
+            }
+            if (val === 'endSurah') {
+                // إيقاف عند نهاية السورة فقط
+                autoNext = false;
+            } else if (val === 'endMoshaf') {
+                // الانتقال تلقائياً بين السور، وعند نهاية المصحف الانتقال للقارئ التالي
+                autoNext = true;
+            } else {
+                // إذا كانت قيمة رقمية فهي بالدقائق
+                const minutes = parseInt(val);
+                if (!isNaN(minutes) && minutes > 0) {
+                    stopTimer = setTimeout(() => {
+                        audioPlayer.pause();
+                        isPlaying = false;
+                        playBtn.textContent = '▶️ تشغيل';
+                    }, minutes * 60 * 1000);
+                }
+            }
+        }
+
+        /**
+         * حفظ السورة التي تم تشغيلها في الذاكرة المؤقتة (localStorage).
+         */
+        function recordPlayedSurah() {
+            try {
+                if (currentReciterIndex !== null && currentMoshafIndex !== null && currentSurahIndex !== null) {
+                    const entry = {
+                        reciterIndex: currentReciterIndex,
+                        moshafIndex: currentMoshafIndex,
+                        surahIndex: currentSurahIndex
+                    };
+                    playedSurahs.push(entry);
+                    localStorage.setItem('playedSurahs', JSON.stringify(playedSurahs));
+                }
+            } catch (e) {
+                console.warn('لا يمكن حفظ السور المشغلة:', e);
+            }
+        }
+
+        // عناصر DOM
+        const reciterSelect = document.getElementById('reciter');
+        const moshafSelect = document.getElementById('moshaf');
+        const surahSelect = document.getElementById('surah');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const statusDiv = document.getElementById('status');
+        const playBtn = document.getElementById('playBtn');
+        const repeatBtn = document.getElementById('repeatBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const downloadSection = document.getElementById('downloadSection');
+        const downloadLink = document.getElementById('downloadLink');
+        const allSurahsSection = document.getElementById('allSurahsSection');
+        const allSurahsList = document.getElementById('allSurahsList');
+        const volumeControl = document.getElementById('volumeControl');
+        const volumeLabel = document.getElementById('volumeLabel');
+        const surahSearch = document.getElementById('surahSearch');
+        const randomReciterBtn = document.getElementById('randomReciterBtn');
+        const randomSurahBtn = document.getElementById('randomSurahBtn');
+        const speedControl = document.getElementById('speedControl');
+        const speedLabel = document.getElementById('speedLabel');
+        const stopAfterSelect = document.getElementById('stopAfter');
+        let isPlaying = false;
+        let stopTimer = null;
+        let playedSurahs = [];
+
+        // عناصر إضافية للوظائف الجديدة
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const languageToggleBtn = document.getElementById('languageToggleBtn');
+        const favoriteReciterBtn = document.getElementById('favoriteReciterBtn');
+        const bookmarkBtn = document.getElementById('bookmarkBtn');
+        const bookmarksSection = document.getElementById('bookmarksSection');
+        const bookmarksList = document.getElementById('bookmarksList');
+        const statsSection = document.getElementById('statsSection');
+        const statsSurahCount = document.getElementById('statsSurahCount');
+        const statsTopSurah = document.getElementById('statsTopSurah');
+        const statsTotalTime = document.getElementById('statsTotalTime');
+        const countdownSection = document.getElementById('countdownSection');
+        const countdownMinutes = document.getElementById('countdownMinutes');
+        const countdownSeconds = document.getElementById('countdownSeconds');
+        const startCountdownBtn = document.getElementById('startCountdownBtn');
+        const countdownDisplay = document.getElementById('countdownDisplay');
+        const bookmarksHeader = document.getElementById('bookmarksHeader');
+        const statsHeader = document.getElementById('statsHeader');
+        const statsSurahCountLabel = document.getElementById('statsSurahCountLabel');
+        const statsTopSurahLabel = document.getElementById('statsTopSurahLabel');
+        const statsTotalTimeLabel = document.getElementById('statsTotalTimeLabel');
+        const countdownHeader = document.getElementById('countdownHeader');
+        const pageTitleElement = document.getElementById('pageTitle');
+        const reciterLabelElement = document.getElementById('reciterLabel');
+        const moshafLabelElement = document.getElementById('moshafLabel');
+        const surahLabelElement = document.getElementById('surahLabel');
+        const speedControlLabel = document.getElementById('speedControlLabel');
+        const stopAfterLabelElement = document.getElementById('stopAfterLabel');
+        const searchNote = document.querySelector('.search-note');
+        const surahSearchInput = document.getElementById('surahSearch');
+        const infoBtn = document.getElementById('infoBtn');
+        const shortcutsInfo = document.getElementById('shortcutsInfo');
+        const shortcutsContents = document.querySelectorAll('.shortcuts-content');
+
+        // تحميل بيانات القراء من API
+        async function loadReciters() {
+            try {
+                // إذا كان المستخدم قد حفظ لغة مختلفة في التخزين المحلي، قم بتحميلها حتى قبل جلب القراء
+                try {
+                    const savedLang = localStorage.getItem('language');
+                    if (savedLang === 'en' || savedLang === 'ar') {
+                        currentLanguage = savedLang;
+                    }
+                } catch (e) {}
+                // استخدام نقطة النهاية المخصصة للغة الحالية إذا كانت متوفرة
+                const endpoint = (apiEndpoints[currentLanguage] && apiEndpoints[currentLanguage].reciters) || `https://mp3quran.net/api/v3/reciters?language=${currentLanguage === 'ar' ? 'ar' : 'eng'}`;
+                const response = await fetch(endpoint);
+                const data = await response.json();
+                recitersData = Array.isArray(data.reciters) ? data.reciters : (Array.isArray(data) ? data : (data.data || []));
+                // مسح القائمة الحالية وإضافة عنصر افتراضي
+                reciterSelect.innerHTML = '';
+                const placeholderOption = document.createElement('option');
+                placeholderOption.value = '';
+                placeholderOption.textContent = (translations[currentLanguage] || translations['ar']).reciterLabel.replace(/:$/, '');
+                reciterSelect.appendChild(placeholderOption);
+                // إضافة القراء إلى القائمة مع العلامة إذا كان القارئ مفضلاً
+                recitersData.forEach((reciter, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    // إضافة نجمة للقارئ المفضل
+                    if (favoriteReciterIndex === index) {
+                        option.textContent = `⭐ ${reciter.name}`;
+                    } else {
+                        option.textContent = reciter.name;
+                    }
+                    reciterSelect.appendChild(option);
+                });
+                // تحميل الإعدادات بعد إضافة القراء
+                loadSettings();
+                // تحميل العلامات المرجعية والإحصائيات
+                loadBookmarks();
+                loadStats();
+                // تحديث أيقونة القارئ المفضل
+                updateFavoriteIcon();
+                // بعد تعيين المفضّل قم بتحديث عناوين القارئ لإظهار النجمة
+                updateReciterOptions();
+                // طلب إذن الإشعارات
+                requestNotificationPermission();
+                // تطبيق اللغة والثيم على الواجهة
+                updateLanguage();
+                // بعد تحميل القراء، قم بتحميل أسماء السور للغة الحالية
+                await loadSurahNames();
+            } catch (error) {
+                console.error('خطأ في تحميل بيانات القراء:', error);
+                statusDiv.textContent = 'خطأ في تحميل بيانات القراء. يرجى إعادة تحميل الصفحة.';
+            }
+        }
+
+        // تحديث قائمة المصاحف عند اختيار القارئ
+        function updateMoshafList() {
+            // استخدم الترجمة للخيارات الافتراضية بناءً على اللغة الحالية
+            const t = translations[currentLanguage] || translations['ar'];
+            moshafSelect.innerHTML = `<option value="">${t.moshafLabel.replace(/[:：]$/, '')}</option>`;
+            surahSelect.innerHTML = `<option value="">${t.surahLabel.replace(/[:：]$/, '')}</option>`;
+            
+            if (currentReciterIndex !== null) {
+                const reciter = recitersData[currentReciterIndex];
+                reciter.moshaf.forEach((moshaf, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = moshaf.name;
+                    moshafSelect.appendChild(option);
+                });
+            }
+            
+            currentMoshafIndex = null;
+            currentSurahIndex = null;
+            updateStatus();
+        }
+
+        // تحديث قائمة السور عند اختيار المصحف
+        function updateSurahList() {
+            // استخدم الترجمة للخيارات الافتراضية بناءً على اللغة الحالية
+            const t = translations[currentLanguage] || translations['ar'];
+            surahSelect.innerHTML = `<option value="">${t.surahLabel.replace(/[:：]$/, '')}</option>`;
+            
+            if (currentReciterIndex !== null && currentMoshafIndex !== null) {
+                const reciter = recitersData[currentReciterIndex];
+                const moshaf = reciter.moshaf[currentMoshafIndex];
+                const availableSurahs = moshaf.surah_list.split(',').map(num => parseInt(num));
+                
+                availableSurahs.forEach(surahNumber => {
+                    const surah = surahs.find(s => s.number === surahNumber);
+                    if (surah) {
+                        const option = document.createElement('option');
+                        option.value = surahs.indexOf(surah);
+                        option.textContent = `${surah.number}. ${surah.name}`;
+                        surahSelect.appendChild(option);
+                    }
+                });
+            }
+            
+            currentSurahIndex = null;
+            updateStatus();
+            // تطبيق التصفية بناءً على البحث
+            if (typeof surahSearch !== 'undefined' && surahSearch) {
+                filterSurahs(surahSearch.value || '');
+            }
+        }
+
+        // تحديث الحالة
+        function updateStatus() {
+            if (currentReciterIndex !== null && currentMoshafIndex !== null && currentSurahIndex !== null) {
+                const reciter = recitersData[currentReciterIndex];
+                const moshaf = reciter.moshaf[currentMoshafIndex];
+                const surah = surahs[currentSurahIndex];
+                const t = translations[currentLanguage] || translations['ar'];
+                statusDiv.textContent = t.readyStatus(surah.name, reciter.name, moshaf.name);
+            } else {
+                const t = translations[currentLanguage] || translations['ar'];
+                statusDiv.textContent = t.statusDefault;
+            }
+        }
+
+        // إنشاء رابط الصوت
+        function getAudioUrl(surahIndex = null) {
+            if (currentReciterIndex === null || currentMoshafIndex === null) return null;
+            
+            const reciter = recitersData[currentReciterIndex];
+            const moshaf = reciter.moshaf[currentMoshafIndex];
+            const surah = surahs[surahIndex !== null ? surahIndex : currentSurahIndex];
+            if (!surah) return null;
+            
+            const surahNumber = surah.number.toString().padStart(3, '0');
+            return `${moshaf.server}${surahNumber}.mp3`;
+        }
+
+        // تشغيل الصوت أو استئنافه
+        function playAudio() {
+            const audioUrl = getAudioUrl();
+            if (!audioUrl) {
+                // لا يمكن التشغيل بدون تعيين القارئ والمصحف والسورة
+                return;
+            }
+            // إذا كان مصدر الصوت مختلفاً عن المطلوب، قم بتحميله
+            if (!audioPlayer.src || audioPlayer.src !== audioUrl) {
+                audioPlayer.src = audioUrl;
+                audioPlayer.load();
+            }
+            // ضبط مستوى الصوت والسرعة الحالية قبل التشغيل
+            audioPlayer.volume = (volumeControl.value || 100) / 100;
+            const desiredSpeed = parseFloat(speedControl.value) || 1;
+            audioPlayer.playbackRate = desiredSpeed;
+            // تشغيل الصوت من الموضع الحالي
+            audioPlayer.play().then(() => {
+                isPlaying = true;
+                const t = translations[currentLanguage] || translations['ar'];
+                playBtn.textContent = t.pause;
+                // تطبيق حالة الإيقاف المؤقت بناءً على اختيار المستخدم
+                applyStopCondition();
+                // حفظ السورة التي تم تشغيلها
+                recordPlayedSurah();
+            }).catch(error => {
+                console.error('خطأ في تشغيل الصوت:', error);
+                // عدم عرض رسالة تنبيه مزعجة للمستخدم، فقط تسجيل الخطأ
+            });
+        }
+
+        // تغيير وضع التكرار
+        function toggleRepeat() {
+            repeatMode = (repeatMode + 1) % 5;
+            const t = translations[currentLanguage] || translations['ar'];
+            const modes = t.repeatModes;
+            repeatBtn.textContent = t.repeatLabel + modes[repeatMode];
+            repeatCount = 0;
+        }
+
+        // الانتقال للسورة التالية
+        function nextSurah() {
+            if (currentSurahIndex !== null && currentSurahIndex < surahs.length - 1) {
+                // البحث عن السورة التالية المتاحة
+                const reciter = recitersData[currentReciterIndex];
+                const moshaf = reciter.moshaf[currentMoshafIndex];
+                const availableSurahs = moshaf.surah_list.split(',').map(num => parseInt(num));
+                const currentSurahNumber = surahs[currentSurahIndex].number;
+                
+                for (let i = currentSurahNumber + 1; i <= 114; i++) {
+                    if (availableSurahs.includes(i)) {
+                        const nextSurah = surahs.find(s => s.number === i);
+                        currentSurahIndex = surahs.indexOf(nextSurah);
+                        surahSelect.value = currentSurahIndex;
+                        updateStatus();
+                        updateDownloadLink();
+                        return;
+                    }
+                }
+            }
+        }
+
+        // الانتقال للسورة السابقة
+        function prevSurah() {
+            if (currentSurahIndex !== null && currentSurahIndex > 0) {
+                // البحث عن السورة السابقة المتاحة
+                const reciter = recitersData[currentReciterIndex];
+                const moshaf = reciter.moshaf[currentMoshafIndex];
+                const availableSurahs = moshaf.surah_list.split(',').map(num => parseInt(num));
+                const currentSurahNumber = surahs[currentSurahIndex].number;
+                
+                for (let i = currentSurahNumber - 1; i >= 1; i--) {
+                    if (availableSurahs.includes(i)) {
+                        const prevSurah = surahs.find(s => s.number === i);
+                        currentSurahIndex = surahs.indexOf(prevSurah);
+                        surahSelect.value = currentSurahIndex;
+                        updateStatus();
+                        updateDownloadLink();
+                        return;
+                    }
+                }
+            }
+        }
+
+        // تحديث رابط التحميل
+        function updateDownloadLink() {
+            const audioUrl = getAudioUrl();
+            if (audioUrl && currentReciterIndex !== null && currentMoshafIndex !== null && currentSurahIndex !== null) {
+                const reciter = recitersData[currentReciterIndex];
+                const moshaf = reciter.moshaf[currentMoshafIndex];
+                const surah = surahs[currentSurahIndex];
+                downloadLink.href = audioUrl;
+                const t = translations[currentLanguage] || translations['ar'];
+                downloadLink.textContent = `${t.downloadLinkPrefix}${surah.name} - ${reciter.name}`;
+            }
+        }
+
+        // عرض جميع السور للتحميل
+        function showAllSurahs() {
+            if (currentReciterIndex === null || currentMoshafIndex === null) {
+                alert('الرجاء اختيار القارئ والمصحف أولاً.');
+                return;
+            }
+
+            const reciter = recitersData[currentReciterIndex];
+            const moshaf = reciter.moshaf[currentMoshafIndex];
+            const availableSurahs = moshaf.surah_list.split(',').map(num => parseInt(num));
+            
+            allSurahsList.innerHTML = '';
+            
+            availableSurahs.forEach(surahNumber => {
+                const surah = surahs.find(s => s.number === surahNumber);
+                if (surah) {
+                    const surahIndex = surahs.indexOf(surah);
+                    const audioUrl = getAudioUrl(surahIndex);
+                    
+                    const link = document.createElement('a');
+                    link.href = audioUrl;
+                    link.target = '_blank';
+                    link.className = 'surah-link';
+                    link.textContent = `${surah.number}. ${surah.name}`;
+                    
+                    allSurahsList.appendChild(link);
+                }
+            });
+        }
+
+        // حفظ الإعدادات في التخزين المحلي
+        function saveSettings() {
+            try {
+                localStorage.setItem('reciterIndex', currentReciterIndex !== null ? currentReciterIndex : '');
+                localStorage.setItem('moshafIndex', currentMoshafIndex !== null ? currentMoshafIndex : '');
+                localStorage.setItem('surahIndex', currentSurahIndex !== null ? currentSurahIndex : '');
+                localStorage.setItem('volume', audioPlayer.volume);
+                localStorage.setItem('speed', audioPlayer.playbackRate);
+            } catch (e) {
+                console.warn('لا يمكن حفظ الإعدادات:', e);
+            }
+        }
+
+        // تحميل الإعدادات من التخزين المحلي
+        function loadSettings() {
+            try {
+                // تحميل السور التي تم تشغيلها سابقاً
+                const played = localStorage.getItem('playedSurahs');
+                if (played) {
+                    try {
+                        playedSurahs = JSON.parse(played);
+                    } catch (e) {
+                        playedSurahs = [];
+                    }
+                }
+                const savedReciter = localStorage.getItem('reciterIndex');
+                const savedMoshaf = localStorage.getItem('moshafIndex');
+                const savedSurah = localStorage.getItem('surahIndex');
+                const savedVolume = localStorage.getItem('volume');
+                const savedSpeed = localStorage.getItem('speed');
+                // تحميل الثيم واللغة والقارئ المفضل
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'dark') {
+                    document.body.classList.add('dark-mode');
+                    currentTheme = 'dark';
+                } else {
+                    document.body.classList.remove('dark-mode');
+                    currentTheme = 'light';
+                }
+                const savedLang = localStorage.getItem('language');
+                currentLanguage = (savedLang === 'en') ? 'en' : 'ar';
+                const favRec = localStorage.getItem('favoriteReciterIndex');
+                const favMos = localStorage.getItem('favoriteMoshafIndex');
+                favoriteReciterIndex = (favRec !== null && favRec !== '') ? parseInt(favRec) : null;
+                favoriteMoshafIndex = (favMos !== null && favMos !== '') ? parseInt(favMos) : null;
+                // إعداد الصوت
+                if (savedVolume !== null && savedVolume !== '') {
+                    const vol = parseFloat(savedVolume);
+                    if (!isNaN(vol)) {
+                        audioPlayer.volume = vol;
+                        volumeControl.value = vol * 100;
+                        // تحديث قيمة الصوت الظاهرة
+                        volumeLabel.textContent = Math.round(vol * 100);
+                    }
+                } else {
+                    // تحديث قيمة الصوت الظاهرة للقيمة الافتراضية
+                    volumeLabel.textContent = volumeControl.value;
+                }
+                // إعداد السرعة
+                if (savedSpeed !== null && savedSpeed !== '') {
+                    const spd = parseFloat(savedSpeed);
+                    if (!isNaN(spd)) {
+                        speedControl.value = spd;
+                        audioPlayer.playbackRate = spd;
+                        speedLabel.textContent = spd + 'x';
+                    }
+                } else {
+                    speedLabel.textContent = speedControl.value + 'x';
+                }
+                // إعدادات القارئ والمصحف والسورة
+                let initialReciterIndex = null;
+                let initialMoshafIndex = null;
+                let initialSurahIndex = null;
+                if (savedReciter !== null && savedReciter !== '') {
+                    const ri = parseInt(savedReciter);
+                    if (!isNaN(ri) && ri >= 0 && ri < recitersData.length) {
+                        initialReciterIndex = ri;
+                    }
+                }
+                if (savedMoshaf !== null && savedMoshaf !== '') {
+                    const mi = parseInt(savedMoshaf);
+                    if (!isNaN(mi)) {
+                        initialMoshafIndex = mi;
+                    }
+                }
+                if (savedSurah !== null && savedSurah !== '') {
+                    const si = parseInt(savedSurah);
+                    if (!isNaN(si)) {
+                        initialSurahIndex = si;
+                    }
+                }
+                // إذا لم يكن هناك حفظ سابق، استخدم القارئ المفضل
+                if (initialReciterIndex === null && favoriteReciterIndex !== null) {
+                    initialReciterIndex = favoriteReciterIndex;
+                }
+                if (initialMoshafIndex === null && favoriteMoshafIndex !== null) {
+                    initialMoshafIndex = favoriteMoshafIndex;
+                }
+                if (initialReciterIndex !== null) {
+                    reciterSelect.value = initialReciterIndex;
+                    currentReciterIndex = initialReciterIndex;
+                    updateMoshafList();
+                    if (initialMoshafIndex !== null) {
+                        moshafSelect.value = initialMoshafIndex;
+                        currentMoshafIndex = initialMoshafIndex;
+                        updateSurahList();
+                        if (initialSurahIndex !== null) {
+                            surahSelect.value = initialSurahIndex;
+                            currentSurahIndex = initialSurahIndex;
+                        }
+                    }
+                }
+                updateFavoriteIcon();
+                updateStatus();
+                updateDownloadLink();
+                updateThemeIcon();
+                updateLanguage();
+            } catch (e) {
+                console.warn('لا يمكن تحميل الإعدادات:', e);
+            }
+        }
+
+        // تصفية السور بناءً على البحث
+        function filterSurahs(term) {
+            const search = term.trim().toLowerCase();
+            const options = surahSelect.options;
+            for (let i = 0; i < options.length; i++) {
+                const option = options[i];
+                if (i === 0) {
+                    option.style.display = '';
+                    continue;
+                }
+                const text = option.textContent.toLowerCase();
+                if (search === '' || text.includes(search)) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            }
+        }
+
+        // *** وظائف إضافية لتعزيز المشغل ***
+
+        // طلب إذن إشعارات سطح المكتب
+        function requestNotificationPermission() {
+            if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        // إرسال إشعار للمستخدم
+        function sendNotification(title, body) {
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                new Notification(title, { body: body || '' });
+            }
+        }
+
+        // تحديث رمز زر الثيم
+        function updateThemeIcon() {
+            if (!themeToggleBtn) return;
+            if (currentTheme === 'dark') {
+                themeToggleBtn.textContent = '☀️';
+            } else {
+                themeToggleBtn.textContent = '🌙';
+            }
+        }
+
+        // تبديل بين الوضعين الفاتح والداكن
+        function toggleTheme() {
+            if (currentTheme === 'dark') {
+                document.body.classList.remove('dark-mode');
+                currentTheme = 'light';
+            } else {
+                document.body.classList.add('dark-mode');
+                currentTheme = 'dark';
+            }
+            updateThemeIcon();
+            try {
+                localStorage.setItem('theme', currentTheme);
+            } catch (e) {}
+        }
+
+        // تحديث خيارات الإيقاف بعد حسب اللغة الحالية
+        function updateStopOptions() {
+            const t = translations[currentLanguage] || translations['ar'];
+            if (!stopAfterSelect) return;
+            const selectedVal = stopAfterSelect.value;
+            stopAfterSelect.innerHTML = '';
+            for (const key in t.stopOptions) {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = t.stopOptions[key];
+                stopAfterSelect.appendChild(opt);
+            }
+            if (selectedVal && t.stopOptions[selectedVal]) {
+                stopAfterSelect.value = selectedVal;
+            }
+        }
+
+        // تحديث النصوص والواجهة حسب اللغة
+        function updateLanguage() {
+            const t = translations[currentLanguage] || translations['ar'];
+            // Set the reading direction on both the html and body elements.  When switching
+            // languages we previously only updated the <html> element's dir attribute.  Some
+            // browsers inherit alignment from the body element, so update it as well to
+            // ensure left‑to‑right layout in English and right‑to‑left in Arabic.
+            const dirValue = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+            document.documentElement.setAttribute('dir', dirValue);
+            document.body.setAttribute('dir', dirValue);
+            if (pageTitleElement) pageTitleElement.textContent = currentLanguage === 'ar' ? '📖 مشغل القرآن الكريم' : '📖 Quran Player';
+            if (reciterLabelElement) reciterLabelElement.textContent = t.reciterLabel;
+            if (moshafLabelElement) moshafLabelElement.textContent = t.moshafLabel;
+            if (surahLabelElement) surahLabelElement.textContent = t.surahLabel;
+            if (speedControlLabel) speedControlLabel.textContent = t.speedLabel;
+            if (stopAfterLabelElement) stopAfterLabelElement.textContent = t.stopLabel;
+            const volLbl = document.querySelector('.volume-control label');
+            if (volLbl) volLbl.textContent = t.volumeLabel;
+            if (surahSearchInput) surahSearchInput.placeholder = t.searchPlaceholder;
+            if (searchNote) searchNote.textContent = t.searchNote;
+            if (randomReciterBtn) randomReciterBtn.title = t.randomReciterTitle;
+            if (randomSurahBtn) randomSurahBtn.title = t.randomSurahTitle;
+            if (favoriteReciterBtn) favoriteReciterBtn.title = t.favoriteTitle;
+            if (bookmarkBtn) bookmarkBtn.title = t.bookmarkTitle;
+            if (startCountdownBtn) startCountdownBtn.title = t.startCountdownTitle;
+            if (bookmarksHeader) bookmarksHeader.textContent = t.bookmarksHeader;
+            if (statsHeader) statsHeader.textContent = t.statsHeader;
+            if (statsSurahCountLabel) statsSurahCountLabel.firstChild.nodeValue = t.statsSurahCountLabel;
+            if (statsTopSurahLabel) statsTopSurahLabel.firstChild.nodeValue = t.statsTopSurahLabel;
+            if (statsTotalTimeLabel) statsTotalTimeLabel.firstChild.nodeValue = t.statsTotalTimeLabel;
+            if (countdownHeader) countdownHeader.textContent = t.countdownHeader;
+            if (countdownMinutes) countdownMinutes.placeholder = t.minutesPlaceholder;
+            if (countdownSeconds) countdownSeconds.placeholder = t.secondsPlaceholder;
+            // تحديث خيارات الإيقاف بعد
+            updateStopOptions();
+            // تحديث أزرار التشغيل والتكرار
+            repeatBtn.textContent = t.repeatLabel + t.repeatModes[repeatMode];
+            playBtn.textContent = isPlaying ? t.pause : t.play;
+            // زر تبديل اللغة
+            if (languageToggleBtn) languageToggleBtn.textContent = (currentLanguage === 'ar') ? 'EN' : 'ع';
+            // تحديث رمز الثيم
+            updateThemeIcon();
+            // تحديث الحالة والتحميل
+            updateStatus();
+            updateDownloadLink();
+            // تحديث قيمة السرعة المعروضة
+            speedLabel.textContent = parseFloat(speedControl.value).toString() + 'x';
+            // تحديث الإشارات المرجعية والإحصائيات
+            updateBookmarksList();
+            updateStatsSection();
+
+            // تحديث نص الخيار الافتراضي في قوائم القراء والمصاحف والسور بناءً على اللغة الحالية
+            // لضمان أن العنصر placeholder يتطابق مع الترجمة المختارة.
+            try {
+                if (reciterSelect && reciterSelect.options.length > 0) {
+                    // إزالة أية نجمة أو رمز من الخيار الافتراضي في أعلى القائمة
+                    reciterSelect.options[0].textContent = t.reciterLabel.replace(/[:：]$/, '');
+                }
+                if (moshafSelect && moshafSelect.options.length > 0) {
+                    moshafSelect.options[0].textContent = t.moshafLabel.replace(/[:：]$/, '');
+                }
+                if (surahSelect && surahSelect.options.length > 0) {
+                    surahSelect.options[0].textContent = t.surahLabel.replace(/[:：]$/, '');
+                }
+            } catch (e) {}
+
+            // تحديث أزرار التنقل والتنزيل وفق اللغة الحالية وحالة العرض
+            if (prevBtn) prevBtn.textContent = t.prevSurah;
+            if (nextBtn) nextBtn.textContent = t.nextSurah;
+            if (downloadBtn) {
+                if (downloadSection && downloadSection.style.display === 'block') {
+                    downloadBtn.textContent = t.hideDownload;
+                } else {
+                    downloadBtn.textContent = t.downloadSurah;
+                }
+            }
+            if (downloadAllBtn) {
+                if (allSurahsSection && allSurahsSection.style.display === 'block') {
+                    downloadAllBtn.textContent = t.hideList;
+                } else {
+                    downloadAllBtn.textContent = t.allSurahs;
+                }
+            }
+
+            // تحديث خيارات القراء لإظهار النجمة إذا تغيرت اللغة أو النصوص
+            updateReciterOptions();
+            // تحديث عنوان زر الاختصارات ومحتواه حسب اللغة الحالية
+            if (infoBtn) {
+                infoBtn.title = (currentLanguage === 'ar') ? 'اختصارات لوحة المفاتيح' : 'Keyboard Shortcuts';
+            }
+            if (shortcutsContents && shortcutsContents.length) {
+                shortcutsContents.forEach(function(el) {
+                    if (el.getAttribute('data-lang') === currentLanguage) {
+                        el.style.display = 'block';
+                    } else {
+                        el.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // تبديل اللغة الحالية
+        async function toggleLanguage() {
+            // تبديل اللغة ما بين العربية والإنجليزية
+            currentLanguage = (currentLanguage === 'ar') ? 'en' : 'ar';
+            try {
+                localStorage.setItem('language', currentLanguage);
+            } catch (e) {}
+            // تحديث الواجهة وفق اللغة الجديدة
+            updateLanguage();
+            // إعادة تحميل القراء والسور من الـ API حسب اللغة الجديدة
+            await loadReciters();
+            // سيتم تحميل أسماء السور داخل loadReciters(), لذلك لا حاجة لنداء منفصل
+            // تحديث خيارات القراء بعد التحميل
+            updateReciterOptions();
+            // تأكيد تطبيق اللغة الجديدة (محاذاة واتجاه النص) بعد اكتمال تحميل القراء
+            updateLanguage();
+        }
+
+        // تحميل العلامات المرجعية من التخزين المحلي
+        function loadBookmarks() {
+            try {
+                const stored = localStorage.getItem('bookmarks');
+                bookmarks = stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                bookmarks = [];
+            }
+            updateBookmarksList();
+        }
+
+        // حفظ العلامات المرجعية
+        function saveBookmarks() {
+            try {
+                localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+            } catch (e) {}
+        }
+
+        // إضافة إشارة مرجعية للسورة أو لموضع محدد داخلها
+        function addBookmark() {
+            if (currentReciterIndex === null || currentMoshafIndex === null || currentSurahIndex === null) return;
+            const promptMsg = (translations[currentLanguage] || translations['ar']).bookmarkPrompt;
+            const note = prompt(promptMsg, '') || '';
+            const bm = {
+                reciterIndex: currentReciterIndex,
+                moshafIndex: currentMoshafIndex,
+                surahIndex: currentSurahIndex,
+                time: audioPlayer.currentTime || 0,
+                note: note.trim()
+            };
+            bookmarks.push(bm);
+            saveBookmarks();
+            updateBookmarksList();
+            const addedMsg = (translations[currentLanguage] || translations['ar']).bookmarkAdded;
+            statusDiv.textContent = addedMsg;
+        }
+
+        // تحديث قائمة الإشارات المرجعية
+        function updateBookmarksList() {
+            if (!bookmarksSection || !bookmarksList) return;
+            if (bookmarks.length === 0) {
+                bookmarksSection.style.display = 'none';
+            } else {
+                bookmarksSection.style.display = 'block';
+            }
+            bookmarksList.innerHTML = '';
+            bookmarks.forEach((bm, idx) => {
+                const item = document.createElement('div');
+                item.className = 'bookmark-item';
+                const surahObj = surahs[bm.surahIndex];
+                let displayText = surahObj ? surahObj.name : '';
+                if (bm.note && bm.note !== '') {
+                    displayText += ' - ' + bm.note;
+                } else if (bm.time && !isNaN(bm.time)) {
+                    const m = Math.floor(bm.time / 60).toString().padStart(2, '0');
+                    const s = Math.floor(bm.time % 60).toString().padStart(2, '0');
+                    displayText += ` (${m}:${s})`;
+                }
+                const span = document.createElement('span');
+                span.textContent = displayText;
+                span.style.cursor = 'pointer';
+                span.addEventListener('click', function () {
+                    if (bm.reciterIndex !== null) {
+                        reciterSelect.value = bm.reciterIndex;
+                        currentReciterIndex = bm.reciterIndex;
+                        updateMoshafList();
+                    }
+                    if (bm.moshafIndex !== null) {
+                        moshafSelect.value = bm.moshafIndex;
+                        currentMoshafIndex = bm.moshafIndex;
+                        updateSurahList();
+                    }
+                    if (bm.surahIndex !== null) {
+                        surahSelect.value = bm.surahIndex;
+                        currentSurahIndex = bm.surahIndex;
+                    }
+                    updateStatus();
+                    updateDownloadLink();
+                    saveSettings();
+                    playAudio();
+                    const desiredTime = bm.time || 0;
+                    audioPlayer.addEventListener('loadeddata', function handler() {
+                        audioPlayer.currentTime = desiredTime;
+                        audioPlayer.removeEventListener('loadeddata', handler);
+                    });
+                });
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'bookmark-remove';
+                removeBtn.textContent = '❌';
+                removeBtn.title = 'Remove';
+                removeBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    bookmarks.splice(idx, 1);
+                    saveBookmarks();
+                    updateBookmarksList();
+                });
+                item.appendChild(span);
+                item.appendChild(removeBtn);
+                bookmarksList.appendChild(item);
+            });
+        }
+
+        // تحميل الإحصائيات من التخزين المحلي
+        function loadStats() {
+            try {
+                const stored = localStorage.getItem('stats');
+                stats = stored ? JSON.parse(stored) : { surahCount: 0, surahTimes: {}, totalTime: 0 };
+            } catch (e) {
+                stats = { surahCount: 0, surahTimes: {}, totalTime: 0 };
+            }
+            updateStatsSection();
+        }
+
+        // حفظ الإحصائيات في التخزين المحلي
+        function saveStats() {
+            try {
+                localStorage.setItem('stats', JSON.stringify(stats));
+            } catch (e) {}
+        }
+
+        // تسجيل إحصائيات الاستماع لسورة معينة
+        function recordStats(surahIndex, duration) {
+            if (surahIndex === null) return;
+            if (!stats.surahTimes[surahIndex]) {
+                stats.surahTimes[surahIndex] = { count: 0, time: 0 };
+            }
+            stats.surahTimes[surahIndex].count += 1;
+            stats.surahTimes[surahIndex].time += duration || 0;
+            stats.surahCount += 1;
+            stats.totalTime += duration || 0;
+            saveStats();
+            updateStatsSection();
+        }
+
+        // تنسيق مدة بالثواني إلى نص مقروء
+        function formatDuration(totalSeconds) {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = Math.floor(totalSeconds % 60);
+            const parts = [];
+            if (hours > 0) parts.push(hours + (currentLanguage === 'ar' ? ' ساعة' : 'h'));
+            if (minutes > 0) parts.push(minutes + (currentLanguage === 'ar' ? ' دقيقة' : 'm'));
+            parts.push(seconds + (currentLanguage === 'ar' ? ' ثانية' : 's'));
+            return parts.join(' ');
+        }
+
+        // تحديث قسم الإحصائيات
+        function updateStatsSection() {
+            if (!statsSection) return;
+            if (stats.surahCount && stats.surahCount > 0) {
+                statsSection.style.display = 'block';
+            } else {
+                statsSection.style.display = 'none';
+            }
+            const t = translations[currentLanguage] || translations['ar'];
+            if (statsSurahCountLabel) statsSurahCountLabel.firstChild.nodeValue = t.statsSurahCountLabel;
+            if (statsTopSurahLabel) statsTopSurahLabel.firstChild.nodeValue = t.statsTopSurahLabel;
+            if (statsTotalTimeLabel) statsTotalTimeLabel.firstChild.nodeValue = t.statsTotalTimeLabel;
+            if (statsSurahCount) statsSurahCount.textContent = stats.surahCount || 0;
+            // أكثر سورة استماعاً
+            let topIndex = null;
+            let maxCount = 0;
+            for (const idx in stats.surahTimes) {
+                if (stats.surahTimes[idx].count > maxCount) {
+                    maxCount = stats.surahTimes[idx].count;
+                    topIndex = idx;
+                }
+            }
+            if (statsTopSurah) statsTopSurah.textContent = (topIndex !== null && surahs[topIndex]) ? surahs[topIndex].name : '-';
+            if (statsTotalTime) statsTotalTime.textContent = formatDuration(stats.totalTime || 0);
+        }
+
+        // تبديل حالة القارئ المفضل
+        function toggleFavorite() {
+            if (currentReciterIndex === null || currentMoshafIndex === null) return;
+            if (favoriteReciterIndex === currentReciterIndex && favoriteMoshafIndex === currentMoshafIndex) {
+                favoriteReciterIndex = null;
+                favoriteMoshafIndex = null;
+                statusDiv.textContent = (translations[currentLanguage] || translations['ar']).favoriteUnset;
+            } else {
+                favoriteReciterIndex = currentReciterIndex;
+                favoriteMoshafIndex = currentMoshafIndex;
+                statusDiv.textContent = (translations[currentLanguage] || translations['ar']).favoriteSet;
+            }
+            updateFavoriteIcon();
+            // تحديث قائمة القراء لإضافة أو إزالة النجمة
+            updateReciterOptions();
+            try {
+                localStorage.setItem('favoriteReciterIndex', favoriteReciterIndex !== null ? favoriteReciterIndex : '');
+                localStorage.setItem('favoriteMoshafIndex', favoriteMoshafIndex !== null ? favoriteMoshafIndex : '');
+            } catch (e) {}
+        }
+
+        // تحديث رمز زر القارئ المفضل حسب الحالة
+        function updateFavoriteIcon() {
+            if (!favoriteReciterBtn) return;
+            if (favoriteReciterIndex !== null && favoriteMoshafIndex !== null && currentReciterIndex === favoriteReciterIndex && currentMoshafIndex === favoriteMoshafIndex) {
+                favoriteReciterBtn.style.background = 'linear-gradient(135deg, #ffd54f 0%, #ffb300 100%)';
+            } else {
+                favoriteReciterBtn.style.background = '';
+            }
+        }
+
+        /**
+         * تحديث خيارات القارئ في القائمة بإضافة نجمة للقارئ المفضل. يجب استدعاؤها
+         * بعد تحميل القراء أو عند تغيير حالة القارئ المفضل أو اللغة. يتم تجاهل
+         * الخيار الأول (placeholder).
+         */
+        function updateReciterOptions() {
+            // إذا لم يتم تحميل البيانات أو العنصر غير موجود، نتخطى
+            if (!reciterSelect || !recitersData || !Array.isArray(recitersData)) return;
+            const options = reciterSelect.options;
+            // الخيار الأول هو عنصر اختياري، لذا نبدأ من 1
+            for (let i = 1; i < options.length; i++) {
+                const reciter = recitersData[i - 1];
+                if (!reciter) continue;
+                // إذا كان هذا هو القارئ المفضل، أضف نجمة
+                if (favoriteReciterIndex === (i - 1)) {
+                    options[i].textContent = `⭐ ${reciter.name}`;
+                } else {
+                    options[i].textContent = reciter.name;
+                }
+            }
+        }
+
+        // بدء مؤقّت العد التنازلي
+        function startCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            if (stopTimer) {
+                clearTimeout(stopTimer);
+                stopTimer = null;
+            }
+            const m = parseInt(countdownMinutes.value) || 0;
+            const s = parseInt(countdownSeconds.value) || 0;
+            const total = m * 60 + s;
+            if (total <= 0) return;
+            countdownRemaining = total;
+            countdownDisplay.style.display = 'block';
+            updateCountdownDisplay();
+            countdownInterval = setInterval(function () {
+                countdownRemaining--;
+                updateCountdownDisplay();
+                if (countdownRemaining <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                    audioPlayer.pause();
+                    isPlaying = false;
+                    const t = translations[currentLanguage] || translations['ar'];
+                    playBtn.textContent = t.play;
+                    sendNotification(t.notificationTimerFinished, '');
+                }
+            }, 1000);
+        }
+
+        // تحديث عرض مؤقّت العد التنازلي
+        function updateCountdownDisplay() {
+            const m = Math.floor(countdownRemaining / 60).toString().padStart(2, '0');
+            const s = Math.floor(countdownRemaining % 60).toString().padStart(2, '0');
+            countdownDisplay.textContent = `${m}:${s}`;
+            // عند بقاء أقل من دقيقة، تغير اللون إلى الأحمر
+            if (countdownRemaining <= 60) {
+                countdownDisplay.style.color = '#d32f2f';
+                // إذا تبقت دقيقة واحدة بالضبط، أرسل إشعاراً للمستخدم بأن الدقيقة الأخيرة بدأت
+                if (countdownRemaining === 60) {
+                    const minuteMsg = (currentLanguage === 'ar') ? 'تبقى دقيقة واحدة لانتهاء المؤقّت' : 'One minute remaining on the timer.';
+                    sendNotification(minuteMsg, '');
+                }
+            } else {
+                countdownDisplay.style.color = '';
+            }
+        }
+
+        // مستمعي الأحداث
+        reciterSelect.addEventListener('change', function() {
+            currentReciterIndex = this.value === '' ? null : parseInt(this.value);
+            updateMoshafList();
+            saveSettings();
+            updateFavoriteIcon();
+        });
+
+        moshafSelect.addEventListener('change', function() {
+            currentMoshafIndex = this.value === '' ? null : parseInt(this.value);
+            updateSurahList();
+            saveSettings();
+            updateFavoriteIcon();
+        });
+
+        surahSelect.addEventListener('change', function() {
+            currentSurahIndex = this.value === '' ? null : parseInt(this.value);
+            updateStatus();
+            updateDownloadLink();
+            saveSettings();
+        });
+
+        playBtn.addEventListener('click', function() {
+            if (isPlaying) {
+                audioPlayer.pause();
+            } else {
+                playAudio();
+            }
+        });
+        repeatBtn.addEventListener('click', toggleRepeat);
+        nextBtn.addEventListener('click', function() {
+            nextSurah();
+            // تشغيل السورة تلقائياً بعد الانتقال
+            playAudio();
+            saveSettings();
+        });
+        prevBtn.addEventListener('click', function() {
+            prevSurah();
+            // تشغيل السورة تلقائياً بعد الانتقال
+            playAudio();
+            saveSettings();
+        });
+
+        downloadBtn.addEventListener('click', function() {
+            const t = translations[currentLanguage] || translations['ar'];
+            if (downloadSection.style.display === 'none') {
+                downloadSection.style.display = 'block';
+                allSurahsSection.style.display = 'none';
+                // تحديث نص الزر لإخفاء التحميل
+                this.textContent = t.hideDownload;
+                // إعادة نص زر جميع السور إلى الحالة الافتراضية
+                downloadAllBtn.textContent = t.allSurahs;
+                updateDownloadLink();
+            } else {
+                downloadSection.style.display = 'none';
+                // إعادة نص الزر لحالة تحميل السورة
+                this.textContent = t.downloadSurah;
+            }
+        });
+
+        downloadAllBtn.addEventListener('click', function() {
+            const t = translations[currentLanguage] || translations['ar'];
+            if (allSurahsSection.style.display === 'none') {
+                allSurahsSection.style.display = 'block';
+                downloadSection.style.display = 'none';
+                // تحديث نص الزر لإخفاء القائمة
+                this.textContent = t.hideList;
+                // إعادة نص زر تحميل السورة إلى الحالة الافتراضية
+                downloadBtn.textContent = t.downloadSurah;
+                showAllSurahs();
+            } else {
+                allSurahsSection.style.display = 'none';
+                // إعادة نص الزر للحالة الافتراضية
+                this.textContent = t.allSurahs;
+            }
+        });
+
+        volumeControl.addEventListener('input', function() {
+            const val = this.value;
+            audioPlayer.volume = val / 100;
+            // تحديث القيمة الظاهرة بجوار المؤشر
+            volumeLabel.textContent = Math.round(val);
+            saveSettings();
+        });
+
+        // التحكم بسرعة القراءة
+        speedControl.addEventListener('input', function() {
+            const speed = parseFloat(this.value);
+            audioPlayer.playbackRate = speed;
+            speedLabel.textContent = speed + 'x';
+            saveSettings();
+        });
+
+        // تطبيق شرط الإيقاف عند تغيير الاختيار
+        if (stopAfterSelect) {
+            stopAfterSelect.addEventListener('change', function() {
+                applyStopCondition();
+            });
+        }
+
+        // اختيار قارئ عشوائي وتشغيل سورة عشوائية
+        randomReciterBtn.addEventListener('click', function() {
+            if (!recitersData || recitersData.length === 0) return;
+            const randIndex = Math.floor(Math.random() * recitersData.length);
+            reciterSelect.value = randIndex;
+            currentReciterIndex = randIndex;
+            updateMoshafList();
+            // اختيار أول مصحف متاح
+            if (moshafSelect.options.length > 1) {
+                moshafSelect.value = moshafSelect.options[1].value;
+                currentMoshafIndex = parseInt(moshafSelect.value);
+                updateSurahList();
+                // اختيار سورة عشوائية من السور المتاحة
+                const availableOptions = Array.from(surahSelect.options).filter((opt, idx) => idx > 0 && opt.style.display !== 'none');
+                if (availableOptions.length > 0) {
+                    const randomOption = availableOptions[Math.floor(Math.random() * availableOptions.length)];
+                    surahSelect.value = randomOption.value;
+                    currentSurahIndex = parseInt(randomOption.value);
+                    updateStatus();
+                    updateDownloadLink();
+                    saveSettings();
+                    updateFavoriteIcon();
+                    playAudio();
+                }
+            }
+        });
+
+        // اختيار سورة عشوائية من القائمة الحالية
+        randomSurahBtn.addEventListener('click', function() {
+            if (currentReciterIndex === null || currentMoshafIndex === null) {
+                alert('الرجاء اختيار القارئ والمصحف أولاً.');
+                return;
+            }
+            const availableOptions = Array.from(surahSelect.options).filter((opt, idx) => idx > 0 && opt.style.display !== 'none');
+            if (availableOptions.length > 0) {
+                const randomOption = availableOptions[Math.floor(Math.random() * availableOptions.length)];
+                surahSelect.value = randomOption.value;
+                currentSurahIndex = parseInt(randomOption.value);
+                updateStatus();
+                updateDownloadLink();
+                saveSettings();
+                playAudio();
+            }
+        });
+
+        // البحث في السور
+        surahSearch.addEventListener('input', function() {
+            filterSurahs(this.value);
+        });
+
+        // تحديث حالة التشغيل عند بدء التشغيل أو الإيقاف المؤقت
+        audioPlayer.addEventListener('play', function() {
+            isPlaying = true;
+            const tPlay = translations[currentLanguage] || translations['ar'];
+            playBtn.textContent = tPlay.pause;
+        });
+        audioPlayer.addEventListener('pause', function() {
+            // إذا كان تم الإيقاف مؤقتاً وليس انتهاء السورة
+            if (audioPlayer.currentTime < audioPlayer.duration) {
+                isPlaying = false;
+                const tPlay = translations[currentLanguage] || translations['ar'];
+                playBtn.textContent = tPlay.play;
+            }
+        });
+
+        // معالجة انتهاء التشغيل مع التكرار وخيارات الإيقاف المختلفة
+        audioPlayer.addEventListener('ended', function() {
+            // تسجيل الإحصائيات وإرسال إشعار انتهاء السورة
+            try {
+                const finishedSurahIndex = currentSurahIndex;
+                if (finishedSurahIndex !== null) {
+                    recordStats(finishedSurahIndex, audioPlayer.duration || 0);
+                    const finishedSurah = surahs[finishedSurahIndex];
+                    const tNotif = translations[currentLanguage] || translations['ar'];
+                    if (finishedSurah) {
+                        sendNotification(tNotif.notificationSurahFinished(finishedSurah.name), '');
+                    }
+                }
+            } catch (e) {
+                console.warn('خطأ في تسجيل الإحصائيات أو الإشعار:', e);
+            }
+            // التعامل مع أوضاع التكرار
+            if (repeatMode === 4) { // دائماً
+                playAudio();
+                return;
+            } else if (repeatMode > 0 && repeatCount < repeatMode) {
+                repeatCount++;
+                playAudio();
+                return;
+            } else {
+                // إعادة تعيين عداد التكرار
+                repeatCount = 0;
+            }
+
+            // إذا كان خيار الإيقاف هو انتهاء السورة فقط
+            if (stopAfterSelect && stopAfterSelect.value === 'endSurah') {
+                isPlaying = false;
+                const tPlay = translations[currentLanguage] || translations['ar'];
+                playBtn.textContent = tPlay.play;
+                return;
+            }
+
+            // إذا كان خيار الإيقاف هو انتهاء المصحف وكنا في آخر سورة، ننتقل للقارئ التالي
+            if (stopAfterSelect && stopAfterSelect.value === 'endMoshaf' && isLastSurahInMoshaf()) {
+                if (hasNextReciter()) {
+                    // الانتقال للقارئ التالي وتشغيل أول سورة متاحة
+                    const moved = nextReciter();
+                    if (moved) {
+                        playAudio();
+                    } else {
+                        isPlaying = false;
+                        const tPlay = translations[currentLanguage] || translations['ar'];
+                        playBtn.textContent = tPlay.play;
+                    }
+                } else {
+                    // لا يوجد قارئ تالٍ، توقف بالكامل
+                    isPlaying = false;
+                    const tPlay = translations[currentLanguage] || translations['ar'];
+                    playBtn.textContent = tPlay.play;
+                }
+                return;
+            }
+
+            // إذا كان التنقل التلقائي مفعلاً
+            if (autoNext) {
+                if (hasNextSurah()) {
+                    // إذا كانت هناك سورة تالية في المصحف الحالي، انتقل إليها
+                    nextSurah();
+                    setTimeout(() => {
+                        playAudio();
+                    }, 500);
+                } else {
+                    // لا توجد سورة تالية في المصحف الحالي
+                    // نتحقق ما إذا كان المستخدم قد اختار خيار «انتهاء المصحف» لبدء قارئ جديد
+                    if (stopAfterSelect && stopAfterSelect.value === 'endMoshaf') {
+                        if (hasNextReciter()) {
+                            const moved = nextReciter();
+                            if (moved) {
+                                setTimeout(() => {
+                                    playAudio();
+                                }, 500);
+                            } else {
+                                // لا يوجد قارئ تالٍ، توقف
+                                isPlaying = false;
+                                const tPlay = translations[currentLanguage] || translations['ar'];
+                                playBtn.textContent = tPlay.play;
+                            }
+                        } else {
+                            // لا يوجد قارئ تالٍ، توقف
+                            isPlaying = false;
+                            const tPlay = translations[currentLanguage] || translations['ar'];
+                            playBtn.textContent = tPlay.play;
+                        }
+                    } else {
+                        // ليس هناك خيار للقراءة المستمرة عبر القراء، توقف عند نهاية المصحف
+                        isPlaying = false;
+                        const tPlay = translations[currentLanguage] || translations['ar'];
+                        playBtn.textContent = tPlay.play;
+                    }
+                }
+            } else {
+                // إذا كان التنقل التلقائي غير مفعّل، توقف
+                isPlaying = false;
+                const tPlay = translations[currentLanguage] || translations['ar'];
+                playBtn.textContent = tPlay.play;
+            }
+        });
+
+        // مستمعات لأزرار الثيم واللغة والقارئ المفضل والإشارات المرجعية والمؤقّت
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', function() {
+                toggleTheme();
+            });
+        }
+        if (languageToggleBtn) {
+            languageToggleBtn.addEventListener('click', function() {
+                toggleLanguage();
+            });
+        }
+        if (favoriteReciterBtn) {
+            favoriteReciterBtn.addEventListener('click', function() {
+                toggleFavorite();
+            });
+        }
+        if (bookmarkBtn) {
+            bookmarkBtn.addEventListener('click', function() {
+                addBookmark();
+            });
+        }
+        if (startCountdownBtn) {
+            startCountdownBtn.addEventListener('click', function() {
+                startCountdown();
+            });
+        }
+        // زر المعلومات: عرض أو إخفاء لوحة الاختصارات عند النقر
+        if (infoBtn) {
+            infoBtn.addEventListener('click', function() {
+                if (!shortcutsInfo) return;
+                if (shortcutsInfo.style.display === 'block') {
+                    shortcutsInfo.style.display = 'none';
+                } else {
+                    // قبل إظهارها، تأكد من عرض المحتوى المناسب للغة الحالية
+                    if (shortcutsContents && shortcutsContents.length) {
+                        shortcutsContents.forEach(function(el) {
+                            if (el.getAttribute('data-lang') === currentLanguage) {
+                                el.style.display = 'block';
+                            } else {
+                                el.style.display = 'none';
+                            }
+                        });
+                    }
+                    shortcutsInfo.style.display = 'block';
+                }
+            });
+        }
+        // دعم اختصارات لوحة المفاتيح
+        document.addEventListener('keydown', function(e) {
+            const tag = e.target.tagName.toLowerCase();
+            if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (isPlaying) {
+                    audioPlayer.pause();
+                } else {
+                    playAudio();
+                }
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                nextSurah();
+                playAudio();
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                prevSurah();
+                playAudio();
+            } else if (e.key === 'r' || e.key === 'R') {
+                e.preventDefault();
+                toggleRepeat();
+            } else if (e.key === '+' || e.key === '=') {
+                e.preventDefault();
+                let val = parseInt(volumeControl.value) + 10;
+                if (val > 100) val = 100;
+                volumeControl.value = val;
+                audioPlayer.volume = val / 100;
+                volumeLabel.textContent = val;
+                saveSettings();
+            } else if (e.key === '-' || e.key === '_') {
+                e.preventDefault();
+                let val = parseInt(volumeControl.value) - 10;
+                if (val < 0) val = 0;
+                volumeControl.value = val;
+                audioPlayer.volume = val / 100;
+                volumeLabel.textContent = val;
+                saveSettings();
+            } else if (e.key === 's' || e.key === 'S') {
+                e.preventDefault();
+                if (surahSearchInput) surahSearchInput.focus();
+            }
+        });
+
+        // تهيئة الصفحة
+        loadReciters();
+    </script>
+</body>
+</html>
+
