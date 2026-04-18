@@ -1375,8 +1375,39 @@ html[dir=ltr] .stop-row{flex-direction:row-reverse;}
 body.bar-open{padding-bottom:calc(90px + var(--safe-bottom));}
 
 /*=======================================================
-  MOBILE TAB BAR
+  INFO SUB-TABS
 =======================================================*/
+.info-tabs{
+  display:flex;overflow-x:auto;flex-shrink:0;
+  background:var(--input-bg);
+  border-bottom:2px solid var(--input-border);
+  scrollbar-width:none;gap:2px;padding:0 8px;
+}
+.info-tabs::-webkit-scrollbar{display:none;}
+.info-tab-btn{
+  flex-shrink:0;padding:9px 14px;border:none;background:none;
+  font-size:12px;font-weight:700;color:var(--text-soft);cursor:pointer;
+  border-bottom:3px solid transparent;margin-bottom:-2px;
+  transition:color 0.2s,border-color 0.2s;font-family:inherit;white-space:nowrap;
+}
+.info-tab-btn.active{color:var(--acc1);border-bottom-color:var(--acc1);}
+.info-pane{display:none;flex:1;overflow-y:auto;flex-direction:column;}
+.info-pane.active{display:flex;}
+.info-pane::-webkit-scrollbar{width:4px;}
+.info-pane::-webkit-scrollbar-thumb{background:var(--acc1);border-radius:2px;}
+/* Quick stats row at top of info */
+.info-quick-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1px;background:var(--input-border);
+  border-bottom:1px solid var(--input-border);flex-shrink:0;
+}
+.info-quick-cell{
+  background:var(--input-bg);padding:10px 8px;text-align:center;
+}
+.info-quick-n{font-size:18px;font-weight:900;color:var(--acc1);}
+.info-quick-l{font-size:10px;color:var(--text-soft);font-weight:600;margin-top:2px;}
+
+
 .mobile-tab-bar{
   display:none; /* hidden on desktop */
   position:sticky;
@@ -1648,8 +1679,8 @@ body.gold .si-ayah.active{background:none !important;}
       <button class="qp-opt-btn"        id="optPrint"   onclick="setScript('print')">📝 نص مطبوع</button>
       <!-- سطر -->
       <div style="width:1px;height:20px;background:var(--input-border)"></div>
-      <button class="qp-opt-btn active" id="optBlock"  onclick="setLineMode('block')">≡ كل آية بسطر</button>
-      <button class="qp-opt-btn"        id="optInline" onclick="setLineMode('inline')">⋯ متتاليات</button>
+      <button class="qp-opt-btn"        id="optBlock"  onclick="setLineMode('block')">≡ كل آية بسطر</button>
+      <button class="qp-opt-btn active" id="optInline" onclick="setLineMode('inline')">⋯ متتاليات</button>
       <!-- حجم الخط -->
       <div style="width:1px;height:20px;background:var(--input-border)"></div>
       <button class="si-font-btn" id="qpFontMinus">A−</button>
@@ -1785,15 +1816,15 @@ body.gold .si-ayah.active{background:none !important;}
     </div>
   </div>
 
-  <!-- MOSHAF SELECT -->
+  <!-- MOSHAF SELECT + التالي في نفس الصف -->
   <div class="fg">
     <label class="lbl" id="moshafLbl">اختر المصحف:</label>
-    <select id="moshaf"><option value="">—</option></select>
-  </div>
-
-  <!-- "التالي" — يحدد سلوك الانتقال بعد انتهاء السورة -->
-  <div class="next-menu-wrap" id="nextMenuWrap" style="margin-bottom:10px">
-    <button class="next-main-btn" id="nextMenuBtn">⏭ التالي ▾</button>
+    <div class="field-row" style="align-items:center">
+      <select id="moshaf" style="flex:1"><option value="">—</option></select>
+      <!-- زر التالي ملاصق للمصحف -->
+      <div class="next-menu-wrap" id="nextMenuWrap" style="flex:0 0 auto;width:auto;margin:0">
+        <button class="next-main-btn" id="nextMenuBtn"
+          style="padding:9px 12px;font-size:12px;border-radius:10px;white-space:nowrap">⏭ التالي ▾</button>
     <div class="next-dropdown" id="nextDropdown">
       <div class="next-opt next-opt-active" id="nextSameSurah">
         <span class="next-opt-icon">⏭</span>
@@ -1814,6 +1845,7 @@ body.gold .si-ayah.active{background:none !important;}
         <span class="next-opt-icon">✨</span>
         <span id="nextRandAllLbl">قارئ وسورة عشوائية</span>
         <span class="next-opt-check" id="nextCheck3"></span>
+        </div>
       </div>
     </div>
   </div>
@@ -3058,7 +3090,16 @@ audio.addEventListener('ended',()=>{
   if(sv==='endSurah'){ isPlaying=false; playBtn.textContent=T[lang].play; return; }
   // تنفيذ الخيار المحدد في قائمة "التالي"
   if(autoNext){
-    setTimeout(()=>{ executeNextMode(); },400);
+    // إذا وصلنا لآخر سورة (114) ولا يوجد إيقاف مطلوب → القارئ التالي
+    const isLastSurah=sIdx!==null&&surahs[sIdx]?.n===114;
+    if(isLastSurah&&nextMode===0&&hasNextRec()){
+      setTimeout(()=>{
+        if(nextReciter()){ playAudio(); onSurahChangeForText(); }
+        else{ isPlaying=false; playBtn.textContent=T[lang].play; }
+      },400);
+    } else {
+      setTimeout(()=>{ executeNextMode(); },400);
+    }
   } else { isPlaying=false; playBtn.textContent=T[lang].play; }
 });
 audio.addEventListener('error',()=>{ statusDiv.textContent=lang==='ar'?'⚠️ خطأ في تحميل الملف الصوتي.':'⚠️ Audio load error.'; isPlaying=false; playBtn.textContent=T[lang].play; });
@@ -3157,7 +3198,7 @@ let qpFontSize=26;
 let scrollLock=false;
 let lastHighlightTime=0;
 let currentScript='uthmani'; // 'uthmani' | 'print'
-let currentLineMode='block';  // 'block' | 'inline'
+let currentLineMode='inline';  // 'block' | 'inline' — default: inline
 let currentQpTab='text';      // 'text' | 'info'
 
 /* ── تبويبات اللوحة ── */
@@ -3323,14 +3364,30 @@ async function fetchSurahText(n){
   }
 }
 
-/* ── جلب المعلومات ── */
+/* ── جلب المعلومات من quranpedia — مع proxy لتجاوز CORS عند فتح الملف محلياً ── */
 async function fetchSurahInfo(n){
   if(infoCache[n]) return infoCache[n];
+  const directUrl=`https://api.quranpedia.net/api/v1/surah/information/${n}`;
+  // محاولة مباشرة أولاً (يعمل عند رفع الملف على سيرفر)
   try{
-    const r=await fetch(`https://api.quranpedia.net/api/v1/surah/information/${n}`);
-    if(!r.ok) throw new Error();
-    return await r.json();
-  }catch(e){ return null; }
+    const r=await fetch(directUrl,{mode:'cors'});
+    if(r.ok){
+      const d=await r.json();
+      infoCache[n]=d;
+      return d;
+    }
+  }catch(e){ /* CORS blocked — try proxy */ }
+  // Fallback: allorigins proxy (يتجاوز CORS)
+  try{
+    const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(directUrl)}`;
+    const r2=await fetch(proxyUrl);
+    if(r2.ok){
+      const wrapper=await r2.json();
+      const d=JSON.parse(wrapper.contents||'null');
+      if(d){ infoCache[n]=d; return d; }
+    }
+  }catch(e2){ /* proxy also failed */ }
+  return null; // كلاهما فشل — سيُعرض المحتوى المحلي
 }
 
 /* ── رسم تبويب النص ── */
@@ -3374,52 +3431,87 @@ function renderTextPane(surahNum, info, ayahs){
 }
 
 /* ── رسم تبويب المعلومات (شاملة من quranpedia) ── */
+/* ── رسم تبويب المعلومات — نظام تبويبات فرعية حسب حجم المحتوى ── */
+/* ── بيانات السور المحلية [transliteration, english_name, revelation_order, juz_start] ── */
+const SURAH_LOCAL=[
+  ['Al-Fatihah','The Opening',5,1],['Al-Baqarah','The Cow',87,1],
+  ['Ali \'Imran','Family of Imran',89,3],['An-Nisa','The Women',92,4],
+  ['Al-Ma\'idah','The Table Spread',112,6],['Al-An\'am','The Cattle',55,7],
+  ['Al-A\'raf','The Heights',39,8],['Al-Anfal','The Spoils of War',88,10],
+  ['At-Tawbah','The Repentance',113,10],['Yunus','Jonah',51,11],
+  ['Hud','Hud',52,11],['Yusuf','Joseph',53,12],
+  ['Ar-Ra\'d','The Thunder',96,13],['Ibrahim','Abraham',72,13],
+  ['Al-Hijr','The Rocky Tract',54,14],['An-Nahl','The Bee',70,14],
+  ['Al-Isra\'','The Night Journey',50,15],['Al-Kahf','The Cave',69,15],
+  ['Maryam','Mary',44,16],['Ta-Ha','Ta-Ha',45,16],
+  ['Al-Anbya\'','The Prophets',73,17],['Al-Hajj','The Pilgrimage',103,17],
+  ['Al-Mu\'minun','The Believers',74,18],['An-Nur','The Light',102,18],
+  ['Al-Furqan','The Criterion',42,18],['Ash-Shu\'ara\'','The Poets',47,19],
+  ['An-Naml','The Ant',48,19],['Al-Qasas','The Stories',49,20],
+  ['Al-\'Ankabut','The Spider',85,20],['Ar-Rum','The Romans',84,21],
+  ['Luqman','Luqman',57,21],['As-Sajdah','The Prostration',75,21],
+  ['Al-Ahzab','The Combined Forces',90,21],['Saba\'','Sheba',58,22],
+  ['Fatir','Originator',43,22],['Ya-Sin','Ya-Sin',41,22],
+  ['As-Saffat','Those Ranged in Ranks',56,23],['Sad','The Letter Sad',38,23],
+  ['Az-Zumar','The Troops',59,23],['Ghafir','The Forgiver',60,24],
+  ['Fussilat','Explained in Detail',61,24],['Ash-Shura','The Consultation',62,25],
+  ['Az-Zukhruf','The Ornaments of Gold',63,25],['Ad-Dukhan','The Smoke',64,25],
+  ['Al-Jathiyah','The Kneeling',65,25],['Al-Ahqaf','The Wind-Curved Sandhills',66,26],
+  ['Muhammad','Muhammad',95,26],['Al-Fath','The Victory',111,26],
+  ['Al-Hujurat','The Rooms',106,26],['Qaf','The Letter Qaf',34,26],
+  ['Adh-Dhariyat','The Winnowing Winds',67,26],['At-Tur','The Mount',76,27],
+  ['An-Najm','The Star',23,27],['Al-Qamar','The Moon',37,27],
+  ['Ar-Rahman','The Beneficent',97,27],['Al-Waqi\'ah','The Inevitable',46,27],
+  ['Al-Hadid','The Iron',94,27],['Al-Mujadila','The Pleading Woman',105,28],
+  ['Al-Hashr','The Exile',101,28],['Al-Mumtahanah','She that is to be Examined',91,28],
+  ['As-Saf','The Ranks',109,28],['Al-Jumu\'ah','The Congregation',110,28],
+  ['Al-Munafiqun','The Hypocrites',104,28],['At-Taghabun','The Mutual Disillusion',108,28],
+  ['At-Talaq','The Divorce',99,28],['At-Tahrim','The Prohibition',107,28],
+  ['Al-Mulk','The Sovereignty',77,29],['Al-Qalam','The Pen',2,29],
+  ['Al-Haqqah','The Reality',78,29],['Al-Ma\'arij','The Ascending Stairways',79,29],
+  ['Nuh','Noah',71,29],['Al-Jinn','The Jinn',40,29],
+  ['Al-Muzzammil','The Enshrouded One',3,29],['Al-Muddaththir','The Cloaked One',4,29],
+  ['Al-Qiyamah','The Resurrection',31,29],['Al-Insan','The Human',98,29],
+  ['Al-Mursalat','The Emissaries',33,29],['An-Naba\'','The Tidings',80,30],
+  ['An-Nazi\'at','Those who Drag Forth',81,30],['\'Abasa','He Frowned',24,30],
+  ['At-Takwir','The Overthrowing',7,30],['Al-Infitar','The Cleaving',82,30],
+  ['Al-Mutaffifin','The Defrauding',86,30],['Al-Inshiqaq','The Sundering',83,30],
+  ['Al-Buruj','The Mansions of the Stars',27,30],['At-Tariq','The Nightcomer',36,30],
+  ['Al-A\'la','The Most High',8,30],['Al-Ghashiyah','The Overwhelming',68,30],
+  ['Al-Fajr','The Dawn',10,30],['Al-Balad','The City',35,30],
+  ['Ash-Shams','The Sun',26,30],['Al-Layl','The Night',9,30],
+  ['Ad-Duhaa','The Morning Hours',11,30],['Ash-Sharh','The Relief',12,30],
+  ['At-Tin','The Fig',28,30],['Al-\'Alaq','The Clot',1,30],
+  ['Al-Qadr','The Power',25,30],['Al-Bayyinah','The Clear Proof',100,30],
+  ['Az-Zalzalah','The Earthquake',93,30],['Al-\'Adiyat','The Courser',14,30],
+  ['Al-Qari\'ah','The Calamity',30,30],['At-Takathur','Rivalry in World Increase',16,30],
+  ['Al-\'Asr','The Declining Day',13,30],['Al-Humazah','The Traducer',32,30],
+  ['Al-Fil','The Elephant',19,30],['Quraysh','Quraysh',29,30],
+  ['Al-Ma\'un','The Small Kindnesses',17,30],['Al-Kawthar','The Abundance',15,30],
+  ['Al-Kafirun','The Disbelievers',18,30],['An-Nasr','The Divine Support',114,30],
+  ['Al-Masad','The Palm Fibre',6,30],['Al-Ikhlas','The Sincerity',22,30],
+  ['Al-Falaq','The Daybreak',20,30],['An-Nas','The Mankind',21,30]
+];
+
 function renderInfoPane(surahNum, info){
   const el=$('qpInfoBody'); if(!el) return;
   const s=surahs.find(x=>x.n===surahNum);
   const si=s?surahs.indexOf(s):0;
   const smetaAr=SMETA_AR[si]||[0,''];
   const local=SURAH_LOCAL[si]||['','',0,0];
-
-  if(!info){
-    el.innerHTML=`<div style="padding:20px;color:var(--text-soft);text-align:center">
-      ${lang==='ar'?'⚠️ لا تتوفر معلومات تفصيلية من quranpedia.net':'⚠️ No detailed info from quranpedia.net'}<br>
-      <a href="https://quranpedia.net/surah/${surahNum}" target="_blank" rel="noopener"
-         style="color:var(--acc1);font-weight:700;font-size:13px;margin-top:12px;display:inline-block">
-        quranpedia.net ↗
-      </a>
-    </div>`;
-    return;
-  }
-
-  // حقول قياسية من الـ API
-  const fields=[
-    {key:'introduction',    icon:'📖'},
-    {key:'surah_number',    icon:'🔢'},
-    {key:'surah_type',      icon:'📍'},
-    {key:'words_count',     icon:'🔤'},
-    {key:'descent',         icon:'🕰️'},
-    {key:'ayahs_count',     icon:'📜'},
-    {key:'asmaoha',         icon:'🏷️'},
-    {key:'topics',          icon:'📌'},
-    {key:'purposes',        icon:'🎯'},
-    {key:'grace',           icon:'✨'},
-    {key:'prophet',         icon:'🕌'},
-    {key:'revelation',      icon:'🌙'},
-  ];
-
-  // بطاقة سريعة في الأعلى
   const name_ar=info?.name_arabic||info?.arabic_name||s?.name||'';
   const name_lat=info?.transliteration||info?.name_simple||local[0]||'';
   const name_en=info?.name_translation||info?.english_name||local[1]||'';
-  const rev_order=info?.revelation_order||local[2]||'—';
-  const juz=info?.juz_number||local[3]||'—';
+  const rev_order=info?.revelation_order||local[2]||null;
+  const juz=info?.juz_number||local[3]||null;
   const total_v=info?.verses_count||smetaAr[0]||'';
+  const words=info?.words_count?.value||null;
   const isMec=smetaAr[1].includes('مكية');
   const typeLabel=lang==='ar'?(isMec?'🕋 مكية':'🕌 مدنية'):(isMec?'🕋 Meccan':'🕌 Medinan');
 
+  // ── Hero card ──
   let html=`
-  <div class="si-hero">
+  <div class="si-hero" style="flex-shrink:0">
     <div class="si-arabic">${name_ar}</div>
     ${name_lat?`<div class="si-latin">${name_lat}</div>`:''}
     ${name_en?`<div class="si-meaning">"${name_en}"</div>`:''}
@@ -3430,30 +3522,133 @@ function renderInfoPane(surahNum, info){
       ${juz?`<span class="si-pill">📚 ${lang==='ar'?`ج${juz}`:`J${juz}`}</span>`:''}
     </div>
   </div>
-  <div class="info-section">`;
+  <!-- إحصائيات سريعة -->
+  <div class="info-quick-grid" style="flex-shrink:0">
+    <div class="info-quick-cell"><div class="info-quick-n">${surahNum}</div><div class="info-quick-l">${lang==='ar'?'رقم':'No.'}</div></div>
+    <div class="info-quick-cell"><div class="info-quick-n">${total_v}</div><div class="info-quick-l">${lang==='ar'?'آية':'Verses'}</div></div>
+    <div class="info-quick-cell"><div class="info-quick-n">${words||rev_order||'—'}</div><div class="info-quick-l">${words?(lang==='ar'?'لفظة':'Words'):(lang==='ar'?'ترتيب النزول':'Rev. Order')}</div></div>
+  </div>`;
 
-  fields.forEach(({key,icon})=>{
-    const field=info[key];
-    if(!field||!field.value) return;
-    const isLong=String(field.value).length>60;
-    html+=`<div class="info-row">
-      <div class="info-row-title">${icon} ${field.title||key}</div>
-      <div class="info-row-val${isLong?' arabic':''}">${field.value}</div>
+  if(!info){
+    // API فشل — عرض البيانات المحلية المتوفرة
+    html+=`<div class="info-section">
+      ${infoRowHTML('🔢',lang==='ar'?'ترتيبها المصحفي':'Surah Number',String(surahNum))}
+      ${infoRowHTML('📍',lang==='ar'?'نوعها':'Type',typeLabel)}
+      ${infoRowHTML('📜',lang==='ar'?'آياتها':'Verses',String(total_v))}
+      ${rev_order?infoRowHTML('🕰️',lang==='ar'?'ترتيب نزولها':'Revelation Order',String(rev_order)):''}
+      ${juz?infoRowHTML('📚',lang==='ar'?'الجزء':"Juz'",String(juz)):''}
+      ${name_lat?infoRowHTML('🔤',lang==='ar'?'الاسم اللاتيني':'Latin Name',name_lat+(name_en?' — '+name_en:'')):''}
+      <div style="padding:10px 16px;font-size:12px;color:var(--text-soft);text-align:center;opacity:0.7">
+        ${lang==='ar'?'ℹ️ المعلومات التفصيلية تتطلب اتصالاً بالإنترنت':'ℹ️ Detailed info requires internet connection'}
+        &nbsp;<a href="https://quranpedia.net/surah/${surahNum}" target="_blank" rel="noopener"
+          style="color:var(--acc1);font-weight:700">quranpedia.net ↗</a>
+      </div>
     </div>`;
-  });
+    el.innerHTML=html;
+    return;
+  }
 
-  // أي حقول إضافية غير مدرجة
-  const knownKeys=new Set(fields.map(f=>f.key).concat(['name_arabic','arabic_name','name_translation','english_name','transliteration','name_simple','revelation_order','juz_number','verses_count','sajdahs','rukus','words_count','letters_count','page','start_page','bismillah_pre','other_names','themes','juz','total_verses','ayahs_count']));
+  // ── تعريف مجموعات التبويبات ──
+  const GROUPS=[
+    {
+      id:'basics', label:lang==='ar'?'🔢 أساسيات':'🔢 Basics',
+      keys:['surah_number','surah_type','ayahs_count','words_count','descent','asmaoha']
+    },
+    {
+      id:'intro', label:lang==='ar'?'📖 عن السورة':'📖 About',
+      keys:['introduction','topics','purposes']
+    },
+    {
+      id:'virtue', label:lang==='ar'?'✨ الفضل':'✨ Virtue',
+      keys:['grace','prophet']
+    },
+    {
+      id:'reveal', label:lang==='ar'?'🌙 النزول':'🌙 Revelation',
+      keys:['revelation']
+    }
+  ];
+
+  // جمع أي حقول إضافية من الـ API لا تنتمي لأي مجموعة
+  const allGroupKeys=new Set(GROUPS.flatMap(g=>g.keys));
+  const extraFields=[];
   Object.entries(info).forEach(([k,v])=>{
-    if(knownKeys.has(k)||typeof v!=='object'||!v?.value) return;
-    html+=`<div class="info-row">
-      <div class="info-row-title">📄 ${v.title||k}</div>
-      <div class="info-row-val">${v.value}</div>
-    </div>`;
+    if(!allGroupKeys.has(k)&&typeof v==='object'&&v?.value&&String(v.value).trim())
+      extraFields.push({key:k,field:v});
   });
+  if(extraFields.length){
+    GROUPS.push({
+      id:'extra', label:lang==='ar'?'📄 أخرى':'📄 More',
+      keys:extraFields.map(f=>f.key)
+    });
+  }
 
-  html+='</div>';
+  // إخفاء التبويبات التي ليس فيها محتوى
+  const visibleGroups=GROUPS.filter(g=>
+    g.keys.some(k=>info[k]&&info[k].value&&String(info[k].value).trim())
+  );
+
+  // إذا كانت المجموعات المرئية أقل من 2 أو المحتوى قليل → عرض مباشر بدون تبويبات
+  const totalFields=visibleGroups.reduce((sum,g)=>sum+g.keys.filter(k=>info[k]?.value).length,0);
+  const useSubTabs=totalFields>4;
+
+  if(!useSubTabs){
+    // عرض مباشر
+    html+=`<div class="info-section" style="flex:1;overflow-y:auto">`;
+    GROUPS.flatMap(g=>g.keys).forEach(key=>{
+      const field=info[key]; if(!field||!String(field.value||'').trim()) return;
+      html+=infoRowHTML(field.icon||'📄',field.title||key,field.value);
+    });
+    html+='</div>';
+  } else {
+    // تبويبات فرعية
+    html+=`<div class="info-tabs" id="infoSubTabs">`;
+    visibleGroups.forEach((g,i)=>{
+      html+=`<button class="info-tab-btn${i===0?' active':''}" onclick="switchInfoTab('${g.id}')">${g.label}</button>`;
+    });
+    html+='</div>';
+    visibleGroups.forEach((g,i)=>{
+      html+=`<div class="info-pane${i===0?' active':''}" id="infoPaneTab_${g.id}" style="flex:1;overflow-y:auto">
+        <div class="info-section">`;
+      g.keys.forEach(key=>{
+        const field=info[key]; if(!field||!String(field.value||'').trim()) return;
+        html+=infoRowHTML(field.icon||infoIcon(key),field.title||key,field.value);
+      });
+      html+=`</div></div>`;
+    });
+  }
+
   el.innerHTML=html;
+}
+
+/* مساعد: HTML لصف معلومة */
+function infoRowHTML(icon,title,value){
+  const val=String(value||'').trim();
+  const isLong=val.length>80;
+  const hasArabic=/[\u0600-\u06ff]/.test(val);
+  return `<div class="info-row">
+    <div class="info-row-title">${icon} ${title}</div>
+    <div class="info-row-val${isLong&&hasArabic?' arabic':''}">${val}</div>
+  </div>`;
+}
+function infoIcon(key){
+  const map={introduction:'📖',surah_number:'🔢',surah_type:'📍',words_count:'🔤',
+    descent:'🕰️',ayahs_count:'📜',asmaoha:'🏷️',topics:'📌',purposes:'🎯',
+    grace:'✨',prophet:'🕌',revelation:'🌙'};
+  return map[key]||'📄';
+}
+/* تبديل التبويبات الفرعية */
+function switchInfoTab(id){
+  document.querySelectorAll('.info-tab-btn').forEach(b=>{
+    b.classList.toggle('active',b.textContent.includes(id)||b.onclick?.toString().includes(id));
+  });
+  // أبسط: نبحث بالـ id المضمّن في onclick
+  document.querySelectorAll('.info-tab-btn').forEach(b=>{
+    const match=b.getAttribute('onclick')?.includes(`'${id}'`);
+    b.classList.toggle('active',match);
+  });
+  document.querySelectorAll('[id^="infoPaneTab_"]').forEach(p=>{
+    p.classList.toggle('active',p.id===`infoPaneTab_${id}`);
+  });
 }
 
 /* ── بناء HTML للآيات ── */
@@ -3533,7 +3728,7 @@ function wireAyahClicks(surahNum, ayahs){
   });
 }
 
-/* ── تمييز الآية الحالية (بدون خلفية — فقط تمرير) ── */
+/* ── تمرير الآية الحالية (بدون تمييز بصري — فقط تمرير سلس) ── */
 function highlightCurrentPosition(){
   if(!audio.duration||!ayahsData.length) return;
   const pct=audio.currentTime/audio.duration;
@@ -3543,11 +3738,10 @@ function highlightCurrentPosition(){
   const rows=container.querySelectorAll('.si-ayah');
   let targetRow=null;
   rows.forEach(r=>{
-    const match=parseInt(r.dataset.ayah)===approxAyah;
-    r.classList.toggle('active',match);
-    if(match) targetRow=r;
+    // لا نضيف أي class — فقط نجد الصف المستهدف
+    if(parseInt(r.dataset.ayah)===approxAyah) targetRow=r;
   });
-  // تمرير داخلي لـ qpPaneText
+  // تمرير داخلي لـ qpPaneText فقط
   const pane=$('qpPaneText');
   if(targetRow&&pane&&!scrollLock){
     scrollLock=true;
