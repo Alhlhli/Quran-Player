@@ -663,17 +663,8 @@ body.gold .ayah-row.highlighted{background:rgba(217,119,6,0.1);border-color:#d97
   position:relative;
 }
 .si-ayah:hover{ background:var(--badge-bg); border-right-color:var(--acc1);}
-.si-ayah.active{
-  background:rgba(102,126,234,0.1);
-  border-right-color:var(--acc2);
-  border-right-width:4px;
-}
-body.dark .si-ayah.active{background:rgba(167,139,250,0.12);}
-body.emerald .si-ayah.active{background:rgba(5,150,105,0.08);border-right-color:#059669;}
-body.gold .si-ayah.active{background:rgba(217,119,6,0.08);border-right-color:#d97706;}
 html[dir=ltr] .si-ayah{ border-right:none; border-left:3px solid transparent;}
 html[dir=ltr] .si-ayah:hover{ border-left-color:var(--acc1);}
-html[dir=ltr] .si-ayah.active{ border-left:4px solid var(--acc2);}
 .si-ayah-text{
   font-family:'Amiri Quran','Scheherazade New',serif;
   font-size:26px;line-height:2.2;
@@ -1374,6 +1365,16 @@ html[dir=ltr] .stop-row{flex-direction:row-reverse;}
 /* ensure body bottom padding when bar visible */
 body.bar-open{padding-bottom:calc(90px + var(--safe-bottom));}
 
+/* قائمة "التالي" في الشريط العائم — تفتح للأعلى */
+#fbNextDropdown{
+  bottom:calc(100% + 6px) !important;
+  top:auto !important;
+  right:-60px;
+  min-width:190px;
+  z-index:700;
+}
+@media(max-width:400px){#fbNextDropdown{right:-30px;}}
+
 /*=======================================================
   INFO SUB-TABS
 =======================================================*/
@@ -1502,15 +1503,8 @@ body.bar-open{padding-bottom:calc(90px + var(--safe-bottom));}
 }
 .qp-text-wrap.block-mode{padding:0;}
 
-/* active ayah — only left bar, no background */
-.si-ayah.active{
-  border-right-color:var(--acc2) !important;
-  border-right-width:4px !important;
-  background:none !important;
-}
-body.dark .si-ayah.active{background:none !important;}
-body.emerald .si-ayah.active{background:none !important;}
-body.gold .si-ayah.active{background:none !important;}
+/* active ayah — تمرير فقط بدون تظليل */
+.si-ayah.active{ background:none !important; }
 
 /*=======================================================
   PROGRESS IN FLOATING BAR
@@ -2006,8 +2000,21 @@ body.gold .si-ayah.active{background:none !important;}
     <div class="fb-controls">
       <button class="fb-btn" id="fbPrev" title="السابقة">⏮</button>
       <button class="fb-btn fb-play" id="fbPlay">▶</button>
-      <button class="fb-btn" id="fbNext" title="التالية">⏭</button>
+      <!-- زر التالي مع قائمة منسدلة -->
+      <div class="next-menu-wrap" id="fbNextWrap" style="position:relative">
+        <button class="fb-btn" id="fbNext" title="التالي">⏭</button>
+        <div class="next-dropdown" id="fbNextDropdown" style="bottom:calc(100% + 8px);top:auto;right:0;min-width:200px">
+          <div class="next-opt" id="fb_nextSameSurah"><span class="next-opt-icon">⏭</span><span id="fb_n0">السورة التالية</span><span class="next-opt-check" id="fb_ck0"></span></div>
+          <div class="next-opt" id="fb_nextRandSurah"><span class="next-opt-icon">🎲</span><span id="fb_n1">سورة عشوائية</span><span class="next-opt-check" id="fb_ck1"></span></div>
+          <div class="next-opt" id="fb_nextRandRec"><span class="next-opt-icon">🎙️</span><span id="fb_n2">قارئ عشوائي</span><span class="next-opt-check" id="fb_ck2"></span></div>
+          <div class="next-opt" id="fb_nextRandAll"><span class="next-opt-icon">✨</span><span id="fb_n3">كل عشوائي</span><span class="next-opt-check" id="fb_ck3"></span></div>
+        </div>
+      </div>
       <button class="fb-btn" id="fbMute" title="كتم">🔊</button>
+      <!-- قارئ عشوائي -->
+      <button class="fb-btn" id="fbRandRec" title="قارئ عشوائي">🎙️</button>
+      <!-- سورة عشوائية -->
+      <button class="fb-btn" id="fbRandSurah" title="سورة عشوائية">🎲</button>
     </div>
   </div>
   <!-- شريط التقدم -->
@@ -2228,7 +2235,7 @@ const stopTimerDisplay=$('stopTimerDisplay');
 const stopTimerClock=$('stopTimerClock');
 const stopTimerLabel=$('stopTimerLabel');
 const stopCancelBtn=$('stopCancelBtn');
-const progTrack=$('progTrack'), progFill=$('progFill'), progThumb=$('progThumb');
+const progTrack=$('progTrack'), progThumb=$('progThumb'); // progFill unused
 const tElapsed=$('tElapsed'), tRemaining=$('tRemaining');
 const npCard=$('npCard'), eqWrap=$('eqWrap');
 const npSurah=$('npSurah'), npReciter=$('npReciter'), npBadges=$('npBadges');
@@ -2522,7 +2529,6 @@ function seekTo(e){
   if(audio.duration){
     audio.currentTime=pct*audio.duration;
     // تحديث فوري للنقطة والشريط أثناء السحب
-    if(progElapsed) progElapsed.style.width=(pct*100)+'%';
     progThumb.style.left=(pct*100)+'%';
   }
 }
@@ -3065,7 +3071,14 @@ function ls(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSave(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 
 /* ============ AUDIO EVENTS ============ */
-audio.addEventListener('timeupdate',updateProg);
+audio.addEventListener('timeupdate',()=>{
+  updateProg();
+  updateFbProgress();
+  if(textPanelOpen&&ayahsData.length){
+    const now=audio.currentTime;
+    if(now-lastHighlightTime>=1){ lastHighlightTime=now; highlightCurrentPosition(); }
+  }
+});
 audio.addEventListener('loadedmetadata',updateProg);
 audio.addEventListener('play',()=>{
   isPlaying=true; playBtn.textContent=T[lang].pause;
@@ -3107,7 +3120,7 @@ audio.addEventListener('error',()=>{ statusDiv.textContent=lang==='ar'?'⚠️ �
 /* ============ SELECT EVENTS ============ */
 recSel.onchange=function(){ rIdx=this.value===''?null:parseInt(this.value); buildMoshafList(); saveSettings(); updateFavIcon(); };
 moshSel.onchange=function(){ mIdx=this.value===''?null:parseInt(this.value); buildSurahList(); saveSettings(); updateFavIcon(); };
-surahSel.onchange=function(){ sIdx=this.value===''?null:parseInt(this.value); updateStatus(); updateDlLink(); saveSettings(); };
+surahSel.onchange=function(){ sIdx=this.value===''?null:parseInt(this.value); updateStatus(); updateDlLink(); saveSettings(); onSurahChangeForText(); };
 surahSearch.oninput=()=>buildSurahList(surahSearch.value);
 recSearch.oninput=()=>buildReciterList(recSearch.value);
 volCtrl.oninput=function(){ audio.volume=this.value/100; volVal.textContent=Math.round(this.value); isMuted=this.value==0; muteBtn.textContent=isMuted?'🔇':'🔊'; saveSettings(); };
@@ -3173,7 +3186,7 @@ window.addEventListener('load',()=>{
 });
 
 // auto-scroll indicator visibility
-audio.addEventListener('play',()=>{ if(qpAutoScroll) qpAutoScroll.style.display=isPlaying||true?'flex':'none'; });
+audio.addEventListener('play',()=>{ if(qpAutoScroll&&ayahsData.length) qpAutoScroll.style.display='flex'; });
 audio.addEventListener('pause',()=>{ /* keep visible */ });
 
 /* ============ DESKTOP INSTALL BAR ============ */
@@ -3293,101 +3306,118 @@ async function loadQuranText(surahNum){
   const s=surahs.find(x=>x.n===surahNum);
   const si=s?surahs.indexOf(s):0;
   const smeta=(lang==='ar'?SMETA_AR:SMETA_EN)[si];
-  qpTitle.textContent=s?s.name:'القرآن الكريم';
-  if(smeta) qpMeta.textContent=smeta[1]+' • '+smeta[0];
+  const local=SURAH_LOCAL[si]||['','',0,0];
 
-  // تحميل البيانات بالتوازي
+  // ── إظهار اسم السورة والقارئ فوراً ──
+  if(qpTitle) qpTitle.textContent=s?s.name:'—';
+  if(qpMeta){
+    const recName=rIdx!==null&&reciters[rIdx]?reciters[rIdx].name:'';
+    const typeLabel=smeta?smeta[1]:'';
+    const ayahCount=smeta?smeta[0]:'';
+    qpMeta.textContent=[recName,typeLabel,ayahCount?(ayahCount+(lang==='ar'?' آية':' verses')):''].filter(Boolean).join(' • ');
+  }
+  qpSearchBar.style.display='block';
+
+  // skeleton خفيف أثناء التحميل
   const bodyEl=$('qpBody');
-  if(bodyEl) bodyEl.innerHTML=renderSkeleton();
+  if(bodyEl) bodyEl.innerHTML=`
+    <div style="padding:20px;text-align:center;color:var(--text-soft)">
+      <div class="qp-spinner" style="margin:0 auto 14px"></div>
+      <div style="font-size:13px;font-weight:600">${lang==='ar'?'جاري تحميل النص...':'Loading text...'}</div>
+      <div style="font-size:12px;opacity:0.6;margin-top:6px">${s?s.name:''}</div>
+    </div>`;
   const infoBodyEl=$('qpInfoBody');
-  if(infoBodyEl) infoBodyEl.innerHTML=renderSkeleton();
+  if(infoBodyEl) infoBodyEl.innerHTML=`
+    <div style="padding:20px;text-align:center;color:var(--text-soft)">
+      <div class="qp-spinner" style="margin:0 auto 14px"></div>
+      <div style="font-size:12px;opacity:0.6">${lang==='ar'?'جاري جلب المعلومات...':'Fetching info...'}</div>
+    </div>`;
 
-  const [infoResult,textResult]=await Promise.allSettled([
-    fetchSurahInfo(surahNum),
-    fetchSurahText(surahNum)
-  ]);
-
-  const info=infoResult.status==='fulfilled'?infoResult.value:null;
-  const ayahs=textResult.status==='fulfilled'?textResult.value:[];
-
-  if(info) infoCache[surahNum]=info;
-  if(ayahs.length){ surahCache[surahNum]=ayahs; ayahsData=ayahs; }
   loadedSurahNum=surahNum;
 
-  qpSearchBar.style.display='block';
+  // تحميل النص أولاً
+  const ayahs=await fetchSurahText(surahNum).catch(()=>[]);
+  if(ayahs.length){ surahCache[surahNum]=ayahs; ayahsData=ayahs; }
+
   qpAutoScroll.style.display=ayahs.length?'flex':'none';
 
-  // رسم لوحة النص
-  renderTextPane(surahNum, info, ayahs);
-  // رسم لوحة المعلومات
-  renderInfoPane(surahNum, info);
+  // رسم النص فوراً
+  renderTextPane(surahNum, null, ayahs);
+
+  // ثم المعلومات بشكل غير متزامن
+  fetchSurahInfo(surahNum).then(info=>{
+    if(info) infoCache[surahNum]=info;
+    renderInfoPane(surahNum, info);
+    if(info&&ayahs.length) renderTextPane(surahNum, info, ayahs);
+  }).catch(()=>renderInfoPane(surahNum, null));
 }
 
 /* ── جلب النص من quran.com API v4 (أو alquran.cloud كاحتياط) ── */
-async function fetchSurahText(n){
-  if(currentScript==='uthmani'&&surahCache[n]) return surahCache[n];
-  if(currentScript==='print'&&surahPrintCache[n]) return surahPrintCache[n];
+/* ─────────────────────────────────────────────────
+   جلب النص القرآني — 3 محاولات:
+   1. api.quran.com/v4  (مباشر)
+   2. alquran.cloud     (مباشر — احتياط)
+   3. allorigins proxy  (لتجاوز CORS عند file://)
+───────────────────────────────────────────────── */
+async function fetchWithProxy(url){
+  // محاولة مباشرة
   try{
-    // quran.com API v4 — يُعطي الكلمات بالرسم العثماني
-    const r=await fetch(
-      `https://api.quran.com/api/v4/verses/by_chapter/${n}`+
-      `?words=true&word_fields=text_uthmani,text&per_page=300&fields=text_uthmani,text_imlaei`
-    );
-    if(!r.ok) throw new Error('quran.com failed');
-    const d=await r.json();
-    const verses=d?.verses||[];
-    // تحويل إلى الشكل المتوقع
-    const mapped=verses.map(v=>({
-      numberInSurah:v.verse_number,
-      text:v.text_uthmani||v.text||'',
-      textPrint:v.text_imlaei||v.text||v.text_uthmani||'',
-      words:(v.words||[]).map(w=>w.text_uthmani||w.text||'').filter(Boolean)
-    }));
-    surahCache[n]=mapped;
-    surahPrintCache[n]=mapped; // كلاهما محفوظ
-    return mapped;
-  }catch(e){
-    // Fallback: alquran.cloud
-    try{
-      const r2=await fetch(`https://api.alquran.cloud/v1/surah/${n}/quran-uthmani`);
-      const d2=await r2.json();
-      const ayahs=(d2?.data?.ayahs||[]).map(ay=>({
-        numberInSurah:ay.numberInSurah,
-        text:ay.text,
-        textPrint:ay.text,
-        words:[]
-      }));
-      surahCache[n]=ayahs;
-      surahPrintCache[n]=ayahs;
-      return ayahs;
-    }catch(e2){ return []; }
-  }
+    const r=await fetch(url);
+    if(r.ok) return await r.json();
+  }catch(e){}
+  // Proxy لتجاوز CORS
+  try{
+    const proxy=`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const r2=await fetch(proxy);
+    if(r2.ok){
+      const w=await r2.json();
+      return JSON.parse(w.contents||'null');
+    }
+  }catch(e2){}
+  return null;
 }
 
-/* ── جلب المعلومات من quranpedia — مع proxy لتجاوز CORS عند فتح الملف محلياً ── */
+async function fetchSurahText(n){
+  if(surahCache[n]) return surahCache[n];
+
+  // ── المصدر 1: quran.com API v4 ──
+  const qUrl=`https://api.quran.com/api/v4/verses/by_chapter/${n}`+
+    `?words=false&per_page=300&fields=text_uthmani,text_imlaei_simple`;
+  const qd=await fetchWithProxy(qUrl);
+  if(qd?.verses?.length){
+    const mapped=qd.verses.map(v=>({
+      numberInSurah: v.verse_number,
+      text:          v.text_uthmani||'',
+      textPrint:     v.text_imlaei_simple||v.text_uthmani||''
+    }));
+    surahCache[n]=mapped;
+    surahPrintCache[n]=mapped;
+    return mapped;
+  }
+
+  // ── المصدر 2: alquran.cloud ──
+  const aUrl=`https://api.alquran.cloud/v1/surah/${n}/quran-uthmani`;
+  const ad=await fetchWithProxy(aUrl);
+  if(ad?.data?.ayahs?.length){
+    const mapped=ad.data.ayahs.map(ay=>({
+      numberInSurah: ay.numberInSurah,
+      text:          ay.text,
+      textPrint:     ay.text
+    }));
+    surahCache[n]=mapped;
+    surahPrintCache[n]=mapped;
+    return mapped;
+  }
+
+  return [];
+}
+
 async function fetchSurahInfo(n){
   if(infoCache[n]) return infoCache[n];
-  const directUrl=`https://api.quranpedia.net/api/v1/surah/information/${n}`;
-  // محاولة مباشرة أولاً (يعمل عند رفع الملف على سيرفر)
-  try{
-    const r=await fetch(directUrl,{mode:'cors'});
-    if(r.ok){
-      const d=await r.json();
-      infoCache[n]=d;
-      return d;
-    }
-  }catch(e){ /* CORS blocked — try proxy */ }
-  // Fallback: allorigins proxy (يتجاوز CORS)
-  try{
-    const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(directUrl)}`;
-    const r2=await fetch(proxyUrl);
-    if(r2.ok){
-      const wrapper=await r2.json();
-      const d=JSON.parse(wrapper.contents||'null');
-      if(d){ infoCache[n]=d; return d; }
-    }
-  }catch(e2){ /* proxy also failed */ }
-  return null; // كلاهما فشل — سيُعرض المحتوى المحلي
+  const url=`https://api.quranpedia.net/api/v1/surah/information/${n}`;
+  const d=await fetchWithProxy(url);
+  if(d){ infoCache[n]=d; return d; }
+  return null;
 }
 
 /* ── رسم تبويب النص ── */
@@ -3639,12 +3669,8 @@ function infoIcon(key){
 /* تبديل التبويبات الفرعية */
 function switchInfoTab(id){
   document.querySelectorAll('.info-tab-btn').forEach(b=>{
-    b.classList.toggle('active',b.textContent.includes(id)||b.onclick?.toString().includes(id));
-  });
-  // أبسط: نبحث بالـ id المضمّن في onclick
-  document.querySelectorAll('.info-tab-btn').forEach(b=>{
     const match=b.getAttribute('onclick')?.includes(`'${id}'`);
-    b.classList.toggle('active',match);
+    b.classList.toggle('active',!!match);
   });
   document.querySelectorAll('[id^="infoPaneTab_"]').forEach(p=>{
     p.classList.toggle('active',p.id===`infoPaneTab_${id}`);
@@ -3717,8 +3743,6 @@ function wireAyahClicks(surahNum, ayahs){
   if(!container) return;
   container.querySelectorAll('.si-ayah').forEach(row=>{
     row.addEventListener('click',()=>{
-      container.querySelectorAll('.si-ayah').forEach(r=>r.classList.remove('active'));
-      row.classList.add('active');
       const ayahN=parseInt(row.dataset.ayah);
       if(audio.duration&&ayahs.length){
         audio.currentTime=(ayahN-1)/ayahs.length*audio.duration;
@@ -3753,12 +3777,7 @@ function highlightCurrentPosition(){
   }
 }
 
-/* ── تحديث كل ثانية أثناء التشغيل ── */
-audio.addEventListener('timeupdate',()=>{
-  if(!textPanelOpen||!ayahsData.length) return;
-  const now=audio.currentTime;
-  if(now-lastHighlightTime>=1){ lastHighlightTime=now; highlightCurrentPosition(); }
-});
+/* ── seeked: تمرير فوري ── */
 audio.addEventListener('seeked',()=>{
   if(textPanelOpen&&ayahsData.length){ lastHighlightTime=audio.currentTime; highlightCurrentPosition(); }
 });
@@ -3824,24 +3843,29 @@ const NEXT_IDS=['nextSameSurah','nextRandSurah','nextRandReciter','nextRandAll']
 const NEXT_CHECKS=['nextCheck0','nextCheck1','nextCheck2','nextCheck3'];
 
 function applyNextModeUI(){
+  const labels=['⏭','🎲','🎙️','✨'];
   NEXT_IDS.forEach((id,i)=>{
+    // main dropdown
     const el=$(id);
-    if(el){
-      el.classList.toggle('next-opt-active',i===nextMode);
-    }
+    if(el) el.classList.toggle('next-opt-active',i===nextMode);
     const ck=$(NEXT_CHECKS[i]);
     if(ck) ck.textContent=i===nextMode?'✓':'';
+    // floating bar dropdown
+    const fck=document.getElementById('fb_ck'+i);
+    if(fck) fck.textContent=i===nextMode?'✓':'';
+    const fopt=document.getElementById(['fb_nextSameSurah','fb_nextRandSurah','fb_nextRandRec','fb_nextRandAll'][i]);
+    if(fopt) fopt.classList.toggle('next-opt-active',i===nextMode);
   });
-  // تحديث نص الزر
-  const labels=['⏭','🎲','🎙️','✨'];
   if(nextMenuBtn) nextMenuBtn.textContent=labels[nextMode]+' التالي ▾';
+  if(document.getElementById('fbNext')) document.getElementById('fbNext').textContent=labels[nextMode];
 }
 
 function selectNextMode(mode){
   nextMode=mode;
   lsSave('nextMode',String(mode));
   applyNextModeUI();
-  nextDropdown.classList.remove('open');
+  nextDropdown?.classList.remove('open');
+  document.getElementById('fbNextDropdown')?.classList.remove('open');
 }
 
 // Toggle dropdown
@@ -4038,13 +4062,15 @@ randSurahBtn.onclick=()=>{
   if(opts.length){ const ro=opts[Math.floor(Math.random()*opts.length)]; surahSel.value=ro.value; sIdx=parseInt(ro.value); updateStatus(); updateDlLink(); saveSettings(); playAudio(); onSurahChangeForText(); }
 };
 
-surahSel.addEventListener('change',()=>{ onSurahChangeForText(); });
 
 /* Close overlays on outside click */
 document.addEventListener('click',e=>{
   if(!e.target.closest('.info-wrap')) shortcutsPanel.classList.remove('open');
   if(!e.target.closest('#paletteBtn')&&!e.target.closest('#palettePanel')) palettePanel.classList.remove('open');
-  if(!e.target.closest('.next-menu-wrap')) nextDropdown?.classList.remove('open');
+  if(!e.target.closest('.next-menu-wrap')) {
+    nextDropdown?.classList.remove('open');
+    fbNextDropdown?.classList.remove('open');
+  }
 });
 
 /* ============ KEYBOARD ============ */
@@ -4135,7 +4161,29 @@ setInterval(()=>{ if(stopEndTime) updateFloatingBar(); },1000);
 
 if(fbPlay) fbPlay.onclick=()=>{ isPlaying?audio.pause():playAudio(); };
 if(fbPrev) fbPrev.onclick=()=>{ if(goPrev()){ playAudio(); onSurahChangeForText(); } };
-if(fbNext) fbNext.onclick=()=>{ executeNextMode(true); };
+
+// زر التالي في الشريط العائم — يفتح/يغلق القائمة
+const fbNextDropdown=document.getElementById('fbNextDropdown');
+const fbNextWrap=document.getElementById('fbNextWrap');
+if(fbNext) fbNext.onclick=(e)=>{
+  e.stopPropagation();
+  fbNextDropdown?.classList.toggle('open');
+};
+// خيارات قائمة التالي في الشريط العائم — تستخدم selectNextMode مباشرة
+['fb_nextSameSurah','fb_nextRandSurah','fb_nextRandRec','fb_nextRandAll'].forEach((id,i)=>{
+  document.getElementById(id)?.addEventListener('click',()=>{
+    selectNextMode(i);       // يغلق القائمة ويطبّق الاختيار
+    executeNextMode(true);   // ينفّذ فوراً
+  });
+});
+// applyNextModeUI already defined and called above
+
+// أزرار العشوائي في الشريط العائم
+const fbRandRec=document.getElementById('fbRandRec');
+const fbRandSurah=document.getElementById('fbRandSurah');
+if(fbRandRec) fbRandRec.onclick=()=>randRecBtn.click();
+if(fbRandSurah) fbRandSurah.onclick=()=>randSurahBtn.click();
+
 if(fbMute) fbMute.onclick=()=>{ toggleMute(); updateFloatingBar(); };
 if(floatVol) floatVol.oninput=function(){
   audio.volume=this.value/100;
@@ -4162,7 +4210,7 @@ if(toggleFloatBtn) toggleFloatBtn.onclick=()=>{
 audio.addEventListener('play',()=>updateFloatingBar());
 audio.addEventListener('pause',()=>updateFloatingBar());
 audio.addEventListener('ended',()=>updateFloatingBar());
-audio.addEventListener('timeupdate',updateFbProgress); // هل أخفاه المستخدم يدوياً؟
+// updateFbProgress called in combined timeupdate below
 
 /* ============ URL SHORTCUTS ============ */
 if(location.hash==='#random') setTimeout(()=>randRecBtn.click(),2500);
