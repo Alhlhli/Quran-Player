@@ -3776,32 +3776,26 @@ function wireAyahClicks(surahNum, ayahs){
   });
 }
 
-/* ── تمرير الآية الحالية (بدون تمييز بصري — فقط تمرير سلس) ── */
+/* ── تمرير الآية الحالية داخل نافذة النص فقط (بدون تمييز بصري) ── */
 function highlightCurrentPosition(){
   if(!audio.duration||!ayahsData.length) return;
   const pct=audio.currentTime/audio.duration;
   const approxAyah=Math.min(Math.floor(pct*ayahsData.length)+1,ayahsData.length);
-  const container=$('qpBody');
-  if(!container) return;
-  const rows=container.querySelectorAll('.si-ayah');
+  const bodyEl=$('qpBody');
+  if(!bodyEl) return;
+  const rows=bodyEl.querySelectorAll('.si-ayah');
   let targetRow=null;
   rows.forEach(r=>{
-    // لا نضيف أي class — فقط نجد الصف المستهدف
     if(parseInt(r.dataset.ayah)===approxAyah) targetRow=r;
   });
-  // تمرير داخلي — يعمل في كلا الوضعَين (block و inline)
-  // نستخدم qpPaneText كحاوية التمرير
-  const pane=$('qpPaneText');
-  if(!pane||!targetRow||scrollLock) return;
+  if(!targetRow||scrollLock) return;
   scrollLock=true;
-  // offsetTop من الآية بالنسبة لـ qpBody
-  const bodyEl=$('qpBody');
-  if(bodyEl){
-    let el=targetRow; let top=0;
-    while(el&&el!==pane){ top+=el.offsetTop||0; el=el.offsetParent; }
-    const offset=top-pane.clientHeight/2+(targetRow.offsetHeight||20)/2;
-    pane.scrollTo({top:Math.max(0,offset),behavior:'smooth'});
-  }
+  // حساب offsetTop بالنسبة لـ qpBody (الحاوية القابلة للتمرير الفعلية)
+  let el=targetRow, top=0;
+  while(el&&el!==bodyEl){ top+=el.offsetTop||0; el=el.offsetParent; }
+  const offset=top-bodyEl.clientHeight/2+(targetRow.offsetHeight||20)/2;
+  // التمرير داخل نافذة النص فقط — لا يتأثر باقي الصفحة
+  bodyEl.scrollTo({top:Math.max(0,offset),behavior:'smooth'});
   setTimeout(()=>{scrollLock=false;},2000);
 }
 
