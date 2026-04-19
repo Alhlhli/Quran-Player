@@ -3585,10 +3585,38 @@ async function fetchSurahText(n){
 
 async function fetchSurahInfo(n){
   if(infoCache[n]) return infoCache[n];
-  const url=`https://api.quranpedia.net/api/v1/surah/information/${n}`;
-  const d=await fetchWithProxy(url);
-  if(d){ infoCache[n]=d; return d; }
-  return null;
+
+  // ── المصدران بالتوازي — كلاهما يدعم CORS بالكامل ──
+  const [qcResult, cloudResult]=await Promise.allSettled([
+    fetch(`https://api.quran.com/api/v4/chapters/${n}`).then(r=>r.ok?r.json():null).catch(()=>null),
+    fetch(`https://api.alquran.cloud/v1/surah/${n}/ar.aljalalayn`).then(r=>r.ok?r.json():null).catch(()=>null)
+  ]);
+
+  const qc   = qcResult.value;
+  const cloud = cloudResult.value;
+
+  // بناء كائن موحّد من أيٍّ من المصدرين
+  const ch = qc?.chapter || null;
+  const cloudData = cloud?.data || null;
+
+  if(!ch && !cloudData) return null;
+
+  const info = {
+    name_arabic:      ch?.name_arabic      || cloudData?.name              || '',
+    transliteration:  ch?.name_simple      || '',
+    english_name:     ch?.translated_name?.translation || '',
+    name_translation: ch?.translated_name?.translation || '',
+    revelation_order: ch?.revelation_order || null,
+    juz_number:       null,   // سيأتي من SURAH_LOCAL
+    verses_count:     ch?.verses_count     || cloudData?.numberOfAyahs    || null,
+    words_count:      null,
+    sajdahs:          [],
+    // مزيد من الحقول لـ renderInfoPane
+    name_simple:      ch?.name_simple      || '',
+  };
+
+  infoCache[n]=info;
+  return info;
 }
 
 /* ── رسم تبويب النص ── */
