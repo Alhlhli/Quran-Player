@@ -1818,7 +1818,7 @@ body.bar-open{padding-bottom:calc(90px + var(--safe-bottom));}
       <!-- زر التالي ملاصق للمصحف -->
       <div class="next-menu-wrap" id="nextMenuWrap" style="flex:0 0 auto;width:auto;margin:0">
         <button class="next-main-btn" id="nextMenuBtn"
-          style="padding:9px 12px;font-size:12px;border-radius:10px;white-space:nowrap">⏭ التالي ▾</button>
+          style="padding:9px 16px;font-size:13px;border-radius:10px;white-space:nowrap;min-width:110px">⏭ التالي ▾</button>
     <div class="next-dropdown" id="nextDropdown">
       <div class="next-opt next-opt-active" id="nextSameSurah">
         <span class="next-opt-icon">⏭</span>
@@ -2715,7 +2715,7 @@ function updateStats(){
     const maxC=topEntries[0]?.[1]?.c||1;
     barsWrap.innerHTML='';
     topEntries.forEach(([idx,data])=>{
-      const s=surahs[idx]; if(!s) return;
+      const s=surahs[parseInt(idx)]; if(!s) return;
       const pct=Math.round(data.c/maxC*100);
       const row=document.createElement('div'); row.className='stat-bar-row';
       row.innerHTML=`<div class="stat-bar-label"><span>${s.name}</span><span>${data.c}×</span></div>
@@ -2742,7 +2742,7 @@ function updateStats(){
     let topSurahName='—';
     if(stats.times){
       const topS=Object.entries(stats.times).sort((a,b)=>b[1].c-a[1].c)[0];
-      if(topS&&surahs[topS[0]]) topSurahName=surahs[topS[0]].name;
+      if(topS&&surahs[parseInt(topS[0])]) topSurahName=surahs[parseInt(topS[0])].name;
     }
     const rows=[
       {icon:'⏱️', label:lang==='ar'?'إجمالي وقت الاستماع':'Total Listening Time',
@@ -3118,8 +3118,8 @@ audio.addEventListener('ended',()=>{
 audio.addEventListener('error',()=>{ statusDiv.textContent=lang==='ar'?'⚠️ خطأ في تحميل الملف الصوتي.':'⚠️ Audio load error.'; isPlaying=false; playBtn.textContent=T[lang].play; });
 
 /* ============ SELECT EVENTS ============ */
-recSel.onchange=function(){ rIdx=this.value===''?null:parseInt(this.value); buildMoshafList(); saveSettings(); updateFavIcon(); };
-moshSel.onchange=function(){ mIdx=this.value===''?null:parseInt(this.value); buildSurahList(); saveSettings(); updateFavIcon(); };
+recSel.onchange=function(){ rIdx=this.value===''?null:parseInt(this.value); buildMoshafList(); saveSettings(); updateFavIcon(); onSurahChangeForText(); };
+moshSel.onchange=function(){ mIdx=this.value===''?null:parseInt(this.value); buildSurahList(); saveSettings(); updateFavIcon(); onSurahChangeForText(); };
 surahSel.onchange=function(){ sIdx=this.value===''?null:parseInt(this.value); updateStatus(); updateDlLink(); saveSettings(); onSurahChangeForText(); };
 surahSearch.oninput=()=>buildSurahList(surahSearch.value);
 recSearch.oninput=()=>buildReciterList(recSearch.value);
@@ -3344,11 +3344,22 @@ async function loadQuranText(surahNum){
   // رسم النص فوراً
   renderTextPane(surahNum, null, ayahs);
 
-  // ثم المعلومات بشكل غير متزامن
+  // ثم المعلومات بشكل غير متزامن — لا نعيد رسم النص لتجنب فقدان موضع التمرير
   fetchSurahInfo(surahNum).then(info=>{
     if(info) infoCache[surahNum]=info;
     renderInfoPane(surahNum, info);
-    if(info&&ayahs.length) renderTextPane(surahNum, info, ayahs);
+    // تحديث مؤشرات الجزء/السجدة في النص بشكل خفي
+    if(info&&ayahs.length){
+      const juz_n=info.juz_number||info.juz||null;
+      const sajdahs=info.sajdahs||[];
+      // أضف مؤشرات الجزء فقط إن لم تكن موجودة
+      const bodyEl=$('qpBody');
+      if(bodyEl&&!bodyEl.querySelector('.juz-marker')){
+        const wrap=bodyEl.querySelector('.qp-text-wrap');
+        if(wrap) wrap.innerHTML=renderAyahsHTML(surahNum,ayahs,juz_n,sajdahs);
+        wireAyahClicks(surahNum,ayahs);
+      }
+    }
   }).catch(()=>renderInfoPane(surahNum, null));
 }
 
@@ -3380,29 +3391,42 @@ async function fetchWithProxy(url){
 async function fetchSurahText(n){
   if(surahCache[n]) return surahCache[n];
 
-  // ── المصدر 1: quran.com API v4 ──
-  const qUrl=`https://api.quran.com/api/v4/verses/by_chapter/${n}`+
-    `?words=false&per_page=300&fields=text_uthmani,text_imlaei_simple`;
-  const qd=await fetchWithProxy(qUrl);
-  if(qd?.verses?.length){
-    const mapped=qd.verses.map(v=>({
-      numberInSurah: v.verse_number,
-      text:          v.text_uthmani||'',
-      textPrint:     v.text_imlaei_simple||v.text_uthmani||''
+  // ── المصدر 1: alquran.cloud — رسم عثماني + مطبوع معاً ──
+  // نجلب الاثنين بالتوازي
+  const [uthmaniResult, printResult]=await Promise.allSettled([
+    fetchWithProxy(`https://api.alquran.cloud/v1/surah/${n}/quran-uthmani`),
+    fetchWithProxy(`https://api.alquran.cloud/v1/surah/${n}/en.transliteration`)
+    // نستخدم النص المطبوع من edition مختلفة
+  ]);
+
+  // المصدر الرئيسي: النص العثماني
+  const uthmaniAyahs=uthmaniResult.value?.data?.ayahs||[];
+
+  // النص المطبوع: نجلبه من edition خاصة
+  let printAyahs=[];
+  const printD=await fetchWithProxy(`https://api.alquran.cloud/v1/surah/${n}`);
+  if(printD?.data?.ayahs?.length) printAyahs=printD.data.ayahs;
+
+  if(uthmaniAyahs.length){
+    const mapped=uthmaniAyahs.map((ay,i)=>({
+      numberInSurah: ay.numberInSurah,
+      text:          ay.text,                              // عثماني
+      textPrint:     printAyahs[i]?.text||ay.text          // مطبوع عادي
     }));
     surahCache[n]=mapped;
     surahPrintCache[n]=mapped;
     return mapped;
   }
 
-  // ── المصدر 2: alquran.cloud ──
-  const aUrl=`https://api.alquran.cloud/v1/surah/${n}/quran-uthmani`;
-  const ad=await fetchWithProxy(aUrl);
-  if(ad?.data?.ayahs?.length){
-    const mapped=ad.data.ayahs.map(ay=>({
-      numberInSurah: ay.numberInSurah,
-      text:          ay.text,
-      textPrint:     ay.text
+  // ── احتياط: quran.com API v4 ──
+  const qd=await fetchWithProxy(
+    `https://api.quran.com/api/v4/verses/by_chapter/${n}?words=false&per_page=300&fields=text_uthmani`
+  );
+  if(qd?.verses?.length){
+    const mapped=qd.verses.map(v=>({
+      numberInSurah: v.verse_number,
+      text:          v.text_uthmani||'',
+      textPrint:     v.text_uthmani||''
     }));
     surahCache[n]=mapped;
     surahPrintCache[n]=mapped;
@@ -3765,16 +3789,20 @@ function highlightCurrentPosition(){
     // لا نضيف أي class — فقط نجد الصف المستهدف
     if(parseInt(r.dataset.ayah)===approxAyah) targetRow=r;
   });
-  // تمرير داخلي لـ qpPaneText فقط
+  // تمرير داخلي — يعمل في كلا الوضعَين (block و inline)
+  // نستخدم qpPaneText كحاوية التمرير
   const pane=$('qpPaneText');
-  if(targetRow&&pane&&!scrollLock){
-    scrollLock=true;
-    const pr=pane.getBoundingClientRect();
-    const rr=targetRow.getBoundingClientRect();
-    const off=rr.top-pr.top+pane.scrollTop-pane.clientHeight/2+rr.height/2;
-    pane.scrollTo({top:Math.max(0,off),behavior:'smooth'});
-    setTimeout(()=>{scrollLock=false;},2000);
+  if(!pane||!targetRow||scrollLock) return;
+  scrollLock=true;
+  // offsetTop من الآية بالنسبة لـ qpBody
+  const bodyEl=$('qpBody');
+  if(bodyEl){
+    let el=targetRow; let top=0;
+    while(el&&el!==pane){ top+=el.offsetTop||0; el=el.offsetParent; }
+    const offset=top-pane.clientHeight/2+(targetRow.offsetHeight||20)/2;
+    pane.scrollTo({top:Math.max(0,offset),behavior:'smooth'});
   }
+  setTimeout(()=>{scrollLock=false;},2000);
 }
 
 /* ── seeked: تمرير فوري ── */
