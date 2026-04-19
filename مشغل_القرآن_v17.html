@@ -3306,100 +3306,118 @@ async function loadQuranText(surahNum){
   const s=surahs.find(x=>x.n===surahNum);
   const si=s?surahs.indexOf(s):0;
   const smeta=(lang==='ar'?SMETA_AR:SMETA_EN)[si];
-  qpTitle.textContent=s?s.name:'القرآن الكريم';
-  if(smeta) qpMeta.textContent=smeta[1]+' • '+smeta[0];
+  const local=SURAH_LOCAL[si]||['','',0,0];
 
-  // تحميل البيانات — النص أولاً فوراً، المعلومات بشكل غير متزامن
+  // ── إظهار اسم السورة والقارئ فوراً ──
+  if(qpTitle) qpTitle.textContent=s?s.name:'—';
+  if(qpMeta){
+    const recName=rIdx!==null&&reciters[rIdx]?reciters[rIdx].name:'';
+    const typeLabel=smeta?smeta[1]:'';
+    const ayahCount=smeta?smeta[0]:'';
+    qpMeta.textContent=[recName,typeLabel,ayahCount?(ayahCount+(lang==='ar'?' آية':' verses')):''].filter(Boolean).join(' • ');
+  }
+  qpSearchBar.style.display='block';
+
+  // skeleton خفيف أثناء التحميل
   const bodyEl=$('qpBody');
-  if(bodyEl) bodyEl.innerHTML=renderSkeleton();
+  if(bodyEl) bodyEl.innerHTML=`
+    <div style="padding:20px;text-align:center;color:var(--text-soft)">
+      <div class="qp-spinner" style="margin:0 auto 14px"></div>
+      <div style="font-size:13px;font-weight:600">${lang==='ar'?'جاري تحميل النص...':'Loading text...'}</div>
+      <div style="font-size:12px;opacity:0.6;margin-top:6px">${s?s.name:''}</div>
+    </div>`;
   const infoBodyEl=$('qpInfoBody');
-  if(infoBodyEl) infoBodyEl.innerHTML=renderSkeleton();
+  if(infoBodyEl) infoBodyEl.innerHTML=`
+    <div style="padding:20px;text-align:center;color:var(--text-soft)">
+      <div class="qp-spinner" style="margin:0 auto 14px"></div>
+      <div style="font-size:12px;opacity:0.6">${lang==='ar'?'جاري جلب المعلومات...':'Fetching info...'}</div>
+    </div>`;
 
-  // تحميل النص أولاً بشكل مستقل (أسرع)
-  const ayahs=await fetchSurahText(surahNum).catch(()=>[]);
-  if(ayahs.length){ surahCache[surahNum]=ayahs; ayahsData=ayahs; }
   loadedSurahNum=surahNum;
 
-  qpSearchBar.style.display='block';
+  // تحميل النص أولاً
+  const ayahs=await fetchSurahText(surahNum).catch(()=>[]);
+  if(ayahs.length){ surahCache[surahNum]=ayahs; ayahsData=ayahs; }
+
   qpAutoScroll.style.display=ayahs.length?'flex':'none';
 
-  // رسم النص فوراً بدون انتظار المعلومات
+  // رسم النص فوراً
   renderTextPane(surahNum, null, ayahs);
 
-  // ثم تحميل المعلومات بشكل غير متزامن
+  // ثم المعلومات بشكل غير متزامن
   fetchSurahInfo(surahNum).then(info=>{
     if(info) infoCache[surahNum]=info;
     renderInfoPane(surahNum, info);
-    // إعادة رسم النص مع المعلومات (juz, sajdahs)
     if(info&&ayahs.length) renderTextPane(surahNum, info, ayahs);
-  }).catch(()=>{ renderInfoPane(surahNum, null); });
+  }).catch(()=>renderInfoPane(surahNum, null));
 }
 
 /* ── جلب النص من quran.com API v4 (أو alquran.cloud كاحتياط) ── */
-async function fetchSurahText(n){
-  if(currentScript==='uthmani'&&surahCache[n]) return surahCache[n];
-  if(currentScript==='print'&&surahPrintCache[n]) return surahPrintCache[n];
+/* ─────────────────────────────────────────────────
+   جلب النص القرآني — 3 محاولات:
+   1. api.quran.com/v4  (مباشر)
+   2. alquran.cloud     (مباشر — احتياط)
+   3. allorigins proxy  (لتجاوز CORS عند file://)
+───────────────────────────────────────────────── */
+async function fetchWithProxy(url){
+  // محاولة مباشرة
   try{
-    // quran.com API v4 — يُعطي الكلمات بالرسم العثماني
-    const r=await fetch(
-      `https://api.quran.com/api/v4/verses/by_chapter/${n}`+
-      `?words=true&word_fields=text_uthmani,text&per_page=300&fields=text_uthmani,text_imlaei`
-    );
-    if(!r.ok) throw new Error('quran.com failed');
-    const d=await r.json();
-    const verses=d?.verses||[];
-    // تحويل إلى الشكل المتوقع
-    const mapped=verses.map(v=>({
-      numberInSurah:v.verse_number,
-      text:v.text_uthmani||v.text||'',
-      textPrint:v.text_imlaei||v.text||v.text_uthmani||'',
-      words:(v.words||[]).map(w=>w.text_uthmani||w.text||'').filter(Boolean)
-    }));
-    surahCache[n]=mapped;
-    surahPrintCache[n]=mapped; // كلاهما محفوظ
-    return mapped;
-  }catch(e){
-    // Fallback: alquran.cloud
-    try{
-      const r2=await fetch(`https://api.alquran.cloud/v1/surah/${n}/quran-uthmani`);
-      const d2=await r2.json();
-      const ayahs=(d2?.data?.ayahs||[]).map(ay=>({
-        numberInSurah:ay.numberInSurah,
-        text:ay.text,
-        textPrint:ay.text,
-        words:[]
-      }));
-      surahCache[n]=ayahs;
-      surahPrintCache[n]=ayahs;
-      return ayahs;
-    }catch(e2){ return []; }
-  }
+    const r=await fetch(url);
+    if(r.ok) return await r.json();
+  }catch(e){}
+  // Proxy لتجاوز CORS
+  try{
+    const proxy=`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const r2=await fetch(proxy);
+    if(r2.ok){
+      const w=await r2.json();
+      return JSON.parse(w.contents||'null');
+    }
+  }catch(e2){}
+  return null;
 }
 
-/* ── جلب المعلومات من quranpedia — مع proxy لتجاوز CORS عند فتح الملف محلياً ── */
+async function fetchSurahText(n){
+  if(surahCache[n]) return surahCache[n];
+
+  // ── المصدر 1: quran.com API v4 ──
+  const qUrl=`https://api.quran.com/api/v4/verses/by_chapter/${n}`+
+    `?words=false&per_page=300&fields=text_uthmani,text_imlaei_simple`;
+  const qd=await fetchWithProxy(qUrl);
+  if(qd?.verses?.length){
+    const mapped=qd.verses.map(v=>({
+      numberInSurah: v.verse_number,
+      text:          v.text_uthmani||'',
+      textPrint:     v.text_imlaei_simple||v.text_uthmani||''
+    }));
+    surahCache[n]=mapped;
+    surahPrintCache[n]=mapped;
+    return mapped;
+  }
+
+  // ── المصدر 2: alquran.cloud ──
+  const aUrl=`https://api.alquran.cloud/v1/surah/${n}/quran-uthmani`;
+  const ad=await fetchWithProxy(aUrl);
+  if(ad?.data?.ayahs?.length){
+    const mapped=ad.data.ayahs.map(ay=>({
+      numberInSurah: ay.numberInSurah,
+      text:          ay.text,
+      textPrint:     ay.text
+    }));
+    surahCache[n]=mapped;
+    surahPrintCache[n]=mapped;
+    return mapped;
+  }
+
+  return [];
+}
+
 async function fetchSurahInfo(n){
   if(infoCache[n]) return infoCache[n];
-  const directUrl=`https://api.quranpedia.net/api/v1/surah/information/${n}`;
-  // محاولة مباشرة أولاً (يعمل عند رفع الملف على سيرفر)
-  try{
-    const r=await fetch(directUrl,{mode:'cors'});
-    if(r.ok){
-      const d=await r.json();
-      infoCache[n]=d;
-      return d;
-    }
-  }catch(e){ /* CORS blocked — try proxy */ }
-  // Fallback: allorigins proxy (يتجاوز CORS)
-  try{
-    const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(directUrl)}`;
-    const r2=await fetch(proxyUrl);
-    if(r2.ok){
-      const wrapper=await r2.json();
-      const d=JSON.parse(wrapper.contents||'null');
-      if(d){ infoCache[n]=d; return d; }
-    }
-  }catch(e2){ /* proxy also failed */ }
-  return null; // كلاهما فشل — سيُعرض المحتوى المحلي
+  const url=`https://api.quranpedia.net/api/v1/surah/information/${n}`;
+  const d=await fetchWithProxy(url);
+  if(d){ infoCache[n]=d; return d; }
+  return null;
 }
 
 /* ── رسم تبويب النص ── */
