@@ -1531,18 +1531,62 @@ body.bar-open{padding-bottom:calc(90px + var(--safe-bottom));}
   transition:left 0.1s linear;
 }
 /* ── وضع المصحف ── */
-.mushaf-pages-wrap{padding:10px;display:flex;flex-direction:column;gap:14px;}
-.mushaf-page-box{border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.18);}
-.mushaf-page-label{
-  text-align:center;font-size:11px;font-weight:700;color:var(--text-soft);
-  padding:5px 8px;background:var(--badge-bg);border-bottom:1px solid var(--input-border);
-  letter-spacing:1px;
+.mushaf-pages-wrap{padding:10px 8px;display:flex;flex-direction:column;gap:20px;}
+/* صفحة المصحف — إطار رقي */
+.mushaf-text-page{
+  background:#fdf8ee;
+  border:2px solid #c8a97e;
+  border-radius:6px;
+  padding:22px 20px 16px;
+  box-shadow:0 6px 28px rgba(0,0,0,0.18),inset 0 0 40px rgba(200,169,126,0.08);
+  position:relative;
+  direction:rtl;
 }
-.mushaf-page-img{width:100%;display:block;image-rendering:high-quality;}
-.mushaf-loading{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:40px 20px;gap:14px;color:var(--text-soft);
+body.dark .mushaf-text-page{
+  background:#1a1408;border-color:#6b5229;
+  box-shadow:0 6px 28px rgba(0,0,0,0.5),inset 0 0 40px rgba(107,82,41,0.08);
 }
+/* رقم الصفحة أعلى */
+.mushaf-pg-top{
+  text-align:center;font-size:11px;font-weight:700;
+  color:#8b6914;letter-spacing:2px;margin-bottom:14px;
+  font-family:'Segoe UI',sans-serif;
+}
+body.dark .mushaf-pg-top{color:#c8a250;}
+/* محتوى النص */
+.mushaf-text-content{
+  font-family:'Amiri Quran','Scheherazade New','Traditional Arabic',serif;
+  font-size:22px;line-height:2.5;
+  color:#1a1208;direction:rtl;text-align:justify;
+  word-spacing:4px;
+}
+body.dark .mushaf-text-content{color:#e8d9a0;}
+/* نهاية الآية */
+.mushaf-aya-end{
+  display:inline-block;
+  font-family:'Amiri Quran','Scheherazade New',serif;
+  font-size:16px;color:#8b4513;
+  vertical-align:middle;
+}
+body.dark .mushaf-aya-end{color:#d4954a;}
+/* رقم الصفحة أسفل */
+.mushaf-pg-bot{
+  text-align:center;font-size:11px;font-weight:700;
+  color:#8b6914;letter-spacing:2px;margin-top:14px;
+  padding-top:10px;border-top:1px solid #c8a97e;
+  font-family:'Segoe UI',sans-serif;
+}
+body.dark .mushaf-pg-bot{color:#c8a250;border-top-color:#6b5229;}
+/* زر فتح quran.com */
+.mushaf-open-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 18px;border-radius:12px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--acc1),var(--acc2));
+  color:#fff;font-size:13px;font-weight:700;font-family:inherit;
+  text-decoration:none;margin:4px 8px 8px;transition:all 0.2s;
+  width:calc(100% - 16px);
+}
+.mushaf-open-btn:hover{filter:brightness(1.1);transform:translateY(-1px);}
 </style>
 </head>
 <body>
@@ -3286,43 +3330,77 @@ const SURAH_START_PAGE=[
   600,601,601,601,602,602,602,603,603,603,604,604,604,604
 ];
 
+
 function renderMushafView(surahNum, ayahs, bodyEl){
-  // استخرج أرقام الصفحات من البيانات أو من الجدول الاحتياطي
-  const si = (surahNum||1)-1;
-  let pages = [...new Set(ayahs.map(a=>a.pageNum).filter(Boolean))].sort((a,b)=>a-b);
-
-  if(!pages.length){
-    // احتياط: من الجدول المدمج
-    const startPage = SURAH_START_PAGE[si] || 1;
-    const endPage   = si<113 ? (SURAH_START_PAGE[si+1]||startPage) : 604;
-    pages=[];
-    for(let p=startPage;p<=endPage;p++) pages.push(p);
-  }
-
   // إزالة المحتوى القديم
-  const oldWrap=bodyEl.querySelector('#qpTextWrap');
-  if(oldWrap) oldWrap.remove();
-  const oldMush=bodyEl.querySelector('#qpMushafWrap');
-  if(oldMush) oldMush.remove();
+  bodyEl.querySelector('#qpTextWrap')?.remove();
+  bodyEl.querySelector('#qpMushafWrap')?.remove();
 
   const wrap=document.createElement('div');
   wrap.id='qpMushafWrap';
   wrap.className='mushaf-pages-wrap';
 
-  pages.forEach(page=>{
+  // زر فتح quran.com في وضع القراءة
+  const openBtn=document.createElement('a');
+  openBtn.href=`https://quran.com/${surahNum}?readingMode=arabic`;
+  openBtn.target='_blank';
+  openBtn.rel='noopener';
+  openBtn.className='mushaf-open-btn';
+  openBtn.innerHTML=`📖 ${lang==='ar'?'فتح المصحف الكامل في quran.com ↗':'Open full Mushaf on quran.com ↗'}`;
+  wrap.appendChild(openBtn);
+
+  // تجميع الآيات حسب رقم الصفحة
+  const pageMap=new Map();
+  ayahs.forEach(ay=>{
+    const p=ay.pageNum||0;
+    if(!pageMap.has(p)) pageMap.set(p,[]);
+    pageMap.get(p).push(ay);
+  });
+
+  // إذا لم تتوفر أرقام الصفحات — اعرض كصفحة واحدة
+  const groups=pageMap.size>1
+    ?[...pageMap.entries()].sort((a,b)=>a[0]-b[0])
+    :[[0,ayahs]];
+
+  groups.forEach(([pageNum,pageAyahs])=>{
     const box=document.createElement('div');
-    box.className='mushaf-page-box';
-    box.innerHTML=`
-      <div class="mushaf-page-label">📄 ${lang==='ar'?'صفحة':'Page'} ${page}</div>
-      <img class="mushaf-page-img" loading="lazy"
-        src="https://cdn.islamic.network/quran/images/high-resolution/${page}.png"
-        alt="${lang==='ar'?'صفحة':'Page'} ${page}"
-        onerror="this.src='https://quran.com/images/bg/page${String(page).padStart(3,'0')}.png'">`;
+    box.className='mushaf-text-page';
+
+    // رقم الصفحة — أعلى
+    if(pageNum>0){
+      box.innerHTML+=`<div class="mushaf-pg-top">— ${lang==='ar'?'صفحة':'Page'} ${pageNum} —</div>`;
+    }
+
+    // النص: كل آيات الصفحة في تدفق واحد
+    let textHtml=`<div class="mushaf-text-content">`;
+    pageAyahs.forEach(ay=>{
+      textHtml+=`<span class="mushaf-ayah" data-ayah="${ay.numberInSurah}">${ay.text}&nbsp;<span class="mushaf-aya-end">﴿${ay.numberInSurah}﴾</span> </span>`;
+    });
+    textHtml+=`</div>`;
+    box.innerHTML+=textHtml;
+
+    // رقم الصفحة — أسفل
+    if(pageNum>0){
+      box.innerHTML+=`<div class="mushaf-pg-bot">${pageNum}</div>`;
+    }
+
+    // ربط النقر على الآية
     wrap.appendChild(box);
   });
 
   bodyEl.appendChild(wrap);
   bodyEl.scrollTop=0;
+
+  // ربط الأحداث بعد الإضافة
+  wrap.querySelectorAll('.mushaf-ayah').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const ayahN=parseInt(el.dataset.ayah);
+      if(audio.duration&&ayahs.length){
+        audio.currentTime=(ayahN-1)/ayahs.length*audio.duration;
+        if(!isPlaying) playAudio();
+      }
+    });
+  });
 }
 
 /* ── تبويب الجوال ── */
