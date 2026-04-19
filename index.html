@@ -3391,45 +3391,41 @@ async function fetchWithProxy(url){
 async function fetchSurahText(n){
   if(surahCache[n]) return surahCache[n];
 
-  // ── المصدر 1: alquran.cloud — رسم عثماني + مطبوع معاً ──
-  // نجلب الاثنين بالتوازي
-  const [uthmaniResult, printResult]=await Promise.allSettled([
+  // ── الثلاث مصادر بالتوازي ──
+  // المصدر 1: عثماني (alquran.cloud)
+  // المصدر 2: مطبوع صحيح quran-simple (alquran.cloud)
+  // المصدر 3: quran.com مع النصين عثماني + إملائي
+  const [cloudUthmani, cloudSimple, quranCom]=await Promise.allSettled([
     fetchWithProxy(`https://api.alquran.cloud/v1/surah/${n}/quran-uthmani`),
-    fetchWithProxy(`https://api.alquran.cloud/v1/surah/${n}/en.transliteration`)
-    // نستخدم النص المطبوع من edition مختلفة
+    fetchWithProxy(`https://api.alquran.cloud/v1/surah/${n}/quran-simple`),
+    fetchWithProxy(`https://api.quran.com/api/v4/verses/by_chapter/${n}?words=false&per_page=300&fields=text_uthmani,text_imlaei`)
   ]);
 
-  // المصدر الرئيسي: النص العثماني
-  const uthmaniAyahs=uthmaniResult.value?.data?.ayahs||[];
-
-  // النص المطبوع: نجلبه من edition خاصة
-  let printAyahs=[];
-  const printD=await fetchWithProxy(`https://api.alquran.cloud/v1/surah/${n}`);
-  if(printD?.data?.ayahs?.length) printAyahs=printD.data.ayahs;
+  // ── المصدر 1: alquran.cloud ──
+  const uthmaniAyahs = cloudUthmani.value?.data?.ayahs || [];
+  const simpleAyahs  = cloudSimple.value?.data?.ayahs  || [];
 
   if(uthmaniAyahs.length){
-    const mapped=uthmaniAyahs.map((ay,i)=>({
+    const mapped = uthmaniAyahs.map((ay, i) => ({
       numberInSurah: ay.numberInSurah,
-      text:          ay.text,                              // عثماني
-      textPrint:     printAyahs[i]?.text||ay.text          // مطبوع عادي
+      text:      ay.text,                           // رسم عثماني
+      textPrint: simpleAyahs[i]?.text || ay.text    // نص مطبوع (quran-simple)
     }));
-    surahCache[n]=mapped;
-    surahPrintCache[n]=mapped;
+    surahCache[n] = mapped;
+    surahPrintCache[n] = mapped;
     return mapped;
   }
 
-  // ── احتياط: quran.com API v4 ──
-  const qd=await fetchWithProxy(
-    `https://api.quran.com/api/v4/verses/by_chapter/${n}?words=false&per_page=300&fields=text_uthmani`
-  );
-  if(qd?.verses?.length){
-    const mapped=qd.verses.map(v=>({
+  // ── المصدر 2: quran.com API v4 ──
+  const verses = quranCom.value?.verses || [];
+  if(verses.length){
+    const mapped = verses.map(v => ({
       numberInSurah: v.verse_number,
-      text:          v.text_uthmani||'',
-      textPrint:     v.text_uthmani||''
+      text:      v.text_uthmani || '',                       // رسم عثماني
+      textPrint: v.text_imlaei  || v.text_uthmani || ''     // نص إملائي (مطبوع)
     }));
-    surahCache[n]=mapped;
-    surahPrintCache[n]=mapped;
+    surahCache[n] = mapped;
+    surahPrintCache[n] = mapped;
     return mapped;
   }
 
