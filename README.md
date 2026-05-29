@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="[https://img.shields.io/badge/](https://img.shields.io/badge/)📖-القرآن_الكريم-1f6feb?style=for-the-badge" alt="logo" />
-
 # 📖 مشغل القرآن الكريم
 
 ### Quran Player — a bilingual, in-browser Quran audio player
