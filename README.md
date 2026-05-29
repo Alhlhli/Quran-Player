@@ -7,14 +7,24 @@
 مشغّل صوتي للقرآن الكريم يعمل مباشرةً في المتصفح، يدعم اللغتين العربية والإنجليزية،<br/>
 ومبني كتطبيق ويب ثابت (Static Web App) مستضاف على GitHub Pages.
 
+<br/>
+
 <a href="https://alhlhli.github.io/Quran-Player/" target="_blank" rel="noopener noreferrer">
   <img src="https://img.shields.io/badge/▶️_جرّب_التطبيق-Live_Demo-2ea44f?style=for-the-badge" alt="Live Demo" />
 </a>
-
 <a href="https://alhlhli.github.io/Quran-Player/" target="_blank" rel="noopener noreferrer">
   <img src="https://img.shields.io/badge/Hosted_on-GitHub_Pages-222?style=for-the-badge&logo=github" alt="GitHub Pages" />
 </a>
-🔗 **التطبيق:** <a href="https://alhlhli.github.io/Quran-Player/" target="_blank">alhlhli.github.io/Quran-Player</a>
+
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)
+![PWA](https://img.shields.io/badge/PWA-قابل_للتثبيت-5A0FC8?style=flat&logo=pwa&logoColor=white)
+![Languages](https://img.shields.io/badge/اللغات-عربي_%7C_English-0891b2?style=flat)
+![No Dependencies](https://img.shields.io/badge/Dependencies-0-success?style=flat)
+![License](https://img.shields.io/badge/License-مفتوح_المصدر-green?style=flat)
+
+🔗 **التطبيق:** <a href="https://alhlhli.github.io/Quran-Player/" target="_blank" rel="noopener noreferrer">alhlhli.github.io/Quran-Player</a>
 
 </div>
 
@@ -27,8 +37,8 @@
 - [لقطات من التطبيق](#-لقطات-من-التطبيق)
 - [اختصارات لوحة المفاتيح](#️-اختصارات-لوحة-المفاتيح)
 - [التشغيل محلياً](#-تشغيل-المشروع-محلياً)
-- [النشر على GitHub Pages](#-النشر-على-github-pages)
-- [التقنيات المستخدمة](#️-التقنيات-المستخدمة)
+- [النشر على GitHub Pages](#-النشر على-github-pages)
+- [التقنيات المستخدمة](#️-التقنيات_المستخدمة)
 - [المصادر والواجهات البرمجية](#-المصادر-والواجهات-البرمجية-apis)
 - [بنية المشروع](#-بنية-المشروع)
 - [المصمم](#-المصمم)
@@ -41,9 +51,8 @@
 تطبيق صفحة واحدة (SPA) خفيف وسريع، بلا أي خادم خلفي وبلا مكتبات خارجية — كل شيء يعمل داخل المتصفح مباشرةً. صُمّم بواجهة عربية كاملة من اليمين لليسار (RTL)، مع دعم إنجليزي، وتصميم متجاوب يعمل على الجوال والحاسب، وإمكانية تثبيته كتطبيق (PWA) على الشاشة الرئيسية.
 
 > **النسخة السابقة:** متاحة على الروابط التالية للأرشفة:
-<a href="https://alhlhli.github.io/Quran-Player/%D9%85%D8%B4%D8%BA%D9%84%20%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86%20%D8%A7%D9%84%D9%83%D8%B1%D9%8A%D9%85.html" target="_blank" rel="noopener noreferrer">
-  مشغّل القرآن الكريم (النسخة الأولية)
-</a>> - <a href="[https://alhlhli.github.io/Quran-Player/%D9%85%D8%B4%D8%BA%D9%84_%D1%87%D9%84%D9%82%D8%B1%D8%A2%D9%86_v20.html](https://alhlhli.github.io/Quran-Player/%D9%85%D8%B4%D8%BA%D9%84_%D1%87%D9%84%D9%82%D8%B1%D8%A2%D9%86_v20.html)" target="_blank">مشغّل القرآن الإصدار V2.0</a>
+> - <a href="https://alhlhli.github.io/Quran-Player/مشغل%20القرآن%20الكريم.html" target="_blank" rel="noopener noreferrer">مشغّل القرآن الكريم (النسخة الأولية)</a>
+> - <a href="https://alhlhli.github.io/Quran-Player/مشغل_القرآن_v20.html" target="_blank" rel="noopener noreferrer">مشغّل القرآن الإصدار V2.0</a>
 
 ---
 
@@ -113,6 +122,43 @@
 | `+` أو `=`     | رفع مستوى الصوت         |
 | `-` أو `_`     | خفض مستوى الصوت         |
 | `S`            | البحث في السور          |
+
+---
+
+## 🛠️ التقنيات المستخدمة
+
+- **HTML5** — بنية دلالية ووسم `<audio>` للتشغيل.
+- **CSS3** — متغيّرات CSS، تصميم متجاوب، دعم RTL، وسمات قابلة للتبديل.
+- **JavaScript (Vanilla)** — بدون أي مكتبات أو أُطر خارجية.
+- **Web App Manifest (PWA)** — قابلية التثبيت على الأجهزة.
+- **GitHub Pages** — الاستضافة المجانية الثابتة.
+
+---
+
+## 🔌 المصادر والواجهات البرمجية (APIs)
+
+| الغرض                | المصدر                          |
+| :------------------- | :------------------------------ |
+| القرّاء والصوت        | mp3quran.net API                |
+| نص السور             | alquran.cloud · quran.com       |
+| معلومات السور        | quranpedia.net                  |
+| صور المصحف           | عدّة مصادر (الافتراضي: التجويد)  |
+
+> جميع الحقوق للمصادر تعود لأصحابها، ويُستخدم المحتوى لأغراض الاستماع والتلاوة.
+
+---
+
+## 📁 بنية المشروع
+
+
+Quran-Player/
+├── screenshots/          # لقطات الشاشة للتطبيق
+├── README.md             # دليل تشغيل وتوثيق المشروع
+├── index.html            # الصفحة الرئيسية الحالية للمشروع
+├── script.js             # ملف العمليات والوظائف التفاعلية
+├── style.css             # ملف التنسيقات والسمات المتجاوبة
+├── مشغل القرآن الكريم.html # النسخة السابقة المؤرشفة
+└── مشغل_القرآن_v20.html   # إصدار الأرشفة الثاني V2.0
 
 ---
 
