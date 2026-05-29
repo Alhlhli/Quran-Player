@@ -184,17 +184,6 @@ Quran-Player/
 
 ---
 
-## 📁 بنية المشروع
-
-```
-Quran-Player/
-├── index.html        # التطبيق كاملاً (HTML + CSS + JS في ملف واحد)
-├── screenshots/      # لقطات الشاشة (اختياري)
-├── README.md         # هذا الملف
-└── LICENSE           # رخصة المشروع
-```
-
----
 
 ## 👤 المصمم
 
