@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/📖-القرآن_الكريم-1f6feb?style=for-the-badge" alt="logo" />
+<img src="[https://img.shields.io/badge/](https://img.shields.io/badge/)📖-القرآن_الكريم-1f6feb?style=for-the-badge" alt="logo" />
 
 # 📖 مشغل القرآن الكريم
 
@@ -11,8 +11,8 @@
 
 <br/>
 
-[![Live Demo](https://img.shields.io/badge/▶️_جرّب_التطبيق-Live_Demo-2ea44f?style=for-the-badge)](https://alhlhli.github.io/Quran-Player/)
-[![GitHub Pages](https://img.shields.io/badge/Hosted_on-GitHub_Pages-222?style=for-the-badge&logo=github)](https://alhlhli.github.io/Quran-Player/)
+[![Live Demo](https://img.shields.io/badge/▶️_جرّب_التطبيق-Live_Demo-2ea44f?style=for-the-badge)](https://alhlhli.github.io/Quran-Player/){:target="_blank"}
+[![GitHub Pages](https://img.shields.io/badge/Hosted_on-GitHub_Pages-222?style=for-the-badge&logo=github)](https://alhlhli.github.io/Quran-Player/){:target="_blank"}
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)
@@ -22,7 +22,7 @@
 ![No Dependencies](https://img.shields.io/badge/Dependencies-0-success?style=flat)
 ![License](https://img.shields.io/badge/License-مفتوح_المصدر-green?style=flat)
 
-🔗 **التطبيق:** [alhlhli.github.io/Quran-Player](https://alhlhli.github.io/Quran-Player/)
+🔗 **التطبيق:** <a href="https://alhlhli.github.io/Quran-Player/" target="_blank">alhlhli.github.io/Quran-Player</a>
 
 </div>
 
@@ -46,12 +46,11 @@
 
 ## 🧭 نبذة
 
-تطبيق صفحة واحدة (SPA) خفيف وسريع، بلا أي خادم خلفي وبلا مكتبات خارجية — كل شيء يعمل
-داخل المتصفح مباشرةً. صُمّم بواجهة عربية كاملة من اليمين لليسار (RTL)، مع دعم إنجليزي،
-وتصميم متجاوب يعمل على الجوال والحاسب، وإمكانية تثبيته كتطبيق (PWA) على الشاشة الرئيسية.
+تطبيق صفحة واحدة (SPA) خفيف وسريع، بلا أي خادم خلفي وبلا مكتبات خارجية — كل شيء يعمل داخل المتصفح مباشرةً. صُمّم بواجهة عربية كاملة من اليمين لليسار (RTL)، مع دعم إنجليزي، وتصميم متجاوب يعمل على الجوال والحاسب، وإمكانية تثبيته كتطبيق (PWA) على الشاشة الرئيسية.
 
-> **النسخة السابقة:** متاحة على هذا الرابط للأرشفة —
-> [مشغّل القرآن الكريم (النسخة السابقة)](https://alhlhli.github.io/Quran-Player/%D9%85%D8%B4%D8%BA%D9%84%20%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86%20%D8%A7%D9%84%D9%83%D8%B1%D9%8A%D9%85.html)
+> **النسخة السابقة:** متاحة على الروابط التالية للأرشفة:
+> - <a href="[https://alhlhli.github.io/Quran-Player/%D9%85%D8%B4%D8%BA%D9%84%20%D1%87%D9%84%D9%82%D8%B1%D8%A2%D9%86%20%D1%87%D9%84%D9%83%D8%B1%D9%8A%D9%85.html](https://alhlhli.github.io/Quran-Player/%D9%85%D8%B4%D8%BA%D9%84%20%D1%87%D9%84%D9%82%D8%B1%D8%A2%D9%86%20%D1%87%D9%84%D9%83%D8%B1%D9%8A%D9%85.html)" target="_blank">مشغّل القرآن الكريم (النسخة الأولية)</a>
+> - <a href="[https://alhlhli.github.io/Quran-Player/%D9%85%D8%B4%D8%BA%D9%84_%D1%87%D9%84%D9%82%D8%B1%D8%A2%D9%86_v20.html](https://alhlhli.github.io/Quran-Player/%D9%85%D8%B4%D8%BA%D9%84_%D1%87%D9%84%D9%82%D8%B1%D8%A2%D9%86_v20.html)" target="_blank">مشغّل القرآن الإصدار V2.0</a>
 
 ---
 
@@ -97,14 +96,12 @@
 
 ## 🖼️ لقطات من التطبيق
 
-> أضِف لقطات الشاشة هنا (مثلاً داخل مجلّد `screenshots/`):
-
 <div align="center">
 
-<!-- استبدل الروابط بلقطاتك الفعلية -->
-<img src="screenshots/home.png"   alt="الواجهة الرئيسية" width="30%" />
-<img src="screenshots/text.png"   alt="نص السورة"       width="30%" />
-<img src="screenshots/mushaf.png" alt="المصحف المصوّر"  width="30%" />
+<img src="screenshots/home.png" alt="الواجهة الرئيسية" width="100%" style="margin-bottom: 20px;" />
+<img src="screenshots/text.png" alt="نص السورة" width="100%" style="margin-bottom: 20px;" />
+<img src="screenshots/mushaf.png" alt="المصحف المصوّر" width="100%" style="margin-bottom: 20px;" />
+<img src="screenshots/info.png" alt="لوحة المعلومات" width="100%" />
 
 </div>
 
@@ -120,8 +117,8 @@
 | `R`            | تغيير وضع التكرار        |
 | `M`            | كتم / إلغاء كتم الصوت    |
 | `T`            | عرض / إخفاء نص السورة    |
-| `+` أو `=`     | رفع مستوى الصوت          |
-| `-` أو `_`     | خفض مستوى الصوت          |
+| `+` أو `=`     | رفع مستوى الصوت         |
+| `-` أو `_`     | خفض مستوى الصوت         |
 | `S`            | البحث في السور          |
 
 ---
@@ -129,92 +126,3 @@
 ## 🚀 تشغيل المشروع محلياً
 
 لا يحتاج المشروع إلى أي خادم أو تبعيات — فقط افتح الملف في متصفّحك:
-
-```bash
-git clone https://github.com/Alhlhli/Quran-Player.git
-cd Quran-Player
-
-# افتح index.html مباشرةً في المتصفح
-```
-
-> 💡 لتجربة ميزات الـ PWA وبعض الواجهات البرمجية بشكل كامل، يُفضّل تشغيله عبر خادم محلي بسيط:
->
-> ```bash
-> # باستخدام Python
-> python -m http.server 8000
-> # ثم افتح: http://localhost:8000
-> ```
-
----
-
-## 🌍 النشر على GitHub Pages
-
-1. ارفع الملفات إلى الفرع `main`.
-2. من المستودع: **Settings → Pages**.
-3. اختر **Branch:** `main` و **Folder:** `/ (root)` ثم **Save**.
-4. سيكون التطبيق متاحاً خلال دقائق على:
-   `https://<username>.github.io/Quran-Player/`
-
----
-
-## 🛠️ التقنيات المستخدمة
-
-- **HTML5** — بنية دلالية ووسم `<audio>` للتشغيل.
-- **CSS3** — متغيّرات CSS، تصميم متجاوب، دعم RTL، وسمات قابلة للتبديل.
-- **JavaScript (Vanilla)** — بدون أي مكتبات أو أُطر خارجية.
-- **Web App Manifest (PWA)** — قابلية التثبيت على الأجهزة.
-- **GitHub Pages** — الاستضافة المجانية الثابتة.
-
----
-
-## 🔌 المصادر والواجهات البرمجية (APIs)
-
-| الغرض                | المصدر                          |
-| :------------------- | :------------------------------ |
-| القرّاء والصوت        | mp3quran.net API                |
-| نص السور             | alquran.cloud · quran.com       |
-| معلومات السور        | quranpedia.net                  |
-| صور المصحف           | عدّة مصادر (الافتراضي: التجويد)  |
-
-> جميع الحقوق للمصادر تعود لأصحابها، ويُستخدم المحتوى لأغراض الاستماع والتلاوة.
-
----
-
-## 📁 بنية المشروع
-
-```
-Quran-Player/
-├── index.html        # التطبيق كاملاً (HTML + CSS + JS في ملف واحد)
-├── screenshots/      # لقطات الشاشة (اختياري)
-├── README.md         # هذا الملف
-└── LICENSE           # رخصة المشروع
-```
-
----
-
-## 👤 المصمم
-
-<div align="center">
-
-**م/ عامر الحلحلي**
-
-[![Telegram](https://img.shields.io/badge/Telegram-قناة_AL3MER-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/pro3mer)
-[![GitHub](https://img.shields.io/badge/GitHub-Alhlhli-181717?style=flat&logo=github&logoColor=white)](https://github.com/Alhlhli)
-
-</div>
-
----
-
-## 📄 الترخيص
-
-هذا المشروع مفتوح المصدر. يُرجى مراجعة ملف [`LICENSE`](LICENSE) للاطلاع على التفاصيل.
-
----
-
-<div align="center">
-
-اللهم اجعله علماً نافعاً وصدقةً جارية 🤲
-
-<sub>صُنع بعناية — م/ عامر الحلحلي · AL3MER</sub>
-
-</div>
