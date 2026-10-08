@@ -11,12 +11,25 @@
   <meta name="apple-mobile-web-app-title" content="مشغل القرآن الكريم">
   <meta name="description" content="مشغل القرآن الكريم - استمع للقرآن الكريم بأصوات كبار القراء">
   <title>مشغل القرآن الكريم</title>
-  <!-- Favicon SVG inline -->
-  <link id="faviconLink" rel="icon" type="image/svg+xml">
-  <!-- PWA Manifest -->
-  <link id="pwaManifest" rel="manifest">
-  <!-- Apple touch icon -->
-  <link id="appleIcon" rel="apple-touch-icon">
+
+  <!-- تسريع الاتصال بالمصادر الخارجية (خطوط + APIs + صور المصحف) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://www.mp3quran.net" crossorigin>
+  <link rel="preconnect" href="https://api.alquran.cloud" crossorigin>
+  <link rel="preconnect" href="https://api.quran.com" crossorigin>
+  <link rel="preconnect" href="https://raw.githubusercontent.com">
+  <link rel="dns-prefetch" href="https://api.quranpedia.net">
+
+  <!-- خط المصحف — تحميل مبكر بدل @import داخل CSS -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Scheherazade+New:wght@400;700&display=swap">
+
+  <!-- أيقونة التطبيق + PWA -->
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
 
 </head>
@@ -25,7 +38,7 @@
 
   <!-- ========== SPLASH ========== -->
   <div id="splash">
-    <div class="splash-icon">📖</div>
+    <img class="splash-icon" src="icon.svg" alt="شعار مشغل القرآن الكريم">
     <div class="splash-title">مشغل القرآن الكريم</div>
     <div class="splash-sub">Quran Player — م/ عامر الحلحلي</div>
     <div class="splash-bar">
@@ -46,7 +59,7 @@
 
   <!-- ========== SETTINGS DIALOG ========== -->
   <div class="dialog-overlay" id="settingsOverlay">
-    <div class="settings-dialog">
+    <div class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
       <div class="settings-head">
         <h3 id="settingsTitle">⚙️ الإعدادات</h3>
         <button class="settings-close" id="settingsClose" title="إغلاق">✕</button>
@@ -83,11 +96,34 @@
               <option value="uthmani">🕌 رسم عثماني</option>
               <option value="print">📝 نص مطبوع</option>
               <option value="simple">✏️ نص عادي</option>
+              <option value="qcf">🕋 خط المصحف (QCF)</option>
             </select>
           </div>
           <div class="set-row">
             <span id="setAutoScrollLbl">تمرير النص مع التلاوة</span>
             <label class="set-switch"><input type="checkbox" id="setAutoScroll"><span class="set-slider"></span></label>
+          </div>
+          <div class="set-row">
+            <span id="setAutoHiLbl">تظليل الآية مع القراءة</span>
+            <label class="set-switch"><input type="checkbox" id="setAutoHi"><span class="set-slider"></span></label>
+          </div>
+          <div class="set-row">
+            <span id="setMushafLinesLbl">الأسطر كما في المصحف</span>
+            <label class="set-switch"><input type="checkbox" id="setMushafLines"><span class="set-slider"></span></label>
+          </div>
+          <div class="set-row">
+            <span id="setFontSizeLbl">حجم خط النص</span>
+            <div class="set-inline">
+              <input type="range" id="setFontSize" min="18" max="40" step="1" class="set-range">
+              <span id="setFontSizeVal" class="set-val">26</span>
+            </div>
+          </div>
+          <div class="set-row">
+            <span id="setLineModeLbl">طريقة عرض الآيات</span>
+            <div class="set-seg" id="setLineModeSeg">
+              <button data-lm="block">≡ كل آية بسطر</button>
+              <button data-lm="inline">⋯ متتاليات</button>
+            </div>
           </div>
         </div>
 
@@ -151,7 +187,7 @@
 
   <!-- ========== SHARE DIALOG ========== -->
   <div class="dialog-overlay" id="shareOverlay">
-    <div class="share-dialog">
+    <div class="share-dialog" role="dialog" aria-modal="true" aria-labelledby="shareDlgTitle">
       <h3 id="shareDlgTitle">مشاركة</h3>
       <div class="share-option" id="shareWebsite">
         <div class="share-opt-icon">🌐</div>
@@ -175,7 +211,7 @@
   <div class="intro-overlay" id="introOverlay">
     <div class="intro-card">
       <div class="intro-header">
-        <span class="intro-icon">📖</span>
+        <img class="intro-icon" src="icon.svg" alt="شعار مشغل القرآن الكريم">
         <h2 id="introTitle">مشغل القرآن الكريم</h2>
         <p id="introSub">م/ عامر الحلحلي</p>
       </div>
@@ -250,9 +286,9 @@
           <div class="qp-meta" id="qpMeta"></div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
-          <button class="qp-close" title="مشاركة" onclick="shareApp()" style="font-size:15px">📤</button>
-          <button class="qp-close" title="مسح البيانات" onclick="clearData()" style="font-size:15px">🗑️</button>
-          <button class="qp-close" id="qpClose">✕</button>
+          <button class="qp-close" id="qpShareBtn" title="مشاركة" onclick="shareApp()" style="font-size:15px">📤</button>
+          <button class="qp-close" id="qpClearBtn" title="مسح البيانات" onclick="clearData()" style="font-size:15px">🗑️</button>
+          <button class="qp-close" id="qpClose" title="إغلاق">✕</button>
         </div>
       </div>
 
@@ -271,18 +307,20 @@
           <button class="qp-opt-btn active" id="optUthmani" onclick="setScript('uthmani')">🕌 رسم عثماني</button>
           <button class="qp-opt-btn" id="optPrint" onclick="setScript('print')">📝 نص مطبوع</button>
           <button class="qp-opt-btn" id="optSimple" onclick="setScript('simple')">✏️ نص عادي</button>
+          <button class="qp-opt-btn" id="optQcf" onclick="setScript('qcf')" title="خطوط المصحف (QCF) — رسم الآيات بخطوط المصحف المعتمدة">🕋 خط المصحف</button>
+          <span class="qp-qcf-chip" id="qpQcfChip" style="display:none" role="status" aria-live="polite"></span>
           <!-- سطر -->
-          <div style="width:1px;height:20px;background:var(--input-border)"></div>
+          <div class="qp-opts-sep"></div>
           <button class="qp-opt-btn" id="optBlock" onclick="setLineMode('block')">≡ كل آية بسطر</button>
           <button class="qp-opt-btn active" id="optInline" onclick="setLineMode('inline')">⋯ متتاليات</button>
           <!-- حجم الخط -->
-          <div style="width:1px;height:20px;background:var(--input-border)"></div>
+          <div class="qp-opts-sep"></div>
           <button class="si-font-btn" id="qpFontMinus">A−</button>
           <button class="si-font-btn" id="qpFontPlus">A+</button>
         </div>
         <!-- بحث -->
         <div class="qp-search" id="qpSearchBar" style="display:none">
-          <input type="text" id="qpSearch" placeholder="🔍 ابحث في السورة (بدون حركات)...">
+          <input type="text" id="qpSearch" placeholder="🔍 ابحث في السورة (بدون حركات) أو برقم الآية...">
         </div>
         <!-- مؤشر التزامن -->
         <div class="qp-autoscroll" id="qpAutoScroll" style="display:none">
@@ -338,7 +376,7 @@
         <div class="top-bar">
           <div class="top-bar-right">
             <div class="info-wrap">
-              <button class="top-btn btn-info" id="infoBtn">ℹ️</button>
+              <button class="top-btn btn-info" id="infoBtn" title="الاختصارات" aria-label="اختصارات لوحة المفاتيح">ℹ️</button>
               <div class="shortcuts-panel" id="shortcutsPanel">
                 <div class="sc-content" data-lang="ar">
                   <h3>الاختصارات</h3>
@@ -368,14 +406,14 @@
                 </div>
               </div>
             </div>
-            <button class="top-btn btn-palette" id="paletteBtn">🎨</button>
+            <button class="top-btn btn-palette" id="paletteBtn" title="الألوان" aria-label="تغيير لون الواجهة">🎨</button>
           </div>
 
           <div class="top-bar-right">
-            <button class="top-btn btn-theme" id="themeBtn">🌙</button>
-            <button class="top-btn btn-settings" id="settingsBtn" title="الإعدادات">⚙️</button>
-            <button class="top-btn btn-text" id="textViewBtn" title="عرض نص السورة">📜</button>
-            <button class="top-btn btn-lang" id="langBtn">EN</button>
+            <button class="top-btn btn-theme" id="themeBtn" title="الوضع الداكن" aria-label="تبديل الوضع الداكن">🌙</button>
+            <button class="top-btn btn-settings" id="settingsBtn" title="الإعدادات" aria-label="الإعدادات">⚙️</button>
+            <button class="top-btn btn-text" id="textViewBtn" title="عرض نص السورة" aria-label="عرض نص السورة">📜</button>
+            <button class="top-btn btn-lang" id="langBtn" title="تبديل اللغة" aria-label="تبديل اللغة">EN</button>
           </div>
         </div>
 
@@ -387,7 +425,10 @@
           <div class="t-dot" data-t="gold" title="ذهبي"></div>
         </div>
 
-        <div class="app-title" id="appTitle">📖 مشغل القرآن الكريم</div>
+        <div class="app-title" id="appTitle">
+          <img class="app-logo" src="icon.svg" alt="">
+          <span id="appTitleText">مشغل القرآن الكريم</span>
+        </div>
 
         <!-- روابط مشاريع مشابهة -->
         <div class="projects-bar" id="projectsBar">
@@ -413,23 +454,23 @@
             <div class="np-reciter" id="npReciter">—</div>
             <div class="np-badges" id="npBadges"></div>
           </div>
-          <button class="np-share-btn" id="shareBtn" title="مشاركة">🔗</button>
+          <button class="np-share-btn" id="shareBtn" title="مشاركة" aria-label="مشاركة">🔗</button>
         </div>
 
         <!-- RECITER SELECT -->
         <div class="fg">
-          <label class="lbl" id="reciterLbl">اختر القارئ:</label>
+          <label class="lbl" id="reciterLbl" for="reciter">اختر القارئ:</label>
           <div class="field-row">
             <select id="reciter"></select>
-            <input type="text" class="text-input mini-search" id="reciterSearch" placeholder="🔍 بحث...">
-            <button class="icon-btn rand-prominent" id="randRecBtn" title="عشوائي">🎲</button>
-            <button class="icon-btn" id="favBtn" title="مفضل">⭐</button>
+            <input type="text" class="text-input mini-search" id="reciterSearch" placeholder="🔍 بحث..." aria-label="بحث في القراء">
+            <button class="icon-btn rand-prominent" id="randRecBtn" title="عشوائي" aria-label="قارئ عشوائي">🎲</button>
+            <button class="icon-btn" id="favBtn" title="مفضل" aria-label="إضافة إلى المفضلة">⭐</button>
           </div>
         </div>
 
         <!-- MOSHAF SELECT + التالي في صف مستقل -->
         <div class="fg">
-          <label class="lbl" id="moshafLbl">اختر المصحف:</label>
+          <label class="lbl" id="moshafLbl" for="moshaf">اختر المصحف:</label>
           <div class="field-row">
             <select id="moshaf">
               <option value="">—</option>
@@ -469,13 +510,13 @@
           <!-- SURAH SELECT -->
 
           <div class="fg">
-            <label class="lbl" id="surahLbl">اختر السورة:</label>
+            <label class="lbl" id="surahLbl" for="surah">اختر السورة:</label>
             <div class="field-row">
               <select id="surah">
                 <option value="">—</option>
               </select>
-              <input type="text" class="text-input mini-search" id="surahSearch" placeholder="🔍 بحث...">
-              <button class="icon-btn rand-prominent" id="randSurahBtn" title="عشوائي">🎲</button>
+              <input type="text" class="text-input mini-search" id="surahSearch" placeholder="🔍 بحث..." aria-label="بحث في السور">
+              <button class="icon-btn rand-prominent" id="randSurahBtn" title="عشوائي" aria-label="سورة عشوائية">🎲</button>
             </div>
             <span class="search-note" id="searchNote">💡 اكتب حرفاً للتصفية</span>
             <!-- مدى السور العشوائية -->
@@ -488,11 +529,11 @@
           </div>
 
           <!-- STATUS -->
-          <div class="status" id="status">الرجاء اختيار القارئ والمصحف والسورة.</div>
+          <div class="status" id="status" aria-live="polite">الرجاء اختيار القارئ والمصحف والسورة.</div>
 
           <!-- AUDIO PLAYER CARD -->
           <div class="player-card">
-            <audio id="audio">متصفحك لا يدعم الصوت.</audio>
+            <audio id="audio" preload="metadata">متصفحك لا يدعم الصوت.</audio>
 
             <!-- Progress -->
             <div class="prog-ltr-wrap">
@@ -574,7 +615,7 @@
 
           <!-- Bookmark -->
           <div class="bm-row">
-            <button class="icon-btn" id="bmBtn" title="إضافة إشارة">📑</button>
+            <button class="icon-btn" id="bmBtn" title="إضافة إشارة" aria-label="إضافة إشارة مرجعية">📑</button>
           </div>
           <div class="sec-card" id="bmSection" style="display:none">
             <h3 id="bmHeader">📌 الإشارات المرجعية</h3>
@@ -615,11 +656,11 @@
           <div class="sec-card" id="cdSection" style="display:none">
             <h3 id="cdHeader">⏲️ مؤقّت عدّ تنازلي</h3>
             <div class="cd-inputs">
-              <input type="number" class="text-input" id="cdMin" min="0" placeholder="دق"
-                style="width:66px;flex:none;padding:8px;">
+              <input type="number" inputmode="numeric" class="text-input" id="cdMin" min="0" placeholder="دق"
+                aria-label="دقائق" style="width:66px;flex:none;padding:8px;">
               <span style="color:var(--text);font-weight:700;">:</span>
-              <input type="number" class="text-input" id="cdSec" min="0" max="59" placeholder="ثا"
-                style="width:66px;flex:none;padding:8px;">
+              <input type="number" inputmode="numeric" class="text-input" id="cdSec" min="0" max="59" placeholder="ثا"
+                aria-label="ثوانٍ" style="width:66px;flex:none;padding:8px;">
               <button class="icon-btn" id="cdStartBtn" title="ابدأ">⏱️</button>
             </div>
             <div class="cd-ring-wrap" id="cdRingWrap" style="display:none">
@@ -682,8 +723,12 @@
         <span class="fb-timer" id="fbTimer" style="display:none">--:--</span>
       </div>
     </div>
-    <button class="fb-toggle" id="toggleFloatBtn" title="إخفاء/إظهار">▼</button>
-</body>
+    <button class="fb-toggle" id="toggleFloatBtn" title="إخفاء/إظهار" aria-label="إخفاء أو إظهار شريط التحكم">▼</button>
+
+  <!-- إشعارات لطيفة (Toasts) -->
+  <div class="toast-host" id="toastHost" aria-live="polite" aria-atomic="false"></div>
+
   <script src="script.js"></script>
+</body>
 
 </html>

@@ -1,5 +1,5 @@
- 
-@import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Scheherazade+New:wght@400;700&display=swap');
+/* خط المصحف يُحمَّل من <head> في index.html مع preconnect —
+   @import هنا كان يؤخر التحميل (سلسلة طلبات متتابعة) */
 
 /*=======================================================
   RESET & VARIABLES
@@ -162,14 +162,10 @@
     .splash-icon {
       width: 110px;
       height: 110px;
-      background: rgba(255, 255, 255, 0.18);
       border-radius: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 60px;
+      display: block;
+      object-fit: cover;
       box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(10px);
       border: 2px solid rgba(255, 255, 255, 0.3);
       animation: splashPulse 1.8s ease-in-out infinite;
     }
@@ -214,7 +210,7 @@
       width: 0%;
       background: #fff;
       border-radius: 2px;
-      animation: splashLoad 1.8s ease-in-out forwards;
+      animation: splashLoad 0.8s ease-in-out forwards;
     }
 
     @keyframes splashLoad {
@@ -474,6 +470,8 @@
       body {
         padding: 8px 8px calc(8px + var(--safe-bottom));
         overflow-x: hidden;
+        /* background-attachment: fixed يسبب إعادة رسم عند كل تمرير على الجوال */
+        background-attachment: scroll;
       }
 
       .app-layout {
@@ -489,9 +487,12 @@
         flex: 0 0 auto;
       }
 
-      /* نص القرآن فوق المشغّل */
-      /* جوال: لوحة القرآن تملأ الشاشة بالكامل كتبويب */
+      /* جوال: لوحة القرآن تملأ الشاشة وتنزلق من الجانب —
+         visibility بدل display كي يعمل الانتقال فعلياً في الاتجاهين */
       .quran-panel {
+        display: flex !important;
+        flex-direction: column;
+        visibility: hidden;
         position: fixed !important;
         inset: 0 !important;
         z-index: 500;
@@ -500,13 +501,13 @@
         max-height: 100dvh !important;
         order: 0;
         transform: translateX(100%);
-        transition: transform 0.35s cubic-bezier(.4, 0, .2, 1);
+        transition: transform 0.35s cubic-bezier(.4, 0, .2, 1), visibility 0s linear 0.35s;
       }
 
       .app-layout.text-open .quran-panel {
-        display: flex !important;
-        flex-direction: column;
+        visibility: visible;
         transform: translateX(0) !important;
+        transition: transform 0.35s cubic-bezier(.4, 0, .2, 1);
       }
 
       .app-layout.text-open .player-col {
@@ -599,9 +600,14 @@
     }
 
     .intro-icon {
-      font-size: 56px;
-      margin-bottom: 10px;
+      width: 78px;
+      height: 78px;
+      border-radius: 20px;
+      object-fit: cover;
       display: block;
+      margin-bottom: 10px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
     }
 
     .intro-header h2 {
@@ -1231,8 +1237,9 @@
       line-height: 2.2;
       color: var(--text);
       direction: rtl;
-      text-align: justify;
-      word-spacing: 4px;
+      /* بلا تبرير ولا تباعد زائد — بلا فراغات بين الكلمات */
+      text-align: start;
+      word-spacing: normal;
     }
 
     .si-ayah-marker {
@@ -1506,12 +1513,31 @@
   TITLE
 =======================================================*/
     .app-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
       text-align: center;
       font-size: 22px;
       font-weight: 800;
       color: var(--text);
       margin-bottom: 16px;
       letter-spacing: 0.3px;
+    }
+
+    /* شعار البرنامج — مصحف مفتوح */
+    .app-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      flex-shrink: 0;
+      object-fit: cover;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22);
+      transition: transform 0.25s ease;
+    }
+
+    .app-logo:hover {
+      transform: scale(1.08) rotate(-3deg);
     }
 
     /*=======================================================
@@ -2047,6 +2073,12 @@
       display: flex;
       align-items: center;
       gap: 7px;
+    }
+
+    /* السماح للقوائم والحقول بالانكماش حتى لا يخرج زر ⭐ خارج الإطار */
+    .field-row select,
+    .field-row .text-input {
+      min-width: 0;
     }
 
     select,
@@ -3437,10 +3469,11 @@
     .qp-text-wrap.inline-mode {
       padding: 16px 18px;
       direction: rtl;
-      text-align: justify;
+      /* بلا تبرير ولا تباعد زائد بين الكلمات — نص متصل بلا فراغات */
+      text-align: start;
       font-family: 'Amiri Quran', 'Scheherazade New', serif;
       line-height: 2.6;
-      word-spacing: 3px;
+      word-spacing: normal;
       color: var(--text);
     }
 
@@ -3458,20 +3491,39 @@
       color: #ffffff;
     }
 
-    /* sync-active ayah — تحريك فقط بدون تلوين */
+    /* sync-active ayah — تمييز خفيف للآية الحالية أثناء التلاوة */
     .si-ayah.active {
       background: none !important;
     }
 
     .si-ayah.sync-active {
-      /* بدون تلوين — التحريك فقط */
+      background: var(--badge-bg);
+      border-right-color: var(--acc1);
     }
 
-    body.dark .si-ayah.sync-active {}
-    body.emerald .si-ayah.sync-active {}
-    body.gold .si-ayah.sync-active {}
+    html[dir=ltr] .si-ayah.sync-active {
+      border-left-color: var(--acc1);
+    }
 
-    .qp-text-wrap.inline-mode .si-ayah.sync-active {}
+    body.dark .si-ayah.sync-active {
+      background: rgba(167, 139, 250, 0.12);
+    }
+
+    body.emerald .si-ayah.sync-active {
+      background: rgba(5, 150, 105, 0.1);
+    }
+
+    body.gold .si-ayah.sync-active {
+      background: rgba(217, 119, 6, 0.1);
+    }
+
+    /* في وضع النص المتتالي: خلفية ناعمة حول الآية دون إزاحة النص */
+    .qp-text-wrap.inline-mode .si-ayah.sync-active {
+      background: var(--badge-bg);
+      border-radius: 8px;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
 
     /*=======================================================
   PROGRESS IN FLOATING BAR
@@ -3928,6 +3980,73 @@
       background: rgba(224, 86, 86, 0.2);
     }
 
+    /*=======================================================
+  تحسينات الجوال — في نهاية الملف عمداً:
+  القواعد الأساسية للعناصر تأتي لاحقاً في الملف، ووضع هذه
+  التجاوزات في أوله كان يجعلها بلا أثر (نفس الأولوية، الترتيب يحسم)
+=======================================================*/
+    @media(max-width:767px) {
+
+      /* backdrop-filter مكلف على معالجات الجوال — الخلفية متدرجة أصلاً فالفرق غير ملحوظ */
+      .container,
+      .quran-panel {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+
+      #floatingBar {
+        backdrop-filter: blur(10px) saturate(1.2);
+        -webkit-backdrop-filter: blur(10px) saturate(1.2);
+      }
+
+      /* iOS يكبّر الصفحة تلقائياً عند التركيز على حقول بخط أصغر من 16px */
+      select,
+      .text-input,
+      .mini-search,
+      .set-select,
+      .surah-range-select {
+        font-size: 16px;
+      }
+
+      /* أهداف لمس أكبر */
+      .top-btn {
+        padding: 9px 13px;
+        font-size: 14px;
+      }
+
+      .qp-opt-btn {
+        padding: 7px 12px;
+      }
+
+      .qp-tab {
+        padding: 12px 4px;
+        font-size: 13px;
+      }
+
+      .mtab {
+        padding: 13px 4px;
+        font-size: 13px;
+      }
+
+      .si-font-btn {
+        padding: 6px 10px;
+      }
+
+      .prog-track {
+        height: 9px;
+      }
+    }
+
+    /* حلقة تركيز واضحة للتنقل بلوحة المفاتيح — دون إزعاج مستخدمي الفأرة */
+    button:focus-visible,
+    select:focus-visible,
+    input:focus-visible,
+    a:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 2px solid var(--acc1);
+      outline-offset: 2px;
+    }
+
     /* احترام إعداد النظام "تقليل الحركة" لمن يتأثرون بالحركة */
     @media (prefers-reduced-motion: reduce) {
 
@@ -3940,3 +4059,334 @@
         scroll-behavior: auto !important;
       }
     }
+
+    /*=======================================================
+  ✦ تحسينات تجربة الاستخدام + خطوط المصحف (QCF)
+=======================================================*/
+
+    /* فاصل داخل شريط خيارات النص */
+    .qp-opts-sep {
+      width: 1px;
+      height: 20px;
+      background: var(--input-border);
+      flex-shrink: 0;
+      opacity: .9;
+    }
+
+    /* ── شارة حالة خطوط المصحف ── */
+    .qp-qcf-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.7;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      animation: qcfChipIn 0.25s ease;
+      max-width: 100%;
+    }
+
+    @keyframes qcfChipIn {
+      from {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .qp-qcf-chip.loading {
+      background: rgba(102, 126, 234, 0.12);
+      color: var(--acc1);
+      border-color: rgba(102, 126, 234, 0.35);
+    }
+
+    .qp-qcf-chip.loading::before {
+      content: "⏳";
+    }
+
+    .qp-qcf-chip.ready {
+      background: rgba(5, 150, 105, 0.12);
+      color: #059669;
+      border-color: rgba(5, 150, 105, 0.35);
+    }
+
+    .qp-qcf-chip.ready::before {
+      content: "✓";
+      font-weight: 900;
+    }
+
+    .qp-qcf-chip.error {
+      background: rgba(220, 38, 38, 0.1);
+      color: #dc2626;
+      border-color: rgba(220, 38, 38, 0.3);
+      white-space: normal;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .qp-qcf-chip.error::before {
+      content: "⚠️";
+    }
+
+    .qp-qcf-chip.partial {
+      background: rgba(217, 119, 6, 0.12);
+      color: #b45309;
+      border-color: rgba(217, 119, 6, 0.35);
+      white-space: normal;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .qp-qcf-chip.partial::before {
+      content: "⚠️";
+    }
+
+    /* ── الآيات بخط المصحف (QCF) ── */
+    .si-ayah.qcf-ayah {
+      font-weight: 400;
+      letter-spacing: 0;
+      word-spacing: normal;
+      -webkit-font-feature-settings: normal;
+      font-feature-settings: normal;
+    }
+
+    /* وضع التدفق بخط المصحف: بلا قصّ للكلمات (بلا فراغات ممتدة) */
+    .qp-text-wrap.qcf-mode {
+      hyphens: none;
+      -webkit-hyphens: none;
+    }
+
+    /* وضع الكتلة: كل آية في سطرها ومتمركزة */
+    .si-ayah.qcf-ayah .si-ayah-text {
+      font-weight: 400;
+      text-align: center;
+    }
+
+    .si-ayah.qcf-ayah:hover {
+      background: rgba(102, 126, 234, 0.07);
+    }
+
+    body.dark .si-ayah.qcf-ayah:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    /* ── الإشعارات اللطيفة (Toasts) ── */
+    .toast-host {
+      position: fixed;
+      left: 50%;
+      bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+      width: min(92vw, 460px);
+    }
+
+    .toast {
+      background: rgba(26, 26, 46, 0.94);
+      color: #fff;
+      padding: 11px 18px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      font-weight: 700;
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      opacity: 0;
+      transform: translateY(16px) scale(0.97);
+      transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+      text-align: center;
+      line-height: 1.65;
+      animation: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: none;
+    }
+
+    .toast-warn {
+      background: rgba(153, 27, 27, 0.96);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* ── لمسات تجريبية عامة ── */
+    .act-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25);
+    }
+
+    .act-btn:active {
+      transform: translateY(0) scale(0.985);
+    }
+
+    .qp-body {
+      scroll-behavior: smooth;
+    }
+
+    /* شريط خيارات النص: تمرير أفقي سلس على الشاشات الصغيرة */
+    @media (max-width: 520px) {
+      .qp-opts {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding: 9px 12px;
+      }
+
+      .qp-opts::-webkit-scrollbar {
+        display: none;
+      }
+
+      .qp-opt-btn,
+      .si-font-btn {
+        flex-shrink: 0;
+      }
+
+      .qp-qcf-chip {
+        font-size: 10.5px;
+        padding: 3px 8px;
+      }
+    }
+
+    /*=======================================================
+  ✦ إطار المصحف + إلغاء الفراغات بين الآيات
+=======================================================*/
+
+    /* الإطار حول نص السورة (يشمل البسملة ورأس السورة) */
+    #qpTextWrap {
+      position: relative;
+      margin: 4px 0 16px;
+      padding: 7px;
+      border: 2px solid var(--acc1);
+      border-radius: 16px;
+      background: linear-gradient(160deg, rgba(102, 126, 234, 0.06), rgba(45, 166, 153, 0.05));
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.07);
+    }
+
+    /* الخط الداخلي المزدوج — كإطار المصحف */
+    #qpTextWrap::before {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border: 1px solid var(--acc1);
+      border-radius: 11px;
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    /* زخارف الزوايا الأربع */
+    #qpTextWrap::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle, var(--acc2) 0 3.6px, rgba(0, 0, 0, 0) 3.9px) 0 0 / 8px 8px no-repeat,
+        radial-gradient(circle, var(--acc2) 0 3.6px, rgba(0, 0, 0, 0) 3.9px) 100% 0 / 8px 8px no-repeat,
+        radial-gradient(circle, var(--acc2) 0 3.6px, rgba(0, 0, 0, 0) 3.9px) 0 100% / 8px 8px no-repeat,
+        radial-gradient(circle, var(--acc2) 0 3.6px, rgba(0, 0, 0, 0) 3.9px) 100% 100% / 8px 8px no-repeat;
+    }
+
+    /* إلغاء الفراغات بين الآيات في وضع التدفق (نص متصل بلا فواصل) */
+    .qp-text-wrap.inline-mode .si-ayah {
+      padding: 0;
+      border: none;
+      background: none;
+      border-radius: 4px;
+    }
+
+    .qp-text-wrap.inline-mode .si-ayah:hover {
+      background: var(--badge-bg);
+      box-shadow: 0 0 0 2px var(--badge-bg);
+    }
+
+    html[dir=ltr] .qp-text-wrap.inline-mode .si-ayah:hover {
+      border-left: none;
+    }
+
+    /* وضع الكتلة: تقليل الفراغ الرأسي بين الآيات */
+    .qp-text-wrap.block-mode .si-ayah {
+      padding: 8px 10px;
+    }
+
+    /* البسملة داخل الإطار: فاصل رفيع بدل الخط المتقطع */
+    #qpTextWrap .si-basmalah {
+      border-bottom: 1px dashed var(--input-border);
+      padding: 14px 12px 16px;
+      margin-bottom: 4px;
+    }
+
+    /* على الشاشات الصغيرة: إطار أنحف */
+    @media (max-width: 520px) {
+      #qpTextWrap {
+        padding: 5px;
+        border-radius: 12px;
+        margin: 4px 0 12px;
+      }
+
+      #qpTextWrap::before {
+        inset: 4px;
+        border-radius: 8px;
+      }
+
+      .qp-text-wrap.inline-mode {
+        padding: 12px;
+      }
+    }
+
+    /*=======================================================
+  ✦ طريقة عرض المصحف: أسطر محفوظة ومبرَّرة + رقم الآية في الزخرفة
+=======================================================*/
+
+    /* مسافة بعرضها صفري بين رموز المصحف: نقطة تبرير ونقطة كسر بلا فراغ مرئي */
+    .qsp {
+      font-size: 0;
+    }
+
+    /* حجم خط المصحف يُضبط من متغيّر على غلاف النص */
+    .qp-text-wrap.qcf-mode .si-ayah.qcf-ayah,
+    .qp-text-wrap.qcf-mode .si-ayah.qcf-ayah .si-ayah-text {
+      font-size: var(--qcf-fs, 31px);
+      line-height: 1.9;
+    }
+
+    /* التبرير: كل سطر يبلغ الحافتين كسطر المصحف */
+    .qp-text-wrap.qcf-mode,
+    .qp-text-wrap.qcf-mode.inline-mode,
+    .qp-text-wrap.qcf-mode.block-mode {
+      text-align: justify;
+    }
+
+    .qp-text-wrap.qcf-mode .si-ayah-text {
+      text-align: justify;
+    }
+
+    /* وضع الأسطر (إبقاء \n): كل سطر محفوظ يُبرَّر من الحافتين */
+    .qp-text-wrap.qcf-mode.qlines .si-ayah,
+    .qp-text-wrap.qcf-mode.qlines {
+      text-align-last: justify;
+    }
+
+    .qp-text-wrap.qcf-mode.block-mode .si-ayah-text {
+      text-align-last: start;
+    }
+
+    /* فواصل أسطر المصحف تبقى كسّر أسطر مرئي */
+    .qp-text-wrap.qcf-mode.qlines .si-ayah,
+    .qp-text-wrap.qcf-mode.qlines .si-ayah-text {
+      white-space: pre-wrap;
+    }
+
+    /* رقم الآية داخل زخرفة نهاية الآية — لا حاجة لتراكب:
+       خط المصحف (QCF) يرسم الرقم داخل الزخرفة أصلاً. */

@@ -1,0 +1,33 @@
+{
+  "name": "مشغل القرآن الكريم",
+  "short_name": "القرآن",
+  "description": "استمع للقرآن الكريم بأصوات أجمل القراء",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "تشغيل عشوائي",
+      "short_name": "عشوائي",
+      "description": "قارئ وسورة عشوائية",
+      "url": "./#random",
+      "icons": [{ "src": "icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "آخر سورة",
+      "short_name": "آخر سورة",
+      "description": "استكمال آخر جلسة",
+      "url": "./#resume",
+      "icons": [{ "src": "icon.svg", "sizes": "any" }]
+    }
+  ]
+}
