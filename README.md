@@ -195,7 +195,7 @@ python -m http.server 8000
 **م/ عامر الحلحلي**
 
 [![Telegram](https://img.shields.io/badge/Telegram-قناة_AL3MER-2CA5E0?style=flat&logo=telegram&logoColor=white)](https://t.me/pro3mer)
-[![GitHub](https://img.shields.io/badge/GitHub-Alhlhli-181717?style=flat&logo=github&logoColor=white)](https://github.com/Alhlhli)
+[![GitHub](https://img.shields.io/badge/GitHub-Alhlhli-181717?style=flat&logo=github&logoColor=white)]([https://github.com/Alhlhli](https://alhlhli.github.io/))
 
 </div>
 
