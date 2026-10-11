@@ -150,7 +150,8 @@
           qpSearchPh: '🔍 ابحث في السورة (بدون حركات) أو برقم الآية...',
           qpAutoScrollLbl: 'متزامن تقريباً مع التلاوة',
           qpShare: 'مشاركة', qpClear: 'مسح البيانات', qpClose: 'إغلاق',
-          qpFontMinus: 'تصغير خط النص', qpFontPlus: 'تكبير خط النص'
+          qpFontMinus: 'تصغير خط النص', qpFontPlus: 'تكبير خط النص',
+          radio: '📻 مشروع القرآن راديو'
         },
         en: {
           play: '▶ Play', pause: '⏸ Pause',
@@ -200,7 +201,8 @@
           qpSearchPh: '🔍 Search in surah (without diacritics) or by ayah number...',
           qpAutoScrollLbl: 'Roughly synced with the recitation',
           qpShare: 'Share', qpClear: 'Clear data', qpClose: 'Close',
-          qpFontMinus: 'Decrease text size', qpFontPlus: 'Increase text size'
+          qpFontMinus: 'Decrease text size', qpFontPlus: 'Increase text size',
+          radio: '📻 Quran Radio project'
         }
       };
 
@@ -376,6 +378,8 @@
         // استعادة مؤقت الإيقاف إن كان لا يزال سارياً
         restoreStopTimer();
         handleHashShortcuts();
+        // استكمال آخر جلسة وفتح نص السورة تلقائياً (إلا عند وجود رابط مشاركة)
+        if (!location.hash) setTimeout(() => autoStartSession(), 350);
       }
 
       function buildReciterList(filterQ = '') {
@@ -505,6 +509,28 @@
         }
       }
 
+      /* ── استكمال الجلسة تلقائياً عند فتح التطبيق ── */
+      // يفتح نص السورة ويستعيد القارئ والمصحف والسورة، ويُعِد ضبط الموضع
+      // (يُطبَّق عند أول تشغيل — لا تشغيل تلقائي عند فتح التطبيق)
+      let pendingResume = null; // { si, time }
+      function autoStartSession() {
+        const p = lsJSON('lastPos') || lsJSON('settings');
+        if (!p) return;
+        const num = v => (v === null || v === undefined || v === '') ? null : parseInt(v);
+        const ri = num(p.rIdx), mi = num(p.mIdx), si = num(p.sIdx);
+        if (ri === null || si === null || isNaN(ri) || isNaN(si)) return;
+        if (ri < 0 || ri >= reciters.length || si < 0 || si >= surahs.length) return;
+        recSel.value = ri; rIdx = ri; buildMoshafList();
+        const mo = (reciters[ri] && reciters[ri].moshaf) || [];
+        if (mi !== null && !isNaN(mi) && mi >= 0 && mi < mo.length) { moshSel.value = mi; mIdx = mi; buildSurahList(); }
+        surahSel.value = si;
+        sIdx = (surahSel.value === String(si)) ? si : (surahSel.value === '' ? null : parseInt(surahSel.value));
+        updateStatus(); updateDlLink(); updateFavIcon(); renderNP(); saveSettings();
+        const t = parseFloat(p.time) || 0;
+        if (t > 0 && sIdx !== null) pendingResume = { si: sIdx, time: t };
+        openTextPanel();
+      }
+
       /* ============ NOW PLAYING ============ */
       function renderNP() {
         if (rIdx === null || sIdx === null) { npCard.classList.add('hidden'); return; }
@@ -536,9 +562,19 @@
         const now = Date.now();
         if (!force && now - lastPosSavedAt < 3000) return;
         lastPosSavedAt = now;
-        lsSave('lastPos', JSON.stringify({ rIdx, mIdx, sIdx, time: audio.currentTime || 0 }));
+        let time = audio.currentTime || 0;
+        // لا نمحو الموضع المحفوظ إن لم يبدأ تشغيل فعلي بعد (الصوت لم يُحمّل)
+        if (!time && (!audio.src || !isFinite(audio.duration) || !audio.duration)) {
+          const prev = lsJSON('lastPos');
+          if (prev && prev.rIdx === rIdx && prev.sIdx === sIdx && (prev.time || 0) > 0) time = prev.time;
+        }
+        lsSave('lastPos', JSON.stringify({ rIdx, mIdx, sIdx, time }));
       }
       window.addEventListener('pagehide', () => saveLastPos(true));
+      // الحفظ عند إخفاء التطبيق (تبديل التطبيقات/قفل الشاشة على الجوال)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') saveLastPos(true);
+      });
       function updateProg() {
         if (dragging) return;
         const dur = audio.duration || 0, cur = audio.currentTime || 0;
@@ -1119,6 +1155,7 @@
         $('searchNote').textContent = t.srchNote;
         randRecBtn.title = t.randRec; randSurahBtn.title = t.randSurah; favBtn.title = t.favTitle;
         bmBtn.title = t.bmTitle; cdStartBtn.title = t.cdStart;
+        if ($('radioBtn')) { $('radioBtn').title = t.radio; $('radioBtn').setAttribute('aria-label', t.radio); }
         langBtn.textContent = lang === 'ar' ? 'EN' : 'ع';
         repBtn.textContent = t.repLabel + t.repModes[repeatMode];
         playBtn.textContent = isPlaying ? t.pause : t.play;
@@ -1126,6 +1163,7 @@
         updateStatus(); updateDlLink(); updateBm(); updateStats(); updateRecent(); renderNP();
         if (typeof refreshQcfChip === 'function') refreshQcfChip(); // ترجمة شارة خطوط المصحف
         updateQpLabels(); // ترجمة عناوين لوحة نص السورة
+        fillSettingsLabels(); // تسميات الإعدادات والتوثيق عند بدء التشغيل أيضاً
         if (dlBtn) dlBtn.textContent = dlSection.style.display === 'block' ? t.hideDl : t.dlSurah;
         // dlAllBtn split into dlAllBtnCards + dlAllBtnLinks (no text update needed)
         if ($('cdHeader')) $('cdHeader').textContent = t.cdHeader;
@@ -1177,6 +1215,7 @@
       /* ============ SETTINGS ============ */
       function saveSettings() {
         lsSave('settings', JSON.stringify({ rIdx, mIdx, sIdx, vol: volCtrl.value, speed: speedCtrl.value, repeatMode, stopAfter: stopSel?.value }));
+        saveLastPos(true); // حفظ القارئ والسورة والموضع للاستكمال عند الإغلاق
       }
       function loadSettings() {
         try {
@@ -1248,6 +1287,15 @@
           document.title = lang === 'ar' ? 'مشغل القرآن الكريم' : 'Quran Player';
           if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
         }
+        saveLastPos(true);
+      });
+      // تطبيق الموضع المحفوظ عند أول تحميل لبيانات الصوت (بدون تشغيل تلقائي)
+      audio.addEventListener('loadedmetadata', () => {
+        if (!pendingResume) return;
+        if (pendingResume.si === sIdx && pendingResume.time > 0 && isFinite(audio.duration)) {
+          audio.currentTime = Math.min(pendingResume.time, Math.max(0, audio.duration - 0.5));
+        }
+        pendingResume = null;
         saveLastPos(true);
       });
       audio.addEventListener('ended', () => {
@@ -2922,6 +2970,7 @@
           mushaf: '📖 المصحف المصور', mushafSrc: 'المصدر الافتراضي',
           play: '🎵 التشغيل', speed: 'سرعة التشغيل', vol: 'مستوى الصوت', rep: 'التكرار', stop: 'إيقاف تلقائي بعد',
           misc: '🔔 الإشعارات والبيانات', notif: 'تنبيه عند انتهاء السورة / المؤقت', clear: '🗑️ مسح جميع البيانات',
+          credit: '✦ تطوير وبرمجة عامر الحلحلي', creditAria: 'توثيق المطوّر',
           scripts: ['🕌 رسم عثماني', '📝 نص مطبوع', '✏️ نص عادي', '🕋 خط المصحف (QCF)'],
           reps: ['بدون تكرار', 'مرة واحدة', 'مرتان', 'ثلاث مرات', '∞ لا نهائي']
         },
@@ -2935,6 +2984,7 @@
           mushaf: '📖 Mushaf Images', mushafSrc: 'Default source',
           play: '🎵 Playback', speed: 'Playback speed', vol: 'Volume', rep: 'Repeat', stop: 'Auto-stop after',
           misc: '🔔 Notifications & Data', notif: 'Alert when surah / timer ends', clear: '🗑️ Clear all data',
+          credit: '✦ Designed & developed by Amer Al-Halahli', creditAria: 'Developer credit',
           scripts: ['🕌 Uthmani', '📝 Print', '✏️ Plain', '🕋 Mushaf font (QCF)'],
           reps: ['No repeat', 'Once', 'Twice', '3 times', '∞ Infinite']
         }
@@ -2998,6 +3048,9 @@
         // خيارات التكرار
         const rs = $('setRepeat');
         if (rs) Array.from(rs.options).forEach((o, i) => o.textContent = L.reps[i]);
+        // توثيق المطوّر في نهاية الشاشة
+        const cr = $('setCredit');
+        if (cr) { cr.textContent = L.credit; cr.setAttribute('aria-label', L.creditAria); }
         applySettingsTips();
       }
 

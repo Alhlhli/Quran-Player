@@ -5,7 +5,7 @@
    - صور المصحف: cache-first مع حد أقصى للعدد
    - ملفات mp3: تمرير مباشر (لدعم طلبات Range وعدم ملء الكاش)
 ============================================================= */
-const VERSION = 'v4';
+const VERSION = 'v9';
 const APP_CACHE = 'quran-app-' + VERSION;
 const DATA_CACHE = 'quran-data-' + VERSION;
 const IMG_CACHE = 'quran-img-' + VERSION;

@@ -4382,6 +4382,68 @@
       text-align-last: start;
     }
 
+    /*=======================================================
+  PROJECTS / CREDIT / DARK MUSHAF
+======================================================*/
+    /* رابط مشروع القرآن راديو بجوار زر الثيم */
+    a.top-btn {
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-radio {
+      background: linear-gradient(135deg, #7e57c2, #512da8);
+      font-size: 13px;
+      padding: 7px 11px;
+      opacity: 0.94;
+    }
+
+    .btn-radio:hover {
+      opacity: 1;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(81, 45, 168, 0.45);
+    }
+
+    /* توثيق المطوّر في نهاية شاشة الإعدادات */
+    .set-credit {
+      text-align: center;
+      padding: 14px 8px 4px;
+      margin-top: 6px;
+      border-top: 1px dashed var(--input-border);
+    }
+
+    .set-credit a {
+      color: var(--acc1);
+      text-decoration: none;
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      opacity: 0.92;
+    }
+
+    .set-credit a:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+
+    html[dir=ltr] .set-credit {
+      text-align: center;
+    }
+
+    /* الوضع الداكن: تعكس خلفية صور المصحف الوضع الغامق بدل التوهج الأبيض */
+    body.dark .mushaf-page-img {
+      filter: brightness(0.84) contrast(1.04) saturate(0.92);
+      background: #12121c;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+    }
+
+    body.dark #qpMushafBody,
+    body.dark .qp-mushaf {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
     /* فواصل أسطر المصحف تبقى كسّر أسطر مرئي */
     .qp-text-wrap.qcf-mode.qlines .si-ayah,
     .qp-text-wrap.qcf-mode.qlines .si-ayah-text {
