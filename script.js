@@ -141,11 +141,15 @@
           qcfReady: '🕋 خطوط المصحف جاهزة',
           qcfPartial: '⚠️ تعذّر تحميل بعض الصفحات — عُرضت آياتها بالنص العادي',
           qcfError: '⚠️ تعذّر تحميل خطوط المصحف — عُرض النص العادي',
+          tajweedLoading: n => n ? `⏳ تحميل خط التجويد… ${n}` : '⏳ تحميل خط التجويد…',
+          tajweedReady: '🎨 خط التجويد جاهز',
+          tajweedPartial: '⚠️ تعذّر تحميل بعض صفحات خط التجويد — عُرضت آياتها بالنص العادي',
+          tajweedError: '⚠️ تعذّر تحميل خط التجويد — عُرض النص العادي',
           copiedOk: '✅ تم النسخ إلى الحافظة',
           // عناوين لوحة نص السورة (تُترجم عند تبديل اللغة)
           qpTitle: 'القرآن الكريم',
           qpTabText: '📖 النص', qpTabInfo: 'ℹ️ المعلومات', qpTabMushaf: '🖼️ المصحف',
-          optUthmani: '🕌 رسم عثماني', optPrint: '📝 نص مطبوع', optSimple: '✏️ نص عادي', optQcf: '🕋 خط المصحف',
+          optUthmani: '🕌 رسم عثماني', optPrint: '📝 نص مطبوع', optSimple: '✏️ نص عادي', optQcf: '🕋 خط المصحف', optTajweed: '🎨 خط التجويد',
           optBlock: '≡ كل آية بسطر', optInline: '⋯ متتاليات',
           qpSearchPh: '🔍 ابحث في السورة (بدون حركات) أو برقم الآية...',
           qpAutoScrollLbl: 'متزامن تقريباً مع التلاوة',
@@ -192,11 +196,15 @@
           qcfReady: '🕋 Mushaf fonts ready',
           qcfPartial: '⚠️ Some pages failed — those verses shown as plain text',
           qcfError: '⚠️ Mushaf fonts failed to load — plain text shown',
+          tajweedLoading: n => n ? `⏳ Loading tajweed font… ${n}` : '⏳ Loading tajweed font…',
+          tajweedReady: '🎨 Tajweed font ready',
+          tajweedPartial: '⚠️ Some tajweed pages failed to load — plain text shown',
+          tajweedError: '⚠️ Tajweed font failed to load — plain text shown',
           copiedOk: '✅ Copied to clipboard',
           // Surah text panel labels (translated on language switch)
           qpTitle: 'The Noble Quran',
           qpTabText: '📖 Text', qpTabInfo: 'ℹ️ Info', qpTabMushaf: '🖼️ Mushaf',
-          optUthmani: '🕌 Uthmani', optPrint: '📝 Print', optSimple: '✏️ Plain', optQcf: '🕋 Mushaf font',
+          optUthmani: '🕌 Uthmani', optPrint: '📝 Print', optSimple: '✏️ Plain', optQcf: '🕋 Mushaf font', optTajweed: '🎨 Tajweed font',
           optBlock: '≡ One ayah per line', optInline: '⋯ Flowing text',
           qpSearchPh: '🔍 Search in surah (without diacritics) or by ayah number...',
           qpAutoScrollLbl: 'Roughly synced with the recitation',
@@ -478,6 +486,7 @@
         loadBookmarks(); loadStats(); loadRecent();
         updateFavIcon();
         updateUI();
+        if (typeof initTajweedLegend === 'function') initTajweedLegend();
       }
 
       async function loadReciters() {
@@ -1415,7 +1424,7 @@
         const set = (id, v) => { const e = $(id); if (e && v != null) e.textContent = v; };
         set('qpTabText', t.qpTabText); set('qpTabInfo', t.qpTabInfo); set('qpTabMushaf', t.qpTabMushaf);
         set('optUthmani', t.optUthmani); set('optPrint', t.optPrint);
-        set('optSimple', t.optSimple); set('optQcf', t.optQcf);
+        set('optSimple', t.optSimple); set('optQcf', t.optQcf); set('optTajweed', t.optTajweed);
         set('optBlock', t.optBlock); set('optInline', t.optInline);
         set('qpAutoScrollLbl', t.qpAutoScrollLbl);
         const ps = $('qpSearch'); if (ps) ps.placeholder = t.qpSearchPh;
@@ -1426,11 +1435,15 @@
         setTip('optQcf', lang === 'ar'
           ? 'خطوط المصحف (QCF) — رسم الآيات بخطوط المصحف المعتمدة'
           : 'Mushaf fonts (QCF) — render ayahs with the official mushaf typeface');
+        setTip('optTajweed', lang === 'ar'
+          ? 'خط التجويد الملوّن (QCF V4) — أحكام التجويد ملوّنة'
+          : 'Colored Tajweed font (QCF V4) — Tajweed rules highlighted in color');
         setTip('optBlock', t.optBlock); setTip('optInline', t.optInline);
         setTip('qpFontMinus', t.qpFontMinus); setTip('qpFontPlus', t.qpFontPlus);
         // العنوان الافتراضي عندما لا تكون هناك سورة محمّلة
         const qt = $('qpTitle');
         if (qt && !loadedSurahNum) qt.textContent = t.qpTitle;
+        if (typeof updateTajweedLegendLabels === 'function') updateTajweedLegendLabels();
       }
 
       /* ============ LANGUAGE ============ */
@@ -1905,12 +1918,17 @@
         const t = T[lang];
         const state = qcfChipState;
         chip.className = 'qp-qcf-chip ' + state;
+        const isTajweed = currentScript === 'tajweed';
+        const loadingTxt = isTajweed ? t.tajweedLoading : t.qcfLoading;
+        const readyTxt = isTajweed ? t.tajweedReady : t.qcfReady;
+        const partialTxt = isTajweed ? t.tajweedPartial : t.qcfPartial;
+        const errorTxt = isTajweed ? t.tajweedError : t.qcfError;
         chip.textContent = state === 'loading'
-          ? (typeof t.qcfLoading === 'function' ? t.qcfLoading(qcfChipProgress) : t.qcfLoading)
-          : state === 'ready' ? t.qcfReady
-            : state === 'partial' ? t.qcfPartial
-              : state === 'error' ? t.qcfError : '';
-        chip.style.display = (currentScript === 'qcf' && state) ? 'inline-flex' : 'none';
+          ? (typeof loadingTxt === 'function' ? loadingTxt(qcfChipProgress) : loadingTxt)
+          : state === 'ready' ? readyTxt
+            : state === 'partial' ? partialTxt
+              : state === 'error' ? errorTxt : '';
+        chip.style.display = ((currentScript === 'qcf' || currentScript === 'tajweed') && state) ? 'inline-flex' : 'none';
       }
 
       /* تحضير خطوط صفحة (صفحات) السورة ثم إعادة الرسم */
@@ -1943,18 +1961,215 @@
         }
       }
 
+      /* ══════════════════════════════════════════════
+         خط التجويد الملوّن (Tajweed Uthmani — QCF V4)
+         - مصادر الخطوط: CDN jsDelivr + GitHub Raw لجميع 604 صفحة
+         - يدعم ترميز ألوان أحكام التجويد (COLR/CPAL)
+         - تسجيل قواعد @font-palette-values لتبديل اللون الأسود
+           تلقائياً إلى أبيض ناصع في الثيم الغامق
+      ══════════════════════════════════════════════ */
+      const TAJWEED_SOURCES = [
+        'https://cdn.jsdelivr.net/gh/YaseenDotDev/quran-qcf-v4@main/',
+        'https://raw.githubusercontent.com/YaseenDotDev/quran-qcf-v4/main/'
+      ];
+      const tajweedFontFile = page => `p${page}.ttf`;
+      const tajweedFontName = page => 'QCF_Tajweed_P' + String(page).padStart(3, '0');
+      const tajweedFontUrl = (page, base) => (base || TAJWEED_SOURCES[0]) + tajweedFontFile(page);
+      const tajweedFontsReady = new Set();
+      const tajweedFontsPending = new Map();
+      const tajweedPagesFailed = new Set();
+      let tajweedReadySurah = null;
+
+      function registerTajweedPalette(fam, page) {
+        let styleEl = document.getElementById('tajweedPalettes');
+        if (!styleEl) {
+          styleEl = document.createElement('style');
+          styleEl.id = 'tajweedPalettes';
+          document.head.appendChild(styleEl);
+        }
+        const ruleId = `--tajweed-dark-${String(page).padStart(3, '0')}`;
+        if (!styleEl.textContent.includes(ruleId)) {
+          styleEl.textContent += `\n@font-palette-values ${ruleId} { font-family: '${fam}'; base-palette: 1; }`;
+        }
+      }
+
+      function ensureTajweedFont(page) {
+        const fam = tajweedFontName(page);
+        if (tajweedFontsReady.has(fam)) return Promise.resolve(fam);
+        if (tajweedFontsPending.has(fam)) return tajweedFontsPending.get(fam);
+        const p = (async () => {
+          let lastErr = null;
+          for (const base of TAJWEED_SOURCES) {
+            for (let attempt = 0; attempt < 2; attempt++) {
+              try {
+                const ff = new FontFace(fam, `url("${tajweedFontUrl(page, base)}") format("truetype")`);
+                await ff.load();
+                document.fonts.add(ff);
+                registerTajweedPalette(fam, page);
+                tajweedFontsReady.add(fam);
+                return fam;
+              } catch (e) {
+                lastErr = e;
+                await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
+              }
+            }
+          }
+          throw lastErr || new Error('tajweed font load failed');
+        })();
+        tajweedFontsPending.set(fam, p);
+        p.catch(() => tajweedFontsPending.delete(fam));
+        return p;
+      }
+
+      async function loadTajweedFonts(pages, onProgress) {
+        let cursor = 0, done = 0;
+        const failed = [];
+        const workers = Array.from({ length: Math.min(4, pages.length) }, async () => {
+          while (cursor < pages.length) {
+            const pg = pages[cursor++];
+            try { await ensureTajweedFont(pg); } catch (e) { failed.push(pg); }
+            done++;
+            if (onProgress) onProgress(done, pages.length);
+          }
+        });
+        await Promise.all(workers);
+        return failed;
+      }
+
+      async function prepareTajweed(surahNum) {
+        if (!surahNum || currentScript !== 'tajweed') return;
+        if (tajweedReadySurah === surahNum) { setQcfChip(tajweedPagesFailed.size ? 'partial' : 'ready'); return; }
+        tajweedPagesFailed.clear();
+        setQcfChip('loading', '…');
+        try {
+          await loadQcfText();
+          const pages = qcfSurahPages(surahNum);
+          if (!pages.length) throw new Error('no page mapping');
+          const failed = await loadTajweedFonts(pages, (done, total) => {
+            if (loadedSurahNum === surahNum && currentScript === 'tajweed')
+              setQcfChip('loading', done + '/' + total);
+          });
+          if (loadedSurahNum !== surahNum || currentScript !== 'tajweed') return;
+          failed.forEach(p => tajweedPagesFailed.add(p));
+          if (failed.length === pages.length) throw new Error('all tajweed fonts failed');
+          tajweedReadySurah = surahNum;
+          setQcfChip(failed.length ? 'partial' : 'ready');
+          if (failed.length) showToast(T[lang].tajweedPartial, 'warn');
+          reRenderText();
+        } catch (e) {
+          if (loadedSurahNum !== surahNum) return;
+          tajweedReadySurah = null;
+          setQcfChip('error');
+          showToast(T[lang].tajweedError, 'warn');
+          console.warn('Tajweed Font:', e);
+        }
+      }
+
+      /* ══════════════════════════════════════════════
+         دليل أحكام التجويد الملوّن (Tajweed Rules Legend)
+         - عرض مقتضب ومفصل لأحكام التجويد بألوانها المضبوطة
+         - قابل للطي والإظهار مع حفظ تفضيل المستخدم
+      ══════════════════════════════════════════════ */
+      const TJ_LABELS = {
+        ar: {
+          sakin: 'الحرف الساكن',
+          ghunnah: 'غُنّة / إخفاء',
+          qalqalah: 'قلقلة',
+          tafkheem: 'تفخيم',
+          maddTabee: 'مدّ طبيعي',
+          maddMunfasil: 'مدّ منفصل',
+          maddMuttasil: 'مدّ متّصل',
+          maddLazim: 'مدّ لازم',
+          sakinTitle: 'الحرف الساكن', sakinDesc: 'حرف لا يُنطق في الوصل (همزة وصل، لام شمسية)',
+          ghunnahTitle: 'غُنّة / إخفاء', ghunnahDesc: 'صوت الغنّة عند الإدغام والإخفاء والإقلاب',
+          qalqalahTitle: 'قلقلة', qalqalahDesc: 'اضطراب صوت الحرف عند سكونه (ق ط ب ج د)',
+          tafkheemTitle: 'تفخيم الصوت', tafkheemDesc: 'تفخيم لام لفظ الجلالة ونحوها',
+          maddTabeeTitle: 'مدّ طبيعي', maddTabeeDesc: 'حركتان',
+          maddMunfasilTitle: 'مدّ جائز منفصل', maddMunfasilDesc: '٢ أو ٤ أو ٥ حركات',
+          maddMuttasilTitle: 'مدّ واجب متّصل', maddMuttasilDesc: '٤ أو ٥ حركات',
+          maddLazimTitle: 'مدّ لازم', maddLazimDesc: '٦ حركات',
+          hideBtn: '^ إخفاء', showBtn: '⌄ دليل الأحكام'
+        },
+        en: {
+          sakin: 'Silent Letter',
+          ghunnah: 'Ghunnah / Ikhfa',
+          qalqalah: 'Qalqalah',
+          tafkheem: 'Tafkheem',
+          maddTabee: 'Natural Madd',
+          maddMunfasil: 'Separated Madd',
+          maddMuttasil: 'Connected Madd',
+          maddLazim: 'Necessary Madd',
+          sakinTitle: 'Silent Letter', sakinDesc: 'Not pronounced in connected speech (Wasl / Solar Lam)',
+          ghunnahTitle: 'Ghunnah / Ikhfa', ghunnahDesc: 'Nasalization sound during Idgham, Ikhfa & Iqlab',
+          qalqalahTitle: 'Qalqalah', qalqalahDesc: 'Echoing sound of quiescent letters (ق ط ب ج د)',
+          tafkheemTitle: 'Tafkheem (Heavy)', tafkheemDesc: 'Heavy pronunciation of Lam in Allah & similar',
+          maddTabeeTitle: 'Natural Madd', maddTabeeDesc: '2 vowel counts (Harakah)',
+          maddMunfasilTitle: 'Permissible Separated Madd', maddMunfasilDesc: '2, 4 or 5 vowel counts',
+          maddMuttasilTitle: 'Obligatory Connected Madd', maddMuttasilDesc: '4 or 5 vowel counts',
+          maddLazimTitle: 'Necessary Madd', maddLazimDesc: '6 vowel counts',
+          hideBtn: '^ Hide', showBtn: '⌄ Rules Guide'
+        }
+      };
+
+      function updateTajweedLegendLabels() {
+        const L = TJ_LABELS[lang] || TJ_LABELS.ar;
+        const leg = $('tajweedLegend');
+        if (!leg) return;
+        leg.querySelectorAll('[data-k]').forEach(el => {
+          const k = el.dataset.k;
+          if (L[k]) el.textContent = L[k];
+        });
+        const isCollapsed = leg.classList.contains('collapsed');
+        const btn = $('tjToggleBtn');
+        if (btn) btn.textContent = isCollapsed ? L.showBtn : L.hideBtn;
+      }
+
+      function initTajweedLegend() {
+        const leg = $('tajweedLegend');
+        const bar = $('tjLegendBar');
+        const btn = $('tjToggleBtn');
+        if (!leg || !bar || !btn) return;
+
+        const saved = ls('tajweedLegendOpen');
+        const isOpen = saved === null ? true : saved === '1';
+        leg.classList.toggle('collapsed', !isOpen);
+        updateTajweedLegendLabels();
+
+        const toggleLegend = () => {
+          const nowOpen = leg.classList.toggle('collapsed') === false;
+          lsSave('tajweedLegendOpen', nowOpen ? '1' : '0');
+          updateTajweedLegendLabels();
+        };
+
+        bar.onclick = toggleLegend;
+        btn.onclick = e => { e.stopPropagation(); toggleLegend(); };
+      }
+
       /* ── خيارات النص ── */
       function setScript(mode) {
         currentScript = mode;
-        document.querySelectorAll('#optUthmani,#optPrint,#optSimple,#optQcf').forEach(b => b.classList.remove('active'));
-        const ids = { uthmani: 'optUthmani', print: 'optPrint', simple: 'optSimple', qcf: 'optQcf' };
+        document.querySelectorAll('#optUthmani,#optPrint,#optSimple,#optQcf,#optTajweed').forEach(b => b.classList.remove('active'));
+        const ids = { uthmani: 'optUthmani', print: 'optPrint', simple: 'optSimple', qcf: 'optQcf', tajweed: 'optTajweed' };
         $(ids[mode])?.classList.add('active');
-        if (mode !== 'qcf') setQcfChip('');
+        if (mode !== 'qcf' && mode !== 'tajweed') setQcfChip('');
+
+        // إظهار أو إخفاء دليل أحكام التجويد
+        const leg = $('tajweedLegend');
+        if (leg) {
+          leg.style.display = (mode === 'tajweed') ? 'block' : 'none';
+          if (mode === 'tajweed') initTajweedLegend();
+        }
+
         if (loadedSurahNum) {
           if (mode === 'qcf') {
             if (qcfReadySurah === loadedSurahNum) { setQcfChip(qcfPagesFailed.size ? 'partial' : 'ready'); reRenderText(); }
             else prepareQcf(loadedSurahNum);
-          } else reRenderText();
+          } else if (mode === 'tajweed') {
+            if (tajweedReadySurah === loadedSurahNum) { setQcfChip(tajweedPagesFailed.size ? 'partial' : 'ready'); reRenderText(); }
+            else prepareTajweed(loadedSurahNum);
+          } else {
+            reRenderText();
+          }
         }
       }
       function setLineMode(mode) {
@@ -1999,10 +2214,13 @@
         appLayout.classList.remove('text-closed');
         appLayout.classList.add('text-open');
         textViewBtn.classList.add('active');
+        if (window.innerWidth <= 767) document.body.classList.add('text-open-mobile');
         lastHighlightTime = 0;
         if (mobileTabBar) { $('mtabText')?.classList.add('active'); $('mtabPlayer')?.classList.remove('active'); }
         // افتح على تبويب النص افتراضياً
         switchQpTab('text');
+        const leg = $('tajweedLegend');
+        if (leg) leg.style.display = (currentScript === 'tajweed') ? 'block' : 'none';
         if (sIdx !== null) loadQuranText(surahs[sIdx].n);
       }
 
@@ -2011,6 +2229,7 @@
         appLayout.classList.remove('text-open');
         appLayout.classList.add('text-closed');
         textViewBtn.classList.remove('active');
+        document.body.classList.remove('text-open-mobile');
         if (mobileTabBar) { $('mtabPlayer')?.classList.add('active'); $('mtabText')?.classList.remove('active'); }
       }
 
@@ -2061,8 +2280,9 @@
         // رسم النص فوراً
         renderTextPane(surahNum, null, ayahs);
 
-        // خطوط المصحف (QCF): تُحمّل خطوط الصفحات ثم يُعاد الرسم بخط المصحف
+        // خطوط المصحف (QCF) أو خط التجويد الملوّن: تُحمّل خطوط الصفحات ثم يُعاد الرسم
         if (currentScript === 'qcf') prepareQcf(surahNum);
+        else if (currentScript === 'tajweed') prepareTajweed(surahNum);
 
         // ثم المعلومات بشكل غير متزامن
         fetchSurahInfo(surahNum).then(info => {
@@ -2311,6 +2531,11 @@
 
 
       /* ── بناء HTML للآيات ── */
+      const AR_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+      function toArDigits(n) {
+        return String(n ?? '').replace(/[0-9]/g, d => AR_DIGITS[+d]);
+      }
+
       const JUZ_STARTS = [
         [1, 1], [2, 142], [2, 253], [3, 93], [4, 24], [4, 148], [5, 82], [6, 111], [7, 88], [8, 41],
         [9, 93], [10, 110], [11, 6], [11, 97], [12, 52], [13, 18], [14, 53], [15, 92], [17, 1], [18, 75],
@@ -2318,6 +2543,14 @@
       ];
 
       function renderAyahsHTML(surahNum, ayahs, juz_n, sajdahs) {
+        const s = surahs.find(x => x.n === surahNum);
+        const si = s ? surahs.indexOf(s) : (surahNum - 1);
+        const smeta = (lang === 'ar' ? SMETA_AR : SMETA_EN)[si] || [];
+        const ayahCount = smeta[0] || ayahs.length;
+        const surahType = smeta[1] || '';
+        const rawName = s ? s.name.replace(/^سورة\s+/, '') : '';
+        const cleanName = rawName || (s ? s.name : '');
+
         const juzInSurah = JUZ_STARTS.filter(([sn]) => sn === surahNum);
         const sajdahNums = new Set((sajdahs || []).map(sj =>
           sj?.verse_key ? parseInt(sj.verse_key.split(':')[1]) : (typeof sj === 'number' ? sj : null)
@@ -2325,15 +2558,41 @@
         const isInline  = currentLineMode === 'inline';
         const isUthmani = currentScript === 'uthmani';
         const isSimple  = currentScript === 'simple';
-        // خطوط المصحف: النص بترميز الصفحة المصحفية إن كانت جاهزة
-        const qcfEntry = (currentScript === 'qcf' && qcfReadySurah === surahNum) ? qcfData[String(surahNum)] : null;
-        const qcfWrapCls = qcfEntry ? ' qcf-mode' + (mushafLines ? ' qlines' : '') : '';
+        const isQcf     = currentScript === 'qcf';
+        const isTajweed = currentScript === 'tajweed';
+        const isQcfLike = isQcf || isTajweed;
+
+        // خطوط المصحف أو خط التجويد: النص بترميز الصفحة المصحفية إن كانت جاهزة
+        const qcfReady = isTajweed ? (tajweedReadySurah === surahNum) : (qcfReadySurah === surahNum);
+        const qcfEntry = (isQcfLike && qcfReady) ? qcfData[String(surahNum)] : null;
+        const qcfWrapCls = qcfEntry ? (' qcf-mode' + (isTajweed ? ' tajweed-mode' : '')) : '';
+        const pagesFailed = isTajweed ? tajweedPagesFailed : qcfPagesFailed;
+
+        // دالة إزالة البسملة الملتصقة بأول آية من الـ API لتظهر في ترويسة مستقلة كالمصحف
+        function stripBasmalahPrefix(txt) {
+          if (!txt) return '';
+          const words = txt.trim().split(/\s+/);
+          if (words.length >= 5) {
+            const first4 = normalizeAr(words.slice(0, 4).join(' '));
+            if (first4.startsWith(normalizeAr('بسم الله الرحمن الرحيم')) || first4.startsWith(normalizeAr('بسم'))) {
+              return words.slice(4).join(' ');
+            }
+          }
+          return txt;
+        }
+
         // دالة اختيار النص
-        const pickTxt = ay => isUthmani ? ay.text : (isSimple ? (ay.textSimple || ay.textPrint) : ay.textPrint);
+        const pickTxt = ay => {
+          let t = isUthmani ? ay.text : (isSimple ? (ay.textSimple || ay.textPrint) : ay.textPrint);
+          if (surahNum !== 1 && surahNum !== 9 && ay.numberInSurah === 1) {
+            t = stripBasmalahPrefix(t);
+          }
+          return t;
+        };
         const attrEsc = s => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         // مسافة بعرضها صفري بين رموز المصحف: نقطة تبرير ونقطة كسر بلا فراغ مرئي
         const QSP = '<span class="qsp"> </span>';
-        // دالة النص العادي (بديل عند عدم توفّر خط المصحف)
+        // دالة النص العادي (بديل عند عدم توفّر خط المصحف أو خط التجويد)
         const plainCell = plain => ({ txt: plain, style: `font-size:${qpFontSize}px`, cls: '', data: '', marker: true });
         // محتوى الآية + أنماطها (نص مصحف أو نص عادي)
         const cell = ay => {
@@ -2343,69 +2602,118 @@
           if (!raw.replace(/\s+/g, '')) return plainCell(plain);
           const pg = qcfPageFor(surahNum, ay.numberInSurah);
           // صفحة لم يُحمَّل خطها → نعرض الآية بالنص العادي بدل مربعات فارغة
-          if (qcfPagesFailed.has(pg)) return plainCell(plain);
-          const fam = qcfFontName(pg);
-          // كل رمز خط = كلمة واحدة والمحارف متلاصقة بلا مسافة، و(\n) يحدّد نهاية سطر المصحف.
-          // نفصل الأسطر ونضع مسافةً بعرضها صفري بين الرموز (نقطة تبرير + نقطة كسر للسطر).
-          // كل سطر مصحف: رموز متتابعة تفصلها مسافة بعرضها صفري.
-          // آخر رمز في كل آية = زخرفة نهاية الآية، وهي تحمل رقم الآية بالحروف
-          // العربية داخلها كما في المصحف — فلا نضيف رقماً ثانياً فوقها تفادياً
-          // لالتقاطع (ظهر الرقم مرتين: عربي وأنجليزي فوق بعضهما).
+          if (pagesFailed.has(pg)) return plainCell(plain);
+          const fam = isTajweed ? tajweedFontName(pg) : qcfFontName(pg);
+          const pgStr = String(pg).padStart(3, '0');
+          const palStyle = isTajweed ? `--page-pal:--tajweed-dark-${pgStr};` : '';
+
+          // جمع رموز الآية بانسيابية دون كسر مصطنع داخل الآية لضبط التبرير كالمصحف
           const lines = raw.split('\n').map(s => Array.from(s).filter(ch => !/\s/.test(ch)));
           const parts = lines.map(arr => arr.join(QSP));
-          const txt = mushafLines ? parts.join('\n') : parts.filter(p => p.length).join(QSP);
+          const txt = parts.filter(p => p.length).join(QSP);
           return {
             txt,
-            style: `font-family:'${fam}'`,
-            cls: ' qcf-ayah', data: ` data-text="${attrEsc(plain)}"`, marker: false
+            style: `font-family:'${fam}';${palStyle}`,
+            cls: ' qcf-ayah' + (isTajweed ? ' tajweed-ayah' : ''),
+            data: ` data-text="${attrEsc(plain)}"`,
+            marker: false
           };
         };
 
-        // بسملة
         let html = '';
-        if (surahNum !== 9) {
-          const firstText = ayahs[0]?.text || '';
-          // في وضع خط المصحف لا تتضمّن رموز الآيات البسملة (تظهر كسطر مستقل في المصحف)
-          const needBasmalah = (currentScript === 'qcf' && surahNum !== 1)
-            ? true
-            : !normalizeAr(firstText).startsWith(normalizeAr('بسم'));
-          if (needBasmalah)
-            html += `<div class="si-basmalah">بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ</div>`;
+
+        // 1. برواز فاتحة السورة المزخرف كالمصحف الشريف
+        html += `
+        <div class="mushaf-surah-banner" role="region" aria-label="سورة ${cleanName}">
+          <div class="ms-inner">
+            <div class="ms-meta ms-meta-right">
+              <span class="ms-badge">${surahType || (lang === 'ar' ? 'مكية' : 'Meccan')}</span>
+            </div>
+            <div class="ms-title-block">
+              <span class="ms-ornament">❖</span>
+              <span class="ms-name">سُورَةُ ${cleanName}</span>
+              <span class="ms-ornament">❖</span>
+            </div>
+            <div class="ms-meta ms-meta-left">
+              <span class="ms-badge">${toArDigits(ayahCount)} ${lang === 'ar' ? 'آية' : 'verses'}</span>
+            </div>
+          </div>
+        </div>`;
+
+        // 2. البسملة الشريفة المزخرفة (لكل السور عدا التوبة، وسورة الفاتحة آيتها الأولى هي البسملة)
+        if (surahNum !== 9 && surahNum !== 1) {
+          html += `
+          <div class="si-basmalah">
+            <span class="basmalah-decor">۞</span>
+            <span class="basmalah-text">بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ</span>
+            <span class="basmalah-decor">۞</span>
+          </div>`;
         }
 
+        // 3. الآيات مع فواصل صفحات المصحف الشريف
+        let lastPage = qcfPageFor(surahNum, 1);
+
         if (isInline) {
-          // وضع التدفق: كل الآيات في فقرة واحدة
+          // وضع التدفق: كل الآيات في فقرة واحدة بانسيابية المصحف
           html += `<div class="qp-text-wrap inline-mode${qcfWrapCls}" id="qpInlineWrap" style="--qcf-fs:${Math.round(qpFontSize * QCF_SCALE)}px">`;
-          ayahs.forEach(ay => {
+          ayahs.forEach((ay, idx) => {
+            const curPg = qcfPageFor(surahNum, ay.numberInSurah);
+            if (curPg && curPg !== lastPage) {
+              lastPage = curPg;
+              html += `
+              <div class="mushaf-page-sep" data-page="${curPg}">
+                <span class="mps-line"></span>
+                <span class="mps-pill"><span class="mps-deco">۞</span> ${lang === 'ar' ? 'صفحة' : 'Page'} ${toArDigits(curPg)} <span class="mps-deco">۞</span></span>
+                <span class="mps-line"></span>
+              </div>`;
+            }
+
             const juzEntry = juzInSurah.find(([, an]) => an === ay.numberInSurah);
             if (juzEntry) {
               const jNum = JUZ_STARTS.indexOf(juzEntry) + 1;
-              html += `<span class="juz-marker" style="display:inline-block;margin:0 4px">[${lang === 'ar' ? 'الجزء' : 'Juz'} ${jNum}]</span>`;
+              html += `<span class="juz-marker" style="display:inline-block;margin:0 6px">[${lang === 'ar' ? 'الجزء' : 'Juz'} ${toArDigits(jNum)}]</span>`;
             }
+
             const c = cell(ay);
             const hasSajdah = sajdahNums.has(ay.numberInSurah);
             const tail = c.marker
-              ? `&nbsp;<span class="si-ayah-marker">${ay.numberInSurah}</span>${hasSajdah ? '🙏' : ''}`
-              : (hasSajdah ? '🙏' : '');
-            // في وضع خط المصحف لا مسافة مرئية بين الآيات (الزخرفة تفصلها كما في المصحف)
-            const sep = c.marker ? ' ' : String.fromCharCode(0x200B);
-            html += `<span class="si-ayah${c.cls}" data-ayah="${ay.numberInSurah}"${c.data}
-        style="${c.style}">${c.txt}${tail}</span>${sep}`;
+              ? `&nbsp;<span class="si-ayah-marker">${toArDigits(ay.numberInSurah)}</span>${hasSajdah ? ' 🙏' : ''}`
+              : (hasSajdah ? ' 🙏' : '');
+            const sep = c.marker ? ' ' : ' ';
+            html += `<span class="si-ayah${c.cls}" data-ayah="${ay.numberInSurah}"${c.data} style="${c.style}">${c.txt}${tail}</span>${sep}`;
           });
+
+          // خاتمة السورة
+          html += `
+          <div class="mushaf-surah-footer">
+            <span class="ms-footer-deco">❖ ❖ ❖</span>
+            <span class="ms-footer-txt">${lang === 'ar' ? `نهاية سورة ${cleanName}` : `End of Surah ${cleanName}`}</span>
+            <span class="ms-footer-deco">❖ ❖ ❖</span>
+          </div>`;
           html += `</div>`;
         } else {
           // وضع الكتلة: كل آية بسطر مستقل
           html += `<div class="qp-text-wrap block-mode${qcfWrapCls}" style="--qcf-fs:${Math.round(qpFontSize * QCF_SCALE)}px">`;
-          ayahs.forEach(ay => {
+          ayahs.forEach((ay, idx) => {
+            const curPg = qcfPageFor(surahNum, ay.numberInSurah);
+            if (curPg && curPg !== lastPage) {
+              lastPage = curPg;
+              html += `
+              <div class="mushaf-page-sep" data-page="${curPg}">
+                <span class="mps-line"></span>
+                <span class="mps-pill"><span class="mps-deco">۞</span> ${lang === 'ar' ? 'صفحة' : 'Page'} ${toArDigits(curPg)} <span class="mps-deco">۞</span></span>
+                <span class="mps-line"></span>
+              </div>`;
+            }
             const juzEntry = juzInSurah.find(([, an]) => an === ay.numberInSurah);
             if (juzEntry) {
               const jNum = JUZ_STARTS.indexOf(juzEntry) + 1;
-              html += `<div class="juz-marker">${lang === 'ar' ? `— الجزء ${jNum} —` : `— Juz' ${jNum} —`}</div>`;
+              html += `<div class="juz-marker">${lang === 'ar' ? `— الجزء ${toArDigits(jNum)} —` : `— Juz' ${jNum} —`}</div>`;
             }
             const c = cell(ay);
             const hasSajdah = sajdahNums.has(ay.numberInSurah);
             const tail = c.marker
-              ? `&nbsp;<span class="si-ayah-marker">${ay.numberInSurah}</span>${hasSajdah ? '&nbsp;<span title="آية سجدة">🙏</span>' : ''}`
+              ? `&nbsp;<span class="si-ayah-marker">${toArDigits(ay.numberInSurah)}</span>${hasSajdah ? '&nbsp;<span title="آية سجدة">🙏</span>' : ''}`
               : (hasSajdah ? '&nbsp;<span title="آية سجدة">🙏</span>' : '');
             html += `<div class="si-ayah${c.cls}" data-ayah="${ay.numberInSurah}"${c.data}><div class="si-ayah-text" dir="rtl" style="${c.style}">${c.txt}${tail}</div></div>`;
           });
@@ -3268,15 +3576,24 @@
         const resizeDivider = $('layoutResizer');
         if (!qp) return;
 
-        // استعادة العرض المحفوظ من localStorage
-        const savedWidth = localStorage.getItem('quranPanelWidth');
-        if (savedWidth) {
-          const w = parseInt(savedWidth, 10);
-          if (!isNaN(w) && w >= 320) {
-            document.documentElement.style.setProperty('--qp-width', `${w}px`);
-            document.documentElement.style.setProperty('--app-max-width', `${w + 500}px`);
+        // استعادة العرض المحفوظ من localStorage فقط على أجهزة الكمبيوتر (فوق 767px)
+        function applySavedDesktopWidth() {
+          if (window.innerWidth <= 767) {
+            document.documentElement.style.removeProperty('--qp-width');
+            document.documentElement.style.removeProperty('--app-max-width');
+            return;
+          }
+          const savedWidth = localStorage.getItem('quranPanelWidth');
+          if (savedWidth) {
+            const w = parseInt(savedWidth, 10);
+            if (!isNaN(w) && w >= 320) {
+              document.documentElement.style.setProperty('--qp-width', `${w}px`);
+              document.documentElement.style.setProperty('--app-max-width', `${w + 500}px`);
+            }
           }
         }
+        applySavedDesktopWidth();
+        window.addEventListener('resize', applySavedDesktopWidth);
 
         let isDragging = false;
         let dragMode = null; // 'right' or 'divider'
@@ -3374,12 +3691,15 @@
         const panel = document.getElementById('quranPanel');
         const playerEl = document.querySelector('.player-card');
 
-        // Swipe على لوحة القرآن: swipe لأسفل يغلق اللوحة
+        // Swipe على رأس لوحة القرآن: swipe لأسفل على الرأس يغلق اللوحة
         if (panel) {
+          let startOnHeader = false;
           panel.addEventListener('touchstart', e => {
             tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY;
+            startOnHeader = !!e.target.closest('.qp-header');
           }, { passive: true });
           panel.addEventListener('touchend', e => {
+            if (!startOnHeader) return;
             const dx = e.changedTouches[0].clientX - tx0;
             const dy = e.changedTouches[0].clientY - ty0;
             if (Math.abs(dy) > 60 && dy > 0 && Math.abs(dx) < 50) closeTextPanel();
@@ -3505,7 +3825,7 @@
           play: '🎵 التشغيل', autoPlayChange: 'تشغيل مباشر عند تغيير القارئ / السورة', speed: 'سرعة التشغيل', vol: 'مستوى الصوت', rep: 'التكرار', stop: 'إيقاف تلقائي بعد',
           misc: '🔔 الإشعارات والبيانات', notif: 'تنبيه عند انتهاء السورة / المؤقت', clear: '🗑️ مسح جميع البيانات',
           credit: '✦ تطوير وبرمجة عامر الحلحلي', creditAria: 'توثيق المطوّر',
-          scripts: ['🕌 رسم عثماني', '📝 نص مطبوع', '✏️ نص عادي', '🕋 خط المصحف (QCF)'],
+          scripts: ['🕌 رسم عثماني', '📝 نص مطبوع', '✏️ نص عادي', '🕋 خط المصحف (QCF)', '🎨 خط التجويد الملوّن'],
           reps: ['بدون تكرار', 'مرة واحدة', 'مرتان', 'ثلاث مرات', '∞ لا نهائي']
         },
         en: {
@@ -3519,7 +3839,7 @@
           play: '🎵 Playback', autoPlayChange: 'Direct playback on reciter/surah change', speed: 'Playback speed', vol: 'Volume', rep: 'Repeat', stop: 'Auto-stop after',
           misc: '🔔 Notifications & Data', notif: 'Alert when surah / timer ends', clear: '🗑️ Clear all data',
           credit: '✦ Designed & developed by Amer Al-Halahli', creditAria: 'Developer credit',
-          scripts: ['🕌 Uthmani', '📝 Print', '✏️ Plain', '🕋 Mushaf font (QCF)'],
+          scripts: ['🕌 Uthmani', '📝 Print', '✏️ Plain', '🕋 Mushaf font (QCF)', '🎨 Colored Tajweed font'],
           reps: ['No repeat', 'Once', 'Twice', '3 times', '∞ Infinite']
         }
       };

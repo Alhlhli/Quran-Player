@@ -1,12 +1,12 @@
 /* =============================================================
-   Service Worker — مشغل القرآن الكريم (الإصدار المحترف v12)
+   Service Worker — مشغل القرآن الكريم (الإصدار المحترف v17)
    - ملفات التطبيق: Stale-While-Revalidate (عرض فوري + تحديث بالخلفية)
    - بيانات APIs (mp3quran / quran.com): Network-First مع رجوع للكاش عند انقطاع الإنترنت
-   - خطوط المصحف (QCF Fonts) من jsDelivr: Cache-First بسعة تخزين موسعة (300 صفحة)
+   - خطوط المصحف (QCF Fonts) وخط التجويد الملوّن: Cache-First بسعة تخزين موسعة (400 صفحة)
    - صور المصحف: Cache-First مع حد أقصى للعدد
    - الملفات الصوتية mp3: تمرير مباشر لدعم طلبات التجزئة (HTTP Byte-Range)
 ============================================================= */
-const VERSION = 'v12';
+const VERSION = 'v17';
 const APP_CACHE = 'quran-app-' + VERSION;
 const DATA_CACHE = 'quran-data-' + VERSION;
 const IMG_CACHE = 'quran-img-' + VERSION;
@@ -43,8 +43,8 @@ const IMG_HOSTS = [
 
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
-// خطوط المصحف الشريف QCF (604 ملف صفحة): تخزين Cache-First بسعة حتى 300 صفحة
-const QCF_HOSTS = ['cdn.jsdelivr.net'];
+// خطوط المصحف الشريف QCF وخط التجويد الملوّن (604 ملف صفحة): تخزين Cache-First بسعة حتى 400 صفحة
+const QCF_HOSTS = ['cdn.jsdelivr.net', 'raw.githubusercontent.com', 'quranpedia.net'];
 
 self.addEventListener('install', e => {
   e.waitUntil(

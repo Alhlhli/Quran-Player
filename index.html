@@ -97,6 +97,7 @@
               <option value="print">📝 نص مطبوع</option>
               <option value="simple">✏️ نص عادي</option>
               <option value="qcf">🕋 خط المصحف (QCF)</option>
+              <option value="tajweed">🎨 خط التجويد الملوّن</option>
             </select>
           </div>
           <div class="set-row">
@@ -324,6 +325,7 @@
           <button class="qp-opt-btn" id="optPrint" onclick="setScript('print')">📝 نص مطبوع</button>
           <button class="qp-opt-btn" id="optSimple" onclick="setScript('simple')">✏️ نص عادي</button>
           <button class="qp-opt-btn" id="optQcf" onclick="setScript('qcf')" title="خطوط المصحف (QCF) — رسم الآيات بخطوط المصحف المعتمدة">🕋 خط المصحف</button>
+          <button class="qp-opt-btn" id="optTajweed" onclick="setScript('tajweed')" title="خط التجويد الملوّن — أحكام التجويد ملوّنة">🎨 خط التجويد</button>
           <span class="qp-qcf-chip" id="qpQcfChip" style="display:none" role="status" aria-live="polite"></span>
           <!-- سطر -->
           <div class="qp-opts-sep"></div>
@@ -342,6 +344,72 @@
         <div class="qp-autoscroll" id="qpAutoScroll" style="display:none">
           <div class="qp-autoscroll-dot"></div>
           <span id="qpAutoScrollLbl">متزامن مع التلاوة</span>
+        </div>
+        <!-- دليل أحكام التجويد الملوّن -->
+        <div class="tajweed-legend" id="tajweedLegend" style="display:none">
+          <div class="tj-legend-bar" id="tjLegendBar" title="انقر للطي أو الإظهار">
+            <div class="tj-legend-pills">
+              <span class="tj-pill"><span class="tj-dot" style="background:#a5a5a5"></span><span class="tj-p-txt" data-k="sakin">الحرف الساكن</span></span>
+              <span class="tj-pill"><span class="tj-dot" style="background:#09b000"></span><span class="tj-p-txt" data-k="ghunnah">غُنّة / إخفاء</span></span>
+              <span class="tj-pill"><span class="tj-dot" style="background:#2fadff"></span><span class="tj-p-txt" data-k="qalqalah">قلقلة</span></span>
+              <span class="tj-pill"><span class="tj-dot" style="background:#3f48e6"></span><span class="tj-p-txt" data-k="tafkheem">تفخيم</span></span>
+              <span class="tj-pill"><span class="tj-dot" style="background:#ce9e00"></span><span class="tj-p-txt" data-k="maddTabee">مدّ طبيعي</span></span>
+              <span class="tj-pill"><span class="tj-dot" style="background:#ff7b00"></span><span class="tj-p-txt" data-k="maddMunfasil">مدّ منفصل</span></span>
+              <span class="tj-pill"><span class="tj-dot" style="background:#f40000"></span><span class="tj-p-txt" data-k="maddMuttasil">مدّ متّصل</span></span>
+              <span class="tj-pill"><span class="tj-dot" style="background:#b50000"></span><span class="tj-p-txt" data-k="maddLazim">مدّ لازم</span></span>
+            </div>
+            <button class="tj-toggle-btn" id="tjToggleBtn" aria-label="طي أو إظهار دليل الأحكام">^ إخفاء</button>
+          </div>
+          <div class="tj-legend-body" id="tjLegendBody">
+            <div class="tj-rule-item">
+              <span class="tj-dot" style="background:#a5a5a5"></span>
+              <span class="tj-rule-title" data-k="sakinTitle">الحرف الساكن</span>
+              <span class="tj-rule-sep">—</span>
+              <span class="tj-rule-desc" data-k="sakinDesc">حرف لا يُنطق في الوصل (همزة وصل، لام شمسية)</span>
+            </div>
+            <div class="tj-rule-item">
+              <span class="tj-dot" style="background:#09b000"></span>
+              <span class="tj-rule-title" data-k="ghunnahTitle">غُنّة / إخفاء</span>
+              <span class="tj-rule-sep">—</span>
+              <span class="tj-rule-desc" data-k="ghunnahDesc">صوت الغنّة عند الإدغام والإخفاء والإقلاب</span>
+            </div>
+            <div class="tj-rule-item">
+              <span class="tj-dot" style="background:#2fadff"></span>
+              <span class="tj-rule-title" data-k="qalqalahTitle">قلقلة</span>
+              <span class="tj-rule-sep">—</span>
+              <span class="tj-rule-desc" data-k="qalqalahDesc">اضطراب صوت الحرف عند سكونه (ق ط ب ج د)</span>
+            </div>
+            <div class="tj-rule-item">
+              <span class="tj-dot" style="background:#3f48e6"></span>
+              <span class="tj-rule-title" data-k="tafkheemTitle">تفخيم الصوت</span>
+              <span class="tj-rule-sep">—</span>
+              <span class="tj-rule-desc" data-k="tafkheemDesc">تفخيم لام لفظ الجلالة ونحوها</span>
+            </div>
+            <div class="tj-rule-item">
+              <span class="tj-dot" style="background:#ce9e00"></span>
+              <span class="tj-rule-title" data-k="maddTabeeTitle">مدّ طبيعي</span>
+              <span class="tj-rule-sep">—</span>
+              <span class="tj-rule-desc" data-k="maddTabeeDesc">حركتان</span>
+            </div>
+            <div class="tj-rule-item">
+              <span class="tj-dot" style="background:#ff7b00"></span>
+              <span class="tj-rule-title" data-k="maddMunfasilTitle">مدّ جائز منفصل</span>
+              <span class="tj-rule-sep">—</span>
+              <span class="tj-rule-desc" data-k="maddMunfasilDesc">٢ أو ٤ أو ٥ حركات</span>
+            </div>
+            <div class="tj-rule-item">
+              <span class="tj-dot" style="background:#f40000"></span>
+              <span class="tj-rule-title" data-k="maddMuttasilTitle">مدّ واجب متّصل</span>
+              <span class="tj-rule-sep">—</span>
+              <span class="tj-rule-desc" data-k="maddMuttasilDesc">٤ أو ٥ حركات</span>
+            </div>
+            <div class="tj-rule-item">
+              <span class="tj-dot" style="background:#b50000"></span>
+              <span class="tj-rule-title" data-k="maddLazimTitle">مدّ لازم</span>
+              <span class="tj-rule-sep">—</span>
+              <span class="tj-rule-desc" data-k="maddLazimDesc">٦ حركات</span>
+            </div>
+          </div>
         </div>
         <!-- محتوى النص -->
         <div class="qp-body" id="qpBody"></div>
