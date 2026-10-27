@@ -1,11 +1,12 @@
 /* =============================================================
-   Service Worker — مشغل القرآن الكريم
-   - ملفات التطبيق: stale-while-revalidate (عرض فوري + تحديث بالخلفية)
-   - بيانات APIs: network-first مع رجوع للكاش عند انقطاع الإنترنت
-   - صور المصحف: cache-first مع حد أقصى للعدد
-   - ملفات mp3: تمرير مباشر (لدعم طلبات Range وعدم ملء الكاش)
+   Service Worker — مشغل القرآن الكريم (الإصدار المحترف v12)
+   - ملفات التطبيق: Stale-While-Revalidate (عرض فوري + تحديث بالخلفية)
+   - بيانات APIs (mp3quran / quran.com): Network-First مع رجوع للكاش عند انقطاع الإنترنت
+   - خطوط المصحف (QCF Fonts) من jsDelivr: Cache-First بسعة تخزين موسعة (300 صفحة)
+   - صور المصحف: Cache-First مع حد أقصى للعدد
+   - الملفات الصوتية mp3: تمرير مباشر لدعم طلبات التجزئة (HTTP Byte-Range)
 ============================================================= */
-const VERSION = 'v9';
+const VERSION = 'v12';
 const APP_CACHE = 'quran-app-' + VERSION;
 const DATA_CACHE = 'quran-data-' + VERSION;
 const IMG_CACHE = 'quran-img-' + VERSION;
@@ -16,6 +17,7 @@ const APP_ASSETS = [
   './index.html',
   './style.css',
   './script.js',
+  './qcf-data.js',
   './manifest.json',
   './icon.svg',
   './qcf-text.json'
@@ -30,6 +32,8 @@ const API_HOSTS = [
 ];
 
 const IMG_HOSTS = [
+  'www.islamicbook.ws',
+  'newapi.hefzmoyaser.net',
   'raw.githubusercontent.com',
   'cdn.aayaat.net',
   'quran.yousefheiba.com',
@@ -39,11 +43,15 @@ const IMG_HOSTS = [
 
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
-// خطوط المصحف (QCF): 604 ملف صفحة تُحمَّل عند الحاجة وتُخزَّن محلياً
+// خطوط المصحف الشريف QCF (604 ملف صفحة): تخزين Cache-First بسعة حتى 300 صفحة
 const QCF_HOSTS = ['cdn.jsdelivr.net'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(APP_CACHE).then(c => c.addAll(APP_ASSETS)).catch(() => {}));
+  e.waitUntil(
+    caches.open(APP_CACHE)
+      .then(c => c.addAll(APP_ASSETS))
+      .catch(err => console.warn('PWA Precache fallback:', err))
+  );
   self.skipWaiting();
 });
 
@@ -74,27 +82,37 @@ async function cacheFirst(req, cacheName, maxEntries) {
   const cache = await caches.open(cacheName);
   const hit = await cache.match(req);
   if (hit) return hit;
-  const fresh = await fetch(req);
-  if (fresh && (fresh.ok || fresh.type === 'opaque')) {
-    cache.put(req, fresh.clone());
-    if (maxEntries) trimCache(cache, maxEntries);
+  try {
+    const fresh = await fetch(req);
+    if (fresh && (fresh.ok || fresh.type === 'opaque')) {
+      cache.put(req, fresh.clone());
+      if (maxEntries) trimCache(cache, maxEntries);
+    }
+    return fresh;
+  } catch (err) {
+    if (hit) return hit;
+    throw err;
   }
-  return fresh;
 }
 
 async function trimCache(cache, max) {
-  const keys = await cache.keys();
-  if (keys.length > max) {
-    await cache.delete(keys[0]);
-    return trimCache(cache, max);
-  }
+  try {
+    const keys = await cache.keys();
+    if (keys.length > max) {
+      await cache.delete(keys[0]);
+      return trimCache(cache, max);
+    }
+  } catch (e) {}
 }
 
 async function staleWhileRevalidate(req, cacheName) {
   const cache = await caches.open(cacheName);
   const hit = await cache.match(req);
   const fetching = fetch(req)
-    .then(res => { if (res && res.ok) cache.put(req, res.clone()); return res; })
+    .then(res => {
+      if (res && res.ok) cache.put(req, res.clone());
+      return res;
+    })
     .catch(() => null);
   return hit || (await fetching) || Response.error();
 }
@@ -106,10 +124,12 @@ self.addEventListener('fetch', e => {
   let url;
   try { url = new URL(req.url); } catch (err) { return; }
 
-  // الملفات الصوتية: لا تُعترض — المتصفح يدير طلبات Range بنفسه
-  if (url.pathname.endsWith('.mp3')) return;
+  // الملفات الصوتية: لا تُعترض — المتصفح يدير طلبات HTTP Range والتدفق بنفسه
+  if (url.pathname.endsWith('.mp3') || url.hostname === 'download.quranicaudio.com' || url.hostname.includes('cdn.mp3quran.net')) {
+    return;
+  }
 
-  // ملفات التطبيق (نفس النطاق)
+  // ملفات التطبيق الأساسية (نفس النطاق)
   if (url.origin === location.origin) {
     if (req.mode === 'navigate') {
       e.respondWith(networkFirst(req, APP_CACHE).catch(() => caches.match('./index.html')));
@@ -119,30 +139,27 @@ self.addEventListener('fetch', e => {
     return;
   }
 
+  // استدعاءات الـ APIs: Network-First
   if (API_HOSTS.includes(url.hostname)) {
-    e.respondWith(networkFirst(req, DATA_CACHE).catch(() => Response.error()));
+    e.respondWith(networkFirst(req, DATA_CACHE).catch(() => caches.match(req).then(hit => hit || Response.error())));
     return;
   }
 
-  if (/\.(woff2?|otf|ttf)$/i.test(url.pathname)) {
-    // خطوط (QCF / جوجل): كاش أول مع حد أقصى للعدد
-    e.respondWith(cacheFirst(req, QCF_CACHE, 64).catch(() => Response.error()));
+  // خطوط المصحف من jsDelivr
+  if (QCF_HOSTS.includes(url.hostname) && (/\.(woff2?|otf|ttf)$/i.test(url.pathname) || url.pathname.includes('/fonts/'))) {
+    e.respondWith(cacheFirst(req, QCF_CACHE, 300).catch(() => Response.error()));
     return;
   }
 
+  // خطوط جوجل والخطوط الأخرى
+  if (FONT_HOSTS.includes(url.hostname) || /\.(woff2?|otf|ttf)$/i.test(url.pathname)) {
+    e.respondWith(cacheFirst(req, QCF_CACHE, 100).catch(() => Response.error()));
+    return;
+  }
+
+  // صور المصحف
   if (IMG_HOSTS.includes(url.hostname)) {
-    e.respondWith(cacheFirst(req, IMG_CACHE, 120).catch(() => Response.error()));
-    return;
-  }
-
-  if (FONT_HOSTS.includes(url.hostname)) {
-    e.respondWith(cacheFirst(req, APP_CACHE).catch(() => Response.error()));
-    return;
-  }
-
-  if (QCF_HOSTS.includes(url.hostname)) {
-    // خطوط الصفحات (≈90 كيلوبايت للصفحة) — كاش أول مع حد أقصى للعدد
-    e.respondWith(cacheFirst(req, QCF_CACHE, 48).catch(() => Response.error()));
+    e.respondWith(cacheFirst(req, IMG_CACHE, 150).catch(() => Response.error()));
     return;
   }
 });

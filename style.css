@@ -422,12 +422,17 @@
       max-width: 1340px;
       position: relative;
       z-index: 1;
-      transition: all 0.4s ease;
+      transition: max-width 0.3s ease;
     }
 
     /* حالة العرض الكامل (بدون نص) */
     .app-layout.text-closed {
       justify-content: center;
+      max-width: 540px;
+    }
+
+    .app-layout.text-open {
+      max-width: var(--app-max-width, 1420px);
     }
 
     /* Player column */
@@ -439,21 +444,25 @@
     }
 
     .app-layout.text-open .player-col {
-      max-width: 460px;
+      flex: 1 1 360px;
+      max-width: 480px;
+      min-width: 320px;
     }
 
     /* Quran text panel */
     .quran-panel {
       display: none;
-      flex: 1 1 0;
-      min-width: 0;
+      width: var(--qp-width, 58%);
+      flex: 0 0 var(--qp-width, 58%);
+      min-width: 360px;
+      max-width: calc(100% - 340px);
       background: var(--card);
       border: 1px solid var(--card-border);
       border-radius: 26px;
       box-shadow: var(--card-shadow);
       backdrop-filter: blur(24px);
       overflow: hidden;
-      transition: background 0.4s;
+      transition: background 0.4s, border-color 0.4s;
       height: calc(100vh - 48px);
       height: calc(100dvh - 48px);
       position: sticky;
@@ -465,8 +474,78 @@
       display: flex;
     }
 
+    /* ===== مقابض تعديل عرض لوحة المصحف في وضع سطح المكتب ===== */
+    .qp-resize-handle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      z-index: 60;
+      position: relative;
+    }
+
+    /* المقبض الخارجي الأيمن لإطار المصحف */
+    .qp-resize-right {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      width: 14px;
+      cursor: col-resize;
+      background: transparent;
+      transition: background 0.2s;
+    }
+
+    .qp-resize-right:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* مقبض الفاصل الأوسط بين لوحة المصحف وعمود المشغل */
+    .qp-resize-divider {
+      width: 14px;
+      margin: 0 -4px;
+      cursor: col-resize;
+      align-self: stretch;
+      flex-shrink: 0;
+      transition: opacity 0.2s;
+    }
+
+    .app-layout.text-closed .qp-resize-divider {
+      display: none !important;
+    }
+
+    .qp-resize-bar {
+      width: 4px;
+      height: 48px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.22);
+      transition: all 0.2s cubic-bezier(.2, .8, .2, 1);
+      box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .qp-resize-handle:hover .qp-resize-bar,
+    .qp-resize-handle.active .qp-resize-bar {
+      width: 6px;
+      height: 72px;
+      background: var(--acc1);
+      box-shadow: 0 0 14px var(--acc1);
+    }
+
+    body.resizing-active,
+    body.resizing-active * {
+      cursor: col-resize !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+    }
+
     /* Mobile: stack vertically */
     @media(max-width:767px) {
+      .qp-resize-handle {
+        display: none !important;
+      }
+
       body {
         padding: 8px 8px calc(8px + var(--safe-bottom));
         overflow-x: hidden;
@@ -2094,6 +2173,11 @@
       font-family: inherit;
     }
 
+    select option {
+      background: var(--card, #ffffff);
+      color: var(--text, #111827);
+    }
+
     select:focus,
     .text-input:focus {
       outline: none;
@@ -2972,26 +3056,27 @@
     }
 
     /*=======================================================
-  FLOATING CONTROL BAR
+  FLOATING CONTROL BAR (مشغل عائم معاد تصميمه باحترافية)
 =======================================================*/
     #floatingBar {
       position: fixed;
-      bottom: calc(12px + var(--safe-bottom));
-      left: 12px;
-      right: 12px;
-      max-width: 680px;
+      bottom: calc(14px + var(--safe-bottom));
+      left: 14px;
+      right: 14px;
+      max-width: 720px;
       margin: 0 auto;
       z-index: 600;
       background: var(--now-bg);
-      backdrop-filter: blur(24px) saturate(1.4);
-      -webkit-backdrop-filter: blur(24px) saturate(1.4);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 22px;
-      padding: 12px 16px 13px;
-      box-shadow: 0 14px 44px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.14);
-      transform: translateY(calc(100% + 28px));
-      transition: transform 0.4s cubic-bezier(.22, 1, .36, 1), opacity 0.35s;
+      backdrop-filter: blur(28px) saturate(1.8);
+      -webkit-backdrop-filter: blur(28px) saturate(1.8);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 26px;
+      padding: 11px 18px 12px;
+      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 20px rgba(0, 0, 0, 0.15);
+      transform: translateY(calc(100% + 32px));
+      transition: transform 0.4s cubic-bezier(.2, 1, .3, 1), opacity 0.35s ease, box-shadow 0.3s;
       opacity: 0;
+      direction: rtl;
     }
 
     #floatingBar.visible {
@@ -3000,19 +3085,59 @@
     }
 
     #floatingBar.hidden-bar {
-      transform: translateY(calc(100% + 28px));
+      transform: translateY(calc(100% + 32px));
       opacity: 0;
+      pointer-events: none;
     }
 
-    .fb-row1 {
+    /* الصف الرئيسي: بيانات التلاوة + أزرار التحكم */
+    .fb-main-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .fb-info-group {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .fb-art-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+      transition: transform 0.2s;
+    }
+
+    .fb-art-thumb:hover {
+      transform: scale(1.06);
     }
 
     .fb-info {
       flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .fb-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 7px;
       min-width: 0;
     }
 
@@ -3023,15 +3148,31 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    }
+
+    .fb-badge {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      color: #ffffff;
+      white-space: nowrap;
+      flex-shrink: 0;
+      letter-spacing: 0.3px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     }
 
     .fb-reciter {
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.75);
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.82);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      margin-top: 1px;
+      margin-top: 2px;
+      font-weight: 600;
     }
 
     .fb-controls {
@@ -3041,79 +3182,182 @@
       flex-shrink: 0;
     }
 
-    /* مجموعة زر التالي + الخيارات في الشريط العائم */
     .fb-next-wrap {
       position: relative;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       width: auto;
+    }
+
+    .fb-btn {
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #fff;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 15px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.18s, transform 0.15s, box-shadow 0.18s, border-color 0.18s;
+      flex-shrink: 0;
+    }
+
+    .fb-btn:hover {
+      background: rgba(255, 255, 255, 0.28);
+      border-color: rgba(255, 255, 255, 0.35);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+
+    .fb-btn:active {
+      transform: scale(0.9);
     }
 
     .fb-btn.fb-next-menu {
       width: 26px;
       height: 38px;
       border-radius: 12px;
-      font-size: 12px;
+      font-size: 11px;
       background: rgba(255, 255, 255, 0.1);
     }
 
-    .fb-btn {
-      background: rgba(255, 255, 255, 0.14);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      color: #fff;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
-      flex-shrink: 0;
-    }
-
-    .fb-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
-      transform: translateY(-1px);
-    }
-
-    .fb-btn:active {
-      transform: scale(0.88);
-    }
-
     .fb-btn.fb-play {
-      width: 50px;
-      height: 50px;
-      font-size: 21px;
-      background: #fff;
+      width: 48px;
+      height: 48px;
+      font-size: 20px;
+      background: #ffffff;
       color: var(--acc2);
-      border-color: transparent;
-      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.3);
+      border: none;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32);
+      font-weight: 800;
+      position: relative;
     }
 
     .fb-btn.fb-play:hover {
-      background: #fff;
-      transform: scale(1.06);
-      box-shadow: 0 7px 20px rgba(0, 0, 0, 0.36);
+      background: #ffffff;
+      transform: scale(1.08);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     }
 
-    .fb-row2 {
+    #floatingBar.playing .fb-btn.fb-play {
+      animation: fbPulseGlow 2s infinite ease-in-out;
+    }
+
+    @keyframes fbPulseGlow {
+      0%, 100% { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(255, 255, 255, 0.4); }
+      50% { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 0 6px rgba(255, 255, 255, 0.18); }
+    }
+
+    /* صف خط سير التلاوة (Progress Row) */
+    .fb-prog-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      direction: ltr;
+      padding: 3px 0 5px;
+    }
+
+    .fb-time {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.85);
+      font-variant-numeric: tabular-nums;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      letter-spacing: 0.4px;
+      flex-shrink: 0;
+      min-width: 38px;
+      text-align: center;
+    }
+
+    .fb-prog-wrap {
+      flex: 1;
+      direction: ltr;
+      padding: 5px 0;
+      cursor: pointer;
+    }
+
+    .fb-prog-track {
+      width: 100%;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 3px;
+      cursor: pointer;
+      position: relative;
+      overflow: visible;
+      transition: height 0.15s ease;
+      direction: ltr;
+    }
+
+    .fb-prog-track:hover,
+    .fb-prog-track.dragging {
+      height: 7px;
+    }
+
+    .fb-prog-elapsed {
+      position: absolute;
+      left: 0;
+      right: auto;
+      top: 0;
+      height: 100%;
+      max-width: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.9), #ffffff);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+      pointer-events: none;
+      width: 0%;
+    }
+
+    .fb-prog-thumb {
+      position: absolute;
+      top: 50%;
+      left: 0%;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      transition: transform 0.15s ease;
+    }
+
+    .fb-prog-track:hover .fb-prog-thumb,
+    .fb-prog-track.dragging .fb-prog-thumb {
+      transform: translate(-50%, -50%) scale(1.2);
+    }
+
+    /* الصف السفلي: الصوت والمؤقت */
+    .fb-bottom-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-top: 2px;
+    }
+
+    .fb-vol-wrap {
       display: flex;
       align-items: center;
       gap: 8px;
+      flex: 1;
+      max-width: 200px;
     }
 
     .fb-vol-icon {
       font-size: 14px;
-      color: rgba(255, 255, 255, 0.8);
+      color: rgba(255, 255, 255, 0.85);
       flex-shrink: 0;
+      cursor: pointer;
     }
 
     #floatVol {
       flex: 1;
       -webkit-appearance: none;
+      appearance: none;
       height: 4px;
       border-radius: 2px;
       background: rgba(255, 255, 255, 0.3);
@@ -3123,17 +3367,22 @@
 
     #floatVol::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
+      width: 13px;
+      height: 13px;
       border-radius: 50%;
       background: #fff;
       cursor: pointer;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+      transition: transform 0.15s;
+    }
+
+    #floatVol::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
     }
 
     #floatVol::-moz-range-thumb {
-      width: 14px;
-      height: 14px;
+      width: 13px;
+      height: 13px;
       border-radius: 50%;
       background: #fff;
       border: none;
@@ -3143,12 +3392,14 @@
     .fb-timer {
       font-size: 11px;
       font-weight: 700;
-      color: rgba(255, 255, 255, 0.85);
-      background: rgba(255, 255, 255, 0.15);
-      padding: 2px 7px;
+      color: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 2px 8px;
       border-radius: 10px;
       white-space: nowrap;
       flex-shrink: 0;
+      font-family: ui-monospace, SFMono-Regular, monospace;
     }
 
     .fb-toggle {
@@ -3157,20 +3408,24 @@
       right: 14px;
       z-index: 601;
       background: var(--now-bg);
-      border: 1px solid rgba(255, 255, 255, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.25);
       color: #fff;
-      width: 40px;
-      height: 40px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       cursor: pointer;
       font-size: 15px;
       display: none;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      transition: all 0.2s;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.32);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transition: all 0.25s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    .fb-toggle:hover {
+      transform: scale(1.08);
     }
 
     #floatingBar.visible~.fb-toggle,
@@ -3178,14 +3433,13 @@
       display: flex;
     }
 
-    /* ensure body bottom padding when bar visible */
+    /* ضمان تباعد أسفل الصفحة عند ظهور الشريط العائم */
     body.bar-open {
-      padding-bottom: calc(110px + var(--safe-bottom));
+      padding-bottom: calc(120px + var(--safe-bottom));
     }
 
-    /* قائمة "التالي" في الشريط العائم — تفتح للأعلى وتبقى داخل البطاقة */
     #fbNextDropdown {
-      bottom: calc(100% + 6px) !important;
+      bottom: calc(100% + 8px) !important;
       top: auto !important;
       right: 0;
       left: auto;
@@ -3193,9 +3447,33 @@
       z-index: 700;
     }
 
-    @media(max-width:400px) {
-      #fbNextDropdown {
-        right: 0;
+    @media (max-width: 600px) {
+      #floatingBar {
+        padding: 9px 12px 10px;
+        bottom: calc(8px + var(--safe-bottom));
+        left: 8px;
+        right: 8px;
+        border-radius: 20px;
+      }
+      .fb-art-thumb,
+      .fb-extra-btn {
+        display: none !important;
+      }
+      .fb-surah {
+        font-size: 13.5px;
+      }
+      .fb-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+      }
+      .fb-btn.fb-play {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+      }
+      .fb-vol-wrap {
+        max-width: 140px;
       }
     }
 
@@ -3491,38 +3769,57 @@
       color: #ffffff;
     }
 
-    /* sync-active ayah — تمييز خفيف للآية الحالية أثناء التلاوة */
+    /* sync-active ayah — تمييز احترافي ناعم للآية الحالية أثناء التلاوة */
+    .si-ayah {
+      transition: background 0.25s ease, box-shadow 0.25s ease;
+      cursor: pointer;
+    }
+
     .si-ayah.active {
       background: none !important;
     }
 
     .si-ayah.sync-active {
-      background: var(--badge-bg);
-      border-right-color: var(--acc1);
+      background: rgba(16, 185, 129, 0.14) !important;
+      border-right: 4px solid var(--acc1);
+      border-radius: 6px;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
     }
 
     html[dir=ltr] .si-ayah.sync-active {
-      border-left-color: var(--acc1);
+      border-right: none;
+      border-left: 4px solid var(--acc1);
     }
 
     body.dark .si-ayah.sync-active {
-      background: rgba(167, 139, 250, 0.12);
+      background: rgba(167, 139, 250, 0.18) !important;
+      box-shadow: 0 0 14px rgba(167, 139, 250, 0.2);
     }
 
     body.emerald .si-ayah.sync-active {
-      background: rgba(5, 150, 105, 0.1);
+      background: rgba(16, 185, 129, 0.18) !important;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.2);
     }
 
     body.gold .si-ayah.sync-active {
-      background: rgba(217, 119, 6, 0.1);
+      background: rgba(217, 119, 6, 0.18) !important;
+      box-shadow: 0 0 14px rgba(217, 119, 6, 0.2);
     }
 
     /* في وضع النص المتتالي: خلفية ناعمة حول الآية دون إزاحة النص */
     .qp-text-wrap.inline-mode .si-ayah.sync-active {
-      background: var(--badge-bg);
+      background: rgba(16, 185, 129, 0.18) !important;
       border-radius: 8px;
+      padding: 2px 6px;
+      margin: 0 2px;
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
+      box-shadow: 0 0 0 1px var(--acc1);
+    }
+
+    body.dark .qp-text-wrap.inline-mode .si-ayah.sync-active {
+      background: rgba(167, 139, 250, 0.2) !important;
+      box-shadow: 0 0 0 1px var(--acc1);
     }
 
     /*=======================================================
@@ -4193,22 +4490,35 @@
     }
 
     .toast {
-      background: rgba(26, 26, 46, 0.94);
+      background: rgba(15, 23, 42, 0.78);
       color: #fff;
-      padding: 11px 18px;
+      padding: 10px 18px;
       border-radius: 14px;
       font-size: 13.5px;
       font-weight: 700;
-      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
       opacity: 0;
       transform: translateY(16px) scale(0.97);
-      transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+      transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2), background 0.2s ease;
       text-align: center;
       line-height: 1.65;
       animation: none;
+      pointer-events: auto;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .toast:hover {
+      background: rgba(15, 23, 42, 0.9);
+      transform: translateY(-2px) scale(1);
+    }
+
+    .toast:active {
+      transform: scale(0.96);
     }
 
     .toast.show {
@@ -4217,8 +4527,8 @@
     }
 
     .toast-warn {
-      background: rgba(153, 27, 27, 0.96);
-      border-color: rgba(255, 255, 255, 0.2);
+      background: rgba(180, 83, 9, 0.82);
+      border-color: rgba(255, 255, 255, 0.25);
     }
 
     /* ── لمسات تجريبية عامة ── */

@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://www.mp3quran.net" crossorigin>
   <link rel="preconnect" href="https://api.alquran.cloud" crossorigin>
   <link rel="preconnect" href="https://api.quran.com" crossorigin>
-  <link rel="preconnect" href="https://raw.githubusercontent.com">
+  <link rel="preconnect" href="https://download.quranicaudio.com" crossorigin>
   <link rel="dns-prefetch" href="https://api.quranpedia.net">
 
   <!-- خط المصحف — تحميل مبكر بدل @import داخل CSS -->
@@ -152,6 +152,10 @@
               <input type="range" id="setVol" min="0" max="100" class="set-range">
               <span id="setVolVal" class="set-val">70</span>
             </div>
+          </div>
+          <div class="set-row">
+            <span id="setAutoPlayChangeLbl">تشغيل مباشر عند تغيير القارئ / السورة</span>
+            <label class="set-switch"><input type="checkbox" id="setAutoPlayChange"><span class="set-slider"></span></label>
           </div>
           <div class="set-row">
             <span id="setRepeatLbl">التكرار</span>
@@ -286,6 +290,11 @@
 
     <!-- ========== QURAN TEXT PANEL ========== -->
     <div class="quran-panel" id="quranPanel">
+      <!-- مقبض تعديل الحافة الخارجية اليمنى لإطار المصحف -->
+      <div class="qp-resize-handle qp-resize-right" id="qpResizeRight" title="اسحب لتعديل عرض إطار المصحف (نقرتان للاستعادة)" aria-label="تعديل عرض إطار المصحف">
+        <div class="qp-resize-bar"></div>
+      </div>
+
       <!-- رأس اللوحة -->
       <div class="qp-header">
         <div>
@@ -329,10 +338,10 @@
         <div class="qp-search" id="qpSearchBar" style="display:none">
           <input type="text" id="qpSearch" placeholder="🔍 ابحث في السورة (بدون حركات) أو برقم الآية...">
         </div>
-        <!-- مؤشر التزامن -->
+        <!-- مؤشر التزامن اللحظي -->
         <div class="qp-autoscroll" id="qpAutoScroll" style="display:none">
           <div class="qp-autoscroll-dot"></div>
-          <span id="qpAutoScrollLbl">متزامن تقريباً مع التلاوة</span>
+          <span id="qpAutoScrollLbl">متزامن مع التلاوة</span>
         </div>
         <!-- محتوى النص -->
         <div class="qp-body" id="qpBody"></div>
@@ -354,6 +363,11 @@
           <button class="mushaf-nav-btn" id="mushafNext">▶</button>
         </div>
       </div>
+    </div>
+
+    <!-- مقبض الفاصل الأوسط بين لوحة المصحف والمشغل -->
+    <div class="qp-resize-handle qp-resize-divider" id="layoutResizer" title="اسحب لتعديل العرض بين المصحف والمشغل (نقرتان للاستعادة)" aria-label="فاصل تعديل العرض">
+      <div class="qp-resize-bar"></div>
     </div>
 
     <!-- ========== PLAYER COLUMN ========== -->
@@ -686,19 +700,25 @@
     </div><!-- /app-layout -->
 
     <!-- ========== FLOATING BAR ========== -->
-    <div id="floatingBar">
-      <div class="fb-row1">
-        <div class="fb-info">
-          <div class="fb-surah" id="fbSurah">—</div>
-          <div class="fb-reciter" id="fbReciter">—</div>
+    <div id="floatingBar" class="floating-player">
+      <div class="fb-main-row">
+        <div class="fb-info-group">
+          <div class="fb-art-thumb" title="القرآن الكريم">📖</div>
+          <div class="fb-info">
+            <div class="fb-title-wrap">
+              <span class="fb-surah" id="fbSurah">—</span>
+              <span class="fb-badge" id="fbBadge" style="display:none">🎯 مزامنة دقيقة</span>
+            </div>
+            <div class="fb-reciter" id="fbReciter">—</div>
+          </div>
         </div>
         <div class="fb-controls">
-          <button class="fb-btn" id="fbPrev" title="السابقة">⏮</button>
-          <button class="fb-btn fb-play" id="fbPlay">▶</button>
+          <button class="fb-btn" id="fbPrev" title="السابقة" aria-label="السابقة">⏮</button>
+          <button class="fb-btn fb-play" id="fbPlay" title="تشغيل / إيقاف" aria-label="تشغيل">▶</button>
           <!-- زر التالي (تنفيذ مباشر) + زر خيارات التالي (قائمة) -->
           <div class="next-menu-wrap fb-next-wrap" id="fbNextWrap">
-            <button class="fb-btn" id="fbNext" title="التالي">⏭</button>
-            <button class="fb-btn fb-next-menu" id="fbNextMenu" title="خيارات التالي">▾</button>
+            <button class="fb-btn" id="fbNext" title="التالي" aria-label="التالي">⏭</button>
+            <button class="fb-btn fb-next-menu" id="fbNextMenu" title="خيارات التالي" aria-label="خيارات التالي">▾</button>
             <div class="next-dropdown" id="fbNextDropdown"
               style="bottom:calc(100% + 8px);top:auto;right:0;min-width:200px">
               <div class="next-opt" id="fb_nextSameSurah"><span class="next-opt-icon">⏭</span><span id="fb_n0">السورة
@@ -711,23 +731,30 @@
                   عشوائي</span><span class="next-opt-check" id="fb_ck3"></span></div>
             </div>
           </div>
-          <button class="fb-btn" id="fbMute" title="كتم">🔊</button>
+          <button class="fb-btn" id="fbMute" title="كتم" aria-label="كتم">🔊</button>
           <!-- قارئ عشوائي -->
-          <button class="fb-btn" id="fbRandRec" title="قارئ عشوائي">🎙️</button>
+          <button class="fb-btn fb-extra-btn" id="fbRandRec" title="قارئ عشوائي" aria-label="قارئ عشوائي">🎙️</button>
           <!-- سورة عشوائية -->
-          <button class="fb-btn" id="fbRandSurah" title="سورة عشوائية">🎲</button>
+          <button class="fb-btn fb-extra-btn" id="fbRandSurah" title="سورة عشوائية" aria-label="سورة عشوائية">🎲</button>
         </div>
       </div>
-      <!-- شريط التقدم -->
-      <div class="fb-prog-wrap">
-        <div class="fb-prog-track" id="fbProgTrack">
-          <div class="fb-prog-elapsed" id="fbProgElapsed"></div>
-          <div class="fb-prog-thumb" id="fbProgThumb"></div>
+      <!-- شريط التقدم الزمني -->
+      <div class="fb-prog-row">
+        <span class="fb-time fb-cur-time" id="fbCurTime">00:00</span>
+        <div class="fb-prog-wrap">
+          <div class="fb-prog-track" id="fbProgTrack">
+            <div class="fb-prog-elapsed" id="fbProgElapsed"></div>
+            <div class="fb-prog-thumb" id="fbProgThumb"></div>
+          </div>
         </div>
+        <span class="fb-time fb-total-time" id="fbTotalTime">--:--</span>
       </div>
-      <div class="fb-row2">
-        <span class="fb-vol-icon">🔈</span>
-        <input type="range" id="floatVol" min="0" max="100" value="70">
+      <!-- شريط التحكم بالصوت والتايمر -->
+      <div class="fb-bottom-row">
+        <div class="fb-vol-wrap">
+          <span class="fb-vol-icon" id="fbVolIcon" title="مستوى الصوت">🔈</span>
+          <input type="range" id="floatVol" min="0" max="100" value="70" aria-label="مستوى الصوت">
+        </div>
         <span class="fb-timer" id="fbTimer" style="display:none">--:--</span>
       </div>
     </div>
@@ -736,6 +763,8 @@
   <!-- إشعارات لطيفة (Toasts) -->
   <div class="toast-host" id="toastHost" aria-live="polite" aria-atomic="false"></div>
 
+  <!-- بيانات خطوط المصحف (تحميل محلي فوري يدعم الأوفلاين و file://) -->
+  <script src="qcf-data.js"></script>
   <script src="script.js"></script>
 </body>
 
