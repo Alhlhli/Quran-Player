@@ -28,7 +28,7 @@
 
   <!-- أيقونة التطبيق + PWA -->
   <link rel="icon" type="image/svg+xml" href="icon.svg">
-  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.png">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
 
@@ -522,10 +522,10 @@
 
         <!-- روابط مشاريع مشابهة -->
         <div class="projects-bar" id="projectsBar">
-          <a class="proj-btn proj-radio" href="https://alhlhli.github.io/Quran-Radio/" target="_blank" rel="noopener">
+          <a class="proj-btn proj-radio" id="projRadio" href="https://alhlhli.github.io/Quran-Radio/" target="_blank" rel="noopener">
             📻 راديو القرآن
           </a>
-          <a class="proj-btn proj-db" href="https://alhlhli.github.io/Quran-Database/" target="_blank" rel="noopener">
+          <a class="proj-btn proj-db" id="projDb" href="https://alhlhli.github.io/Quran-Database/" target="_blank" rel="noopener">
             🗄️ قاعدة بيانات القرآن
           </a>
         </div>
@@ -629,7 +629,6 @@
             <div class="prog-ltr-wrap">
               <div class="prog-row">
                 <div class="prog-track" id="progTrack" role="slider" aria-label="شريط تقدّم التلاوة" tabindex="0">
-                  <div class="prog-fill" id="progFill"></div>
                   <div class="prog-elapsed" id="progElapsed"></div>
                   <div class="prog-thumb" id="progThumb"></div>
                 </div>
@@ -688,7 +687,7 @@
             </div>
           </div>
           <div class="dl-section" id="dlSection" style="display:none">
-            <div class="dl-hint">💡 انقر الرابط لتحميل السورة</div>
+            <div class="dl-hint" id="dlHint">💡 انقر الرابط لتحميل السورة</div>
             <a id="dlLink" class="dl-btn" href="#" target="_blank">📥 تحميل</a>
           </div>
           <!-- بطاقات السور -->
@@ -740,27 +739,6 @@
             <div id="statsFullRows" class="stats-full" style="margin-top:8px"></div>
             <button class="exp-btn" id="expBtn">📤 تصدير الإحصائيات</button>
             <button class="clear-btn" id="clearStatsBtn">🗑️ مسح الإحصائيات</button>
-          </div>
-
-          <!-- Countdown -->
-          <div class="sec-card" id="cdSection" style="display:none">
-            <h3 id="cdHeader">⏲️ مؤقّت عدّ تنازلي</h3>
-            <div class="cd-inputs">
-              <input type="number" inputmode="numeric" class="text-input" id="cdMin" min="0" placeholder="دق"
-                aria-label="دقائق" style="width:66px;flex:none;padding:8px;">
-              <span style="color:var(--text);font-weight:700;">:</span>
-              <input type="number" inputmode="numeric" class="text-input" id="cdSec" min="0" max="59" placeholder="ثا"
-                aria-label="ثوانٍ" style="width:66px;flex:none;padding:8px;">
-              <button class="icon-btn" id="cdStartBtn" title="ابدأ">⏱️</button>
-            </div>
-            <div class="cd-ring-wrap" id="cdRingWrap" style="display:none">
-              <svg width="80" height="80" viewBox="0 0 80 80">
-                <circle class="ring-bg" cx="40" cy="40" r="34" />
-                <circle class="ring-fg" id="cdRing" cx="40" cy="40" r="34" stroke-dasharray="213.6"
-                  stroke-dashoffset="0" />
-              </svg>
-            </div>
-            <div class="cd-label" id="cdDisplay" style="display:none">00:00</div>
           </div>
 
         </div><!-- /container -->
