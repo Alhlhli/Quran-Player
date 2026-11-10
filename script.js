@@ -2073,6 +2073,7 @@
       let currentScript = localStorage.getItem('defaultScript') || 'qcf';
       let currentLineMode = ls('lineMode') === 'block' ? 'block' : 'inline';
       let textPageMode = ls('textPageMode') === 'pages' ? 'pages' : 'scroll'; // 'scroll' | 'pages'
+      let mushafPageDist = ls('mushafPageDist') === 'surah' ? 'surah' : 'mushaf'; // 'mushaf' | 'surah'
       let textCurrentPageIdx = 0;
       let textSurahPages = [];
       let currentQpTab = 'text';
@@ -2206,6 +2207,34 @@
         const e = qcfData && qcfData[String(surahNum)];
         if (!e || !e.p) return [];
         return Array.from(new Set(e.p.map(r => r[2])));
+      }
+
+      /* استخراج جميع مقاطع السور المشتركة في صفحة مصحفية واحدة (مرتبة حسب ترتيب المصحف) */
+      function getSurahSegmentsOnPage(pageNum) {
+        if (!qcfData) return [];
+        const segs = [];
+        for (let sn = 1; sn <= 114; sn++) {
+          const entry = qcfData[String(sn)];
+          if (!entry || !entry.p) continue;
+          entry.p.forEach(([startAy, endAy, pg]) => {
+            if (pg === pageNum) segs.push({ surahNum: sn, startAy, endAy, pageNum: pg });
+          });
+        }
+        return segs;
+      }
+
+      /* جلب نصوص السور المجاورة المشتركة في نفس الصفحة عند تفعيل توزيع المصحف */
+      async function ensureSharedPageSurahsText(surahNum) {
+        if (mushafPageDist !== 'mushaf' || !qcfData) return;
+        const pages = qcfSurahPages(surahNum);
+        const neighborSet = new Set();
+        pages.forEach(pg => {
+          getSurahSegmentsOnPage(pg).forEach(seg => {
+            if (seg.surahNum !== surahNum && !surahCache[seg.surahNum]) neighborSet.add(seg.surahNum);
+          });
+        });
+        if (!neighborSet.size) return;
+        await Promise.all(Array.from(neighborSet).map(sn => fetchSurahText(sn).catch(() => [])));
       }
 
       function setQcfChip(state, progress) {
@@ -2392,6 +2421,17 @@
         if (loadedSurahNum) reRenderText();
       }
 
+      function setPageDist(mode) {
+        mushafPageDist = (mode === 'surah') ? 'surah' : 'mushaf';
+        lsSave('mushafPageDist', mushafPageDist);
+        document.querySelectorAll('#setPageDistSeg button').forEach(b =>
+          b.classList.toggle('active', b.dataset.pd === mushafPageDist));
+        if (loadedSurahNum) {
+          if (mushafPageDist === 'mushaf') ensureSharedPageSurahsText(loadedSurahNum).then(() => reRenderText());
+          else reRenderText();
+        }
+      }
+
       function showTextPage(idx, animDir = '') {
         const container = $('qpBody');
         const navEl = $('qpTextPageNav');
@@ -2465,11 +2505,12 @@
       window.addEventListener('resize', checkMobileTabBar);
       checkMobileTabBar();
 
-      /* إدارة زر الركن لإظهار أو إخفاء بقية الأزرار والأشرطة */
+      /* إدارة زر الركن لإظهار أو إخفاء بقية الأزرار والأشرطة والمشغل المصغر */
       let qpBarsCollapsed = (localStorage.getItem('qpBarsCollapsed') ?? '1') === '1';
       function applyQpBarsState() {
         if (!quranPanel) return;
         quranPanel.classList.toggle('qp-bars-collapsed', qpBarsCollapsed);
+        document.body.classList.toggle('qp-immersive-clean', textPanelOpen && qpBarsCollapsed);
         if (qpCornerToggleBtn) {
           qpCornerToggleBtn.classList.toggle('bars-open', !qpBarsCollapsed);
           qpCornerToggleBtn.textContent = qpBarsCollapsed ? '☰' : '▴';
@@ -2516,7 +2557,7 @@
         appLayout.classList.remove('text-open');
         appLayout.classList.add('text-closed');
         textViewBtn.classList.remove('active');
-        document.body.classList.remove('text-open-mobile');
+        document.body.classList.remove('text-open-mobile', 'qp-immersive-clean');
         if (mobileTabBar) { $('mtabPlayer')?.classList.add('active'); $('mtabText')?.classList.remove('active'); }
       }
 
@@ -2556,7 +2597,7 @@
         if (currentQpTab === 'mushaf') loadMushafView(surahNum);
 
         // تحميل النص أولاً
-        const ayahs = await fetchSurahText(surahNum).catch(() => []);
+        const [ayahs] = await Promise.all([fetchSurahText(surahNum).catch(() => []), ensureSharedPageSurahsText(surahNum)]);
         // حارس السباق: إن غيّر المستخدم السورة أثناء التحميل نتجاهل النتيجة المتأخرة
         if (loadedSurahNum !== surahNum) return;
         ayahsData = ayahs;
@@ -2814,19 +2855,6 @@
       ];
 
       function renderAyahsHTML(surahNum, ayahs) {
-        const sajdahs = SAJDAH_MAP[surahNum] || [];
-        const s = surahs.find(x => x.n === surahNum);
-        const si = s ? surahs.indexOf(s) : (surahNum - 1);
-        const smeta = (lang === 'ar' ? SMETA_AR : SMETA_EN)[si] || [];
-        const ayahCount = smeta[0] || ayahs.length;
-        const surahType = smeta[1] || '';
-        const rawName = s ? s.name.replace(/^سورة\s+/, '') : '';
-        const cleanName = rawName || (s ? s.name : '');
-
-        const juzInSurah = JUZ_STARTS.filter(([sn]) => sn === surahNum);
-        const sajdahNums = new Set((sajdahs || []).map(sj =>
-          sj?.verse_key ? parseInt(sj.verse_key.split(':')[1]) : (typeof sj === 'number' ? sj : null)
-        ).filter(Boolean));
         const isInline  = currentLineMode === 'inline';
         const isUthmani = currentScript === 'uthmani';
         const isSimple  = currentScript === 'simple';
@@ -2834,13 +2862,11 @@
         const isTajweed = currentScript === 'tajweed';
         const isQcfLike = isQcf || isTajweed;
 
-        // خطوط المصحف أو خط التجويد: النص بترميز الصفحة المصحفية إن كانت جاهزة
         const qcfReady = isTajweed ? (tajweedReadySurah === surahNum) : (qcfReadySurah === surahNum);
-        const qcfEntry = (isQcfLike && qcfReady) ? qcfData[String(surahNum)] : null;
-        const qcfWrapCls = qcfEntry ? (' qcf-mode' + (isTajweed ? ' tajweed-mode' : '')) : '';
+        const qcfEntryMain = (isQcfLike && qcfReady && qcfData) ? qcfData[String(surahNum)] : null;
+        const qcfWrapCls = qcfEntryMain ? (' qcf-mode' + (isTajweed ? ' tajweed-mode' : '')) : '';
         const pagesFailed = isTajweed ? tajweedPagesFailed : qcfPagesFailed;
 
-        // دالة إزالة البسملة الملتصقة بأول آية من الـ API لتظهر في ترويسة مستقلة كالمصحف
         function stripBasmalahPrefix(txt) {
           if (!txt) return '';
           const words = txt.trim().split(/\s+/);
@@ -2853,33 +2879,30 @@
           return txt;
         }
 
-        // دالة اختيار النص
-        const pickTxt = ay => {
+        const pickTxtFor = (sNum, ay) => {
+          if (!ay) return '';
           let t = isUthmani ? ay.text : (isSimple ? (ay.textSimple || ay.textPrint) : ay.textPrint);
-          if (surahNum !== 1 && surahNum !== 9 && ay.numberInSurah === 1) {
+          if (sNum !== 1 && sNum !== 9 && ay.numberInSurah === 1) {
             t = stripBasmalahPrefix(t);
           }
           return t;
         };
+
         const attrEsc = s => String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        // مسافة بعرضها صفري بين رموز المصحف: نقطة تبرير ونقطة كسر بلا فراغ مرئي
         const QSP = '<span class="qsp"> </span>';
-        // دالة النص العادي (بديل عند عدم توفّر خط المصحف أو خط التجويد)
         const plainCell = plain => ({ txt: plain, style: `font-size:${qpFontSize}px`, cls: '', data: '', marker: true });
-        // محتوى الآية + أنماطها (نص مصحف أو نص عادي)
-        const cell = ay => {
-          const plain = pickTxt(ay);
-          if (!qcfEntry) return plainCell(plain);
-          const raw = (qcfEntry.g[ay.numberInSurah - 1] || '').replace(/\r/g, '');
+
+        const cellFor = (sNum, ayNum, ayObj) => {
+          const plain = ayObj ? pickTxtFor(sNum, ayObj) : `${lang === 'ar' ? 'آية' : 'Verse'} ${ayNum}`;
+          const sEntry = (isQcfLike && qcfReady && qcfData) ? qcfData[String(sNum)] : null;
+          if (!sEntry) return plainCell(plain);
+          const raw = (sEntry.g[ayNum - 1] || '').replace(/\r/g, '');
           if (!raw.replace(/\s+/g, '')) return plainCell(plain);
-          const pg = qcfPageFor(surahNum, ay.numberInSurah);
-          // صفحة لم يُحمَّل خطها → نعرض الآية بالنص العادي بدل مربعات فارغة
+          const pg = qcfPageFor(sNum, ayNum);
           if (pagesFailed.has(pg)) return plainCell(plain);
           const fam = isTajweed ? tajweedFontName(pg) : qcfFontName(pg);
           const pgStr = String(pg).padStart(3, '0');
           const palStyle = isTajweed ? `--page-pal:--tajweed-dark-${pgStr};` : '';
-
-          // جمع رموز الآية بانسيابية دون كسر مصطنع داخل الآية لضبط التبرير كالمصحف
           const lines = raw.split('\n').map(s => Array.from(s).filter(ch => !/\s/.test(ch)));
           const parts = lines.map(arr => arr.join(QSP));
           const txt = parts.filter(p => p.length).join(QSP);
@@ -2892,44 +2915,54 @@
           };
         };
 
-        let html = '';
-
-        // 1. برواز فاتحة السورة المزخرف كالمصحف الشريف
-        const bannerHTML = `
-        <div class="mushaf-surah-banner" role="region" aria-label="سورة ${cleanName}">
-          <div class="ms-inner">
-            <div class="ms-meta ms-meta-right">
-              <span class="ms-badge">${surahType || (lang === 'ar' ? 'مكية' : 'Meccan')}</span>
+        function buildBannerFor(sNum, isNeighbor = false) {
+          const sObj = surahs.find(x => x.n === sNum);
+          const si = sObj ? surahs.indexOf(sObj) : (sNum - 1);
+          const smeta = (lang === 'ar' ? SMETA_AR : SMETA_EN)[si] || [];
+          const aCount = smeta[0] || (qcfData?.[String(sNum)]?.g?.length || '');
+          const sType = smeta[1] || '';
+          const rName = sObj ? sObj.name.replace(/^سورة\s+/, '') : String(sNum);
+          const cName = rName || (sObj ? sObj.name : String(sNum));
+          return `
+          <div class="mushaf-surah-banner${isNeighbor ? ' mushaf-neighbor-surah' : ''}" role="region" aria-label="سورة ${cName}">
+            <div class="ms-inner">
+              <div class="ms-meta ms-meta-right">
+                <span class="ms-badge">${sType || (lang === 'ar' ? 'مكية' : 'Meccan')}</span>
+              </div>
+              <div class="ms-title-block">
+                <span class="ms-ornament">❖</span>
+                <span class="ms-name">سُورَةُ ${cName}</span>
+                <span class="ms-ornament">❖</span>
+              </div>
+              <div class="ms-meta ms-meta-left">
+                <span class="ms-badge">${toArDigits(aCount)} ${T[lang].ayahsLbl}</span>
+              </div>
             </div>
-            <div class="ms-title-block">
-              <span class="ms-ornament">❖</span>
-              <span class="ms-name">سُورَةُ ${cleanName}</span>
-              <span class="ms-ornament">❖</span>
-            </div>
-            <div class="ms-meta ms-meta-left">
-              <span class="ms-badge">${toArDigits(ayahCount)} ${T[lang].ayahsLbl}</span>
-            </div>
-          </div>
-        </div>` + ((surahNum !== 9 && surahNum !== 1) ? `
-          <div class="si-basmalah">
+          </div>` + ((sNum !== 9 && sNum !== 1) ? `
+          <div class="si-basmalah${isNeighbor ? ' mushaf-neighbor-surah' : ''}">
             <span class="basmalah-decor">۞</span>
             <span class="basmalah-text">بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ</span>
             <span class="basmalah-decor">۞</span>
           </div>` : '');
+        }
 
-        const footerHTML = `
-        <div class="mushaf-surah-footer">
-          <span class="ms-footer-deco">❖ ❖ ❖</span>
-          <span class="ms-footer-txt">${lang === 'ar' ? `نهاية سورة ${cleanName}` : `End of Surah ${cleanName}`}</span>
-          <span class="ms-footer-deco">❖ ❖ ❖</span>
-        </div>`;
+        function buildFooterFor(sNum) {
+          const sObj = surahs.find(x => x.n === sNum);
+          const cName = sObj ? (sObj.name.replace(/^سورة\s+/, '') || sObj.name) : String(sNum);
+          return `
+          <div class="mushaf-surah-footer">
+            <span class="ms-footer-deco">❖ ❖ ❖</span>
+            <span class="ms-footer-txt">${lang === 'ar' ? `نهاية سورة ${cName}` : `End of Surah ${cName}`}</span>
+            <span class="ms-footer-deco">❖ ❖ ❖</span>
+          </div>`;
+        }
 
-        // تقسيم آيات السورة حسب صفحات المصحف الشريف
         const rawPages = (qcfData && qcfData[String(surahNum)] && qcfData[String(surahNum)].p)
           ? qcfData[String(surahNum)].p
           : [[1, ayahs.length, SURAH_PAGES[surahNum - 1] || 1]];
         textSurahPages = rawPages.map(r => r[2]);
         const isPagesMode = (textPageMode === 'pages');
+        const isMushafDist = (mushafPageDist === 'mushaf' && !!qcfData);
 
         const pageSepHTML = pageNum => `
         <div class="mushaf-page-sep" data-page="${pageNum}">
@@ -2938,118 +2971,159 @@
           <span class="mps-line"></span>
         </div>`;
 
-        if (!isPagesMode) html += bannerHTML;
+        let html = '';
+        // في وضع السورة المستقلة مع التمرير لأسفل: نعرض البسملة والبرواز مرة واحدة في الأعلى
+        if (!isPagesMode && !isMushafDist) {
+          html += buildBannerFor(surahNum, false);
+        }
 
         const wrapModeCls = isInline
-          ? (`inline-mode${qcfWrapCls}${isQcfLike && qcfEntry && mushafLines ? ' qlines' : ''}`)
+          ? (`inline-mode${qcfWrapCls}${isQcfLike && qcfEntryMain && mushafLines ? ' qlines' : ''}`)
           : (`block-mode${qcfWrapCls}`);
 
         html += `<div class="qp-text-wrap ${wrapModeCls}${isPagesMode ? ' pages-mode' : ''}" id="qpInlineWrap" style="--qcf-fs:${Math.round(qpFontSize * QCF_SCALE)}px">`;
 
         rawPages.forEach((pRange, pIdx) => {
-          const [startAy, endAy, pageNum] = pRange;
+          const [, , pageNum] = pRange;
           let pageInner = '';
 
           if (!isPagesMode && pIdx > 0) {
             pageInner += pageSepHTML(pageNum);
           }
 
-          if (isInline && isQcfLike && qcfEntry && mushafLines) {
-            // ── الوضع الأصيل: أسطر مصحف المدينة الـ 15 الحقيقية للصفحة ──
-            const fam = isTajweed ? tajweedFontName(pageNum) : qcfFontName(pageNum);
-            const pgStr = String(pageNum).padStart(3, '0');
-            const palStyle = isTajweed ? `--page-pal:--tajweed-dark-${pgStr};` : '';
-            const fontStyle = `font-family:'${fam}';${palStyle}`;
+          // تحديد مقاطع السور في هذه الصفحة: إما جميع السور المشتركة بالصفحة (توزيع المصحف) أو السورة الحالية فقط
+          const pageSegments = isMushafDist
+            ? getSurahSegmentsOnPage(pageNum)
+            : [{ surahNum, startAy: pRange[0], endAy: pRange[1], pageNum }];
 
-            const lines = [];
-            let curLine = [];
-            for (let an = startAy; an <= endAy; an++) {
-              const ay = ayahs.find(x => x.numberInSurah === an);
-              if (!ay) continue;
-              const plain = pickTxt(ay);
-              const raw = (qcfEntry.g[an - 1] || '').replace(/\r/g, '');
-              const splits = raw.split('\n');
-              splits.forEach((part, idx) => {
-                const glyphArr = Array.from(part).filter(ch => !/\s/.test(ch));
-                const glyphs = glyphArr.join(QSP);
-                if (idx === 0) {
-                  if (glyphs) curLine.push({ an, glyphs, count: glyphArr.length, fontStyle, plain });
-                } else {
-                  if (curLine.length) lines.push(curLine);
-                  curLine = [];
-                  if (glyphs) curLine.push({ an, glyphs, count: glyphArr.length, fontStyle, plain });
-                }
-              });
-            }
-            if (curLine.length) lines.push(curLine);
-
-            const lineCounts = lines.map(l => l.reduce((sum, seg) => sum + (seg.count || 0), 0));
-            const totalGlyphs = lineCounts.reduce((a, b) => a + b, 0);
-            const avgGlyphs = lines.length ? (totalGlyphs / lines.length) : 11.5;
-
-            pageInner += `<div class="mushaf-page-lines" data-page="${pageNum}" data-avg-glyphs="${avgGlyphs.toFixed(2)}" data-lines-count="${lines.length}">`;
-            lines.forEach((lineSegs, lIdx) => {
-              const lineGlyphCount = lineCounts[lIdx] || 0;
-              const isSurahLastLine = (pIdx === rawPages.length - 1 && lIdx === lines.length - 1);
-              const shouldCenter = lineGlyphCount <= 5 || (isSurahLastLine && lineGlyphCount <= 8);
-              pageInner += `<div class="mushaf-page-line${shouldCenter ? ' is-last-line' : ''}" data-glyphs="${lineGlyphCount}">`;
-              lineSegs.forEach((seg, sIdx) => {
-                const segSep = sIdx < lineSegs.length - 1 ? QSP : '';
-                pageInner += `<span class="si-ayah qcf-ayah${isTajweed ? ' tajweed-ayah' : ''}" data-ayah="${seg.an}" data-text="${attrEsc(seg.plain)}" style="${seg.fontStyle}">${seg.glyphs}</span>${segSep}`;
-              });
-              pageInner += `</div>`;
-            });
-            pageInner += `</div>`;
-          } else if (isInline) {
-            // ── وضع التدفق الحر المتصل ──
-            for (let an = startAy; an <= endAy; an++) {
-              const ay = ayahs.find(x => x.numberInSurah === an);
-              if (!ay) continue;
-              const juzEntry = juzInSurah.find(([, jAn]) => jAn === ay.numberInSurah);
-              if (juzEntry) {
-                const jNum = JUZ_STARTS.indexOf(juzEntry) + 1;
-                pageInner += `<span class="juz-marker" style="display:inline-block;margin:0 6px">[${lang === 'ar' ? 'الجزء' : 'Juz'} ${toArDigits(jNum)}]</span>`;
-              }
-              const c = cell(ay);
-              const hasSajdah = sajdahNums.has(ay.numberInSurah);
-              const tail = c.marker
-                ? `&nbsp;<span class="si-ayah-marker">${toArDigits(ay.numberInSurah)}</span>${hasSajdah ? ' 🙏' : ''}`
-                : (hasSajdah ? ' 🙏' : '');
-              pageInner += `<span class="si-ayah${c.cls}" data-ayah="${ay.numberInSurah}"${c.data} style="${c.style}">${c.txt}${tail}</span> `;
-            }
-          } else {
-            // ── وضع الكتلة: كل آية بسطر مستقل ──
-            for (let an = startAy; an <= endAy; an++) {
-              const ay = ayahs.find(x => x.numberInSurah === an);
-              if (!ay) continue;
-              const juzEntry = juzInSurah.find(([, jAn]) => jAn === ay.numberInSurah);
-              if (juzEntry) {
-                const jNum = JUZ_STARTS.indexOf(juzEntry) + 1;
-                pageInner += `<div class="juz-marker">${lang === 'ar' ? `— الجزء ${toArDigits(jNum)} —` : `— Juz' ${jNum} —`}</div>`;
-              }
-              const c = cell(ay);
-              const hasSajdah = sajdahNums.has(ay.numberInSurah);
-              const tail = c.marker
-                ? `&nbsp;<span class="si-ayah-marker">${toArDigits(ay.numberInSurah)}</span>${hasSajdah ? '&nbsp;<span title="آية سجدة">🙏</span>' : ''}`
-                : (hasSajdah ? '&nbsp;<span title="آية سجدة">🙏</span>' : '');
-              pageInner += `<div class="si-ayah${c.cls}" data-ayah="${ay.numberInSurah}"${c.data}><div class="si-ayah-text" dir="rtl" style="${c.style}">${c.txt}${tail}</div></div>`;
-            }
+          // في وضع السورة المستقلة مع الصفحات المستقلة: نضع البرواز في الصفحة الأولى فقط
+          if (isPagesMode && !isMushafDist && pIdx === 0) {
+            pageInner += buildBannerFor(surahNum, false);
           }
 
+          // حساب متوسط الرموز الإجمالي للصفحة كاملة (عبر كل المقاطع المشتركة في الصفحة) لضبط حجم خط موحّد للصفحة
+          let pageTotalGlyphs = 0;
+          let pageTotalLines = 0;
+          if (isInline && isQcfLike && qcfEntryMain && mushafLines) {
+            pageSegments.forEach(seg => {
+              const sEnt = qcfData?.[String(seg.surahNum)];
+              if (!sEnt) return;
+              let lCount = 1;
+              for (let an = seg.startAy; an <= seg.endAy; an++) {
+                const rawG = (sEnt.g[an - 1] || '').replace(/\r/g, '');
+                const sp = rawG.split('\n');
+                lCount += (sp.length - 1);
+                pageTotalGlyphs += Array.from(rawG).filter(ch => !/\s/.test(ch)).length;
+              }
+              pageTotalLines += Math.max(1, lCount);
+            });
+          }
+          const pageAvgGlyphs = pageTotalLines > 0 ? (pageTotalGlyphs / pageTotalLines) : 11.5;
+          const EffectivePageLines = isMushafDist && pageSegments.length > 1 ? 15 : pageTotalLines;
+
+          pageSegments.forEach(seg => {
+            const segSurah = seg.surahNum;
+            const isNeighbor = (segSurah !== surahNum);
+            const segAyahsList = (segSurah === surahNum) ? ayahs : (surahCache[segSurah] || []);
+            const segQcfEntry = (isQcfLike && qcfReady && qcfData) ? qcfData[String(segSurah)] : null;
+            const segTotalAyahs = (SMETA_AR[segSurah - 1]?.[0]) || (segQcfEntry?.g?.length) || segAyahsList.length || seg.endAy;
+            const segSajdahs = new Set((SAJDAH_MAP[segSurah] || []).map(Number));
+            const segJuzInSurah = JUZ_STARTS.filter(([sn]) => sn === segSurah);
+
+            // في وضع توزيع المصحف: نعرض برواز السورة والبسملة لكل سورة تبدأ عند الآية 1 في هذه الصفحة (أو بأول صفحة إن لم تبدأ من 1 في وضع التمرير للسورة المختارة)
+            if (isMushafDist) {
+              if (seg.startAy === 1) {
+                pageInner += buildBannerFor(segSurah, isNeighbor);
+              }
+            }
+
+            if (isInline && isQcfLike && segQcfEntry && mushafLines) {
+              const fam = isTajweed ? tajweedFontName(pageNum) : qcfFontName(pageNum);
+              const pgStr = String(pageNum).padStart(3, '0');
+              const palStyle = isTajweed ? `--page-pal:--tajweed-dark-${pgStr};` : '';
+              const fontStyle = `font-family:'${fam}';${palStyle}`;
+
+              const lines = [];
+              let curLine = [];
+              for (let an = seg.startAy; an <= seg.endAy; an++) {
+                const ayObj = segAyahsList.find(x => x.numberInSurah === an);
+                const plain = ayObj ? pickTxtFor(segSurah, ayObj) : '';
+                const raw = (segQcfEntry.g[an - 1] || '').replace(/\r/g, '');
+                const splits = raw.split('\n');
+                splits.forEach((part, idx) => {
+                  const glyphArr = Array.from(part).filter(ch => !/\s/.test(ch));
+                  const glyphs = glyphArr.join(QSP);
+                  if (idx === 0) {
+                    if (glyphs) curLine.push({ sNum: segSurah, an, glyphs, count: glyphArr.length, fontStyle, plain });
+                  } else {
+                    if (curLine.length) lines.push(curLine);
+                    curLine = [];
+                    if (glyphs) curLine.push({ sNum: segSurah, an, glyphs, count: glyphArr.length, fontStyle, plain });
+                  }
+                });
+              }
+              if (curLine.length) lines.push(curLine);
+
+              const lineCounts = lines.map(l => l.reduce((sum, item) => sum + (item.count || 0), 0));
+
+              pageInner += `<div class="mushaf-page-lines${isNeighbor ? ' mushaf-neighbor-surah' : ''}" data-page="${pageNum}" data-surah="${segSurah}" data-avg-glyphs="${pageAvgGlyphs.toFixed(2)}" data-lines-count="${EffectivePageLines || lines.length}">`;
+              lines.forEach((lineSegs, lIdx) => {
+                const lineGlyphCount = lineCounts[lIdx] || 0;
+                const isSurahEndLine = (seg.endAy >= segTotalAyahs && lIdx === lines.length - 1);
+                const shouldCenter = lineGlyphCount <= 5 || (isSurahEndLine && lineGlyphCount <= 8);
+                pageInner += `<div class="mushaf-page-line${shouldCenter ? ' is-last-line' : ''}" data-glyphs="${lineGlyphCount}">`;
+                lineSegs.forEach((item, sIdx) => {
+                  const segSep = sIdx < lineSegs.length - 1 ? QSP : '';
+                  pageInner += `<span class="si-ayah qcf-ayah${isTajweed ? ' tajweed-ayah' : ''}" data-surah="${item.sNum}" data-ayah="${item.an}" data-text="${attrEsc(item.plain)}" style="${item.fontStyle}">${item.glyphs}</span>${segSep}`;
+                });
+                pageInner += `</div>`;
+              });
+              pageInner += `</div>`;
+            } else if (isInline) {
+              for (let an = seg.startAy; an <= seg.endAy; an++) {
+                const ayObj = segAyahsList.find(x => x.numberInSurah === an);
+                const juzEntry = segJuzInSurah.find(([, jAn]) => jAn === an);
+                if (juzEntry) {
+                  const jNum = JUZ_STARTS.indexOf(juzEntry) + 1;
+                  pageInner += `<span class="juz-marker" style="display:inline-block;margin:0 6px">[${lang === 'ar' ? 'الجزء' : 'Juz'} ${toArDigits(jNum)}]</span>`;
+                }
+                const c = cellFor(segSurah, an, ayObj);
+                const hasSajdah = segSajdahs.has(an);
+                const tail = c.marker
+                  ? `&nbsp;<span class="si-ayah-marker">${toArDigits(an)}</span>${hasSajdah ? ' 🙏' : ''}`
+                  : (hasSajdah ? ' 🙏' : '');
+                pageInner += `<span class="si-ayah${c.cls}${isNeighbor ? ' mushaf-neighbor-surah' : ''}" data-surah="${segSurah}" data-ayah="${an}"${c.data} style="${c.style}">${c.txt}${tail}</span> `;
+              }
+            } else {
+              for (let an = seg.startAy; an <= seg.endAy; an++) {
+                const ayObj = segAyahsList.find(x => x.numberInSurah === an);
+                const juzEntry = segJuzInSurah.find(([, jAn]) => jAn === an);
+                if (juzEntry) {
+                  const jNum = JUZ_STARTS.indexOf(juzEntry) + 1;
+                  pageInner += `<div class="juz-marker">${lang === 'ar' ? `— الجزء ${toArDigits(jNum)} —` : `— Juz' ${jNum} —`}</div>`;
+                }
+                const c = cellFor(segSurah, an, ayObj);
+                const hasSajdah = segSajdahs.has(an);
+                const tail = c.marker
+                  ? `&nbsp;<span class="si-ayah-marker">${toArDigits(an)}</span>${hasSajdah ? '&nbsp;<span title="آية سجدة">🙏</span>' : ''}`
+                  : (hasSajdah ? '&nbsp;<span title="آية سجدة">🙏</span>' : '');
+                pageInner += `<div class="si-ayah${c.cls}${isNeighbor ? ' mushaf-neighbor-surah' : ''}" data-surah="${segSurah}" data-ayah="${an}"${c.data}><div class="si-ayah-text" dir="rtl" style="${c.style}">${c.txt}${tail}</div></div>`;
+              }
+            }
+          });
+
           if (isPagesMode) {
-            const isFirst = (pIdx === 0);
             const isLast = (pIdx === rawPages.length - 1);
             html += `<div class="qp-text-page${pIdx === textCurrentPageIdx ? ' active' : ''}" data-page-idx="${pIdx}" data-page="${pageNum}">
-              ${isFirst ? bannerHTML : ''}
               ${pageInner}
-              ${isLast ? footerHTML : ''}
+              ${isLast && !isMushafDist ? buildFooterFor(surahNum) : ''}
             </div>`;
           } else {
             html += pageInner;
           }
         });
 
-        if (!isPagesMode) html += footerHTML;
+        if (!isPagesMode && !isMushafDist) html += buildFooterFor(surahNum);
         html += `</div>`;
         return html;
       }
@@ -3061,7 +3135,18 @@
         container.querySelectorAll('.si-ayah').forEach(row => {
           row.addEventListener('click', () => {
             const ayahN = parseInt(row.dataset.ayah, 10);
+            const rowSurahN = parseInt(row.dataset.surah || String(surahNum), 10);
             if (isNaN(ayahN)) return;
+
+            // إذا نقر المستخدم على آية تابعة لسورة مجاورة مشتركة في نفس الصفحة، ننتقل لتلك السورة ونشغل الآية
+            if (rowSurahN && rowSurahN !== surahNum) {
+              const targetSi = surahs.findIndex(s => s.n === rowSurahN);
+              if (targetSi >= 0) {
+                pendingResumeAyah = { surahNum: rowSurahN, ayah: ayahN };
+                selectReciterMoshafSurah(rIdx, mIdx, targetSi, true);
+                return;
+              }
+            }
 
             // إذا كانت التوقيتات الدقيقة محمّلة مسبقاً، نقفز فوراً بالمللي ثانية
             if (currentAyahTimestamps && currentAyahTimestamps.length) {
@@ -3114,7 +3199,8 @@
 
           rows.forEach(r => {
             const aNum = parseInt(r.dataset.ayah, 10);
-            const isTarget = (activeAyahNum !== null) && (aNum === activeAyahNum);
+            const rSurah = parseInt(r.dataset.surah || String(loadedSurahNum), 10);
+            const isTarget = (activeAyahNum !== null) && (aNum === activeAyahNum) && (rSurah === loadedSurahNum);
             r.classList.toggle('sync-active', autoHighlight && isTarget);
             if (isTarget) targetRow = r;
           });
@@ -4362,6 +4448,9 @@
           lmOpts: ['≡ كل آية بسطر', '⋯ متتاليات'],
           pm: 'طريقة عرض صفحات السورة',
           pmOpts: ['↕ تمرير لأسفل', '↔ صفحات مستقلة'],
+          pd: 'توزيع السور في الصفحة',
+          pdOpts: ['📖 توزيع المصحف', '📄 سورة مستقلة'],
+          tabGen: '⚙️ الإعدادات العامة', tabDl: '📥 التحميلات والتخزين',
           mushaf: '📖 المصحف المصور', mushafSrc: 'المصدر الافتراضي',
           play: '🎵 التشغيل', autoPlayChange: 'تشغيل مباشر عند تغيير القارئ / السورة', speed: 'سرعة التشغيل', vol: 'مستوى الصوت', rep: 'التكرار', stop: 'إيقاف تلقائي بعد',
           misc: '🔔 الإشعارات والبيانات', notif: 'تنبيه عند انتهاء السورة / المؤقت', clear: '🗑️ مسح جميع البيانات',
@@ -4378,6 +4467,9 @@
           lmOpts: ['≡ One ayah per line', '⋯ Flowing text'],
           pm: 'Surah page navigation',
           pmOpts: ['↕ Scroll down', '↔ Independent pages'],
+          pd: 'Surah page distribution',
+          pdOpts: ['📖 Mushaf layout', '📄 Single surah'],
+          tabGen: '⚙️ General Settings', tabDl: '📥 Downloads & Offline',
           mushaf: '📖 Mushaf Images', mushafSrc: 'Default source',
           play: '🎵 Playback', autoPlayChange: 'Direct playback on reciter/surah change', speed: 'Playback speed', vol: 'Volume', rep: 'Repeat', stop: 'Auto-stop after',
           misc: '🔔 Notifications & Data', notif: 'Alert when surah / timer ends', clear: '🗑️ Clear all data',
@@ -4399,6 +4491,7 @@
           fs: 'حجم خط نص السورة — يمكنك تغييره أيضاً من أزرار A− / A+ في شريط خيارات النص.',
           lm: 'كل آية في سطر مستقل، أو الآيات متتالية داخل فقرة واحدة.',
           pm: 'التمرير العمودي لأسفل عبر كامل السورة، أو عرض كل صفحة مصحفية في قسم مستقل يتم تقليبه يميناً ويساراً كالصور.',
+          pd: 'توزيع المصحف يُظهر السورة السابقة أو التالية إذا كانت مشتركة في نفس الصفحة كما في المصحف الشريف، أو عرض السورة الحالية وحدها.',
           mushafSrc: 'المصدر الافتراضي لصور المصحف المصوّر.',
           speed: 'سرعة التلاوة من 0.5× إلى 2×.',
           vol: 'مستوى صوت التشغيل.',
@@ -4417,6 +4510,7 @@
           fs: 'Font size of the surah text — you can also change it with the A− / A+ buttons in the text options bar.',
           lm: 'One ayah per line, or ayahs flowing inside a single paragraph.',
           pm: 'Scroll vertically down through the surah, or view each Mushaf page independently and flip right/left.',
+          pd: 'Show previous/next surahs when they share the same Mushaf page, or show only the selected surah.',
           mushafSrc: 'Default source for the illustrated mushaf pages.',
           speed: 'Recitation speed from 0.5× to 2×.',
           vol: 'Playback volume.',
@@ -4440,6 +4534,12 @@
         if ($('setPageModeLbl')) $('setPageModeLbl').textContent = L.pm;
         const pmBtns = $('setPageModeSeg');
         if (pmBtns) Array.from(pmBtns.querySelectorAll('button')).forEach((b, i) => { if (L.pmOpts[i]) b.textContent = L.pmOpts[i]; });
+        if ($('setPageDistLbl')) $('setPageDistLbl').textContent = L.pd;
+        const pdBtns = $('setPageDistSeg');
+        if (pdBtns) Array.from(pdBtns.querySelectorAll('button')).forEach((b, i) => { if (L.pdOpts[i]) b.textContent = L.pdOpts[i]; });
+        if ($('setTabGeneral')) $('setTabGeneral').textContent = L.tabGen;
+        if ($('setTabDownloads')) $('setTabDownloads').textContent = L.tabDl;
+        if (typeof fillDownloadsLabels === 'function') fillDownloadsLabels();
         $('setMushafTitle').textContent = L.mushaf; $('setMushafLbl').textContent = L.mushafSrc;
         $('setPlayTitle').textContent = L.play;
         if ($('setAutoPlayChangeLbl')) $('setAutoPlayChangeLbl').textContent = L.autoPlayChange;
@@ -4464,7 +4564,7 @@
         const map = {
           setThemeLbl: 'theme', setLangLbl: 'lang', setScriptLbl: 'script',
           setAutoScrollLbl: 'autoS', setAutoHiLbl: 'autoHi', setMushafLinesLbl: 'mLines',
-          setFontSizeLbl: 'fs', setLineModeLbl: 'lm', setPageModeLbl: 'pm', setMushafLbl: 'mushafSrc',
+          setFontSizeLbl: 'fs', setLineModeLbl: 'lm', setPageModeLbl: 'pm', setPageDistLbl: 'pd', setMushafLbl: 'mushafSrc',
           setSpeedLbl: 'speed', setVolLbl: 'vol', setRepeatLbl: 'rep',
           setStopLbl: 'stop', setNotifLbl: 'notif', setClearData: 'clear'
         };
@@ -4507,6 +4607,9 @@
         // طريقة عرض صفحات السورة
         document.querySelectorAll('#setPageModeSeg button').forEach(b =>
           b.classList.toggle('active', b.dataset.pm === textPageMode));
+        // توزيع السور في الصفحة
+        document.querySelectorAll('#setPageDistSeg button').forEach(b =>
+          b.classList.toggle('active', b.dataset.pd === mushafPageDist));
         // المصحف
         fillMushafSourceSelect();
         // السرعة
@@ -4589,6 +4692,535 @@
       document.querySelectorAll('#setPageModeSeg button').forEach(b => {
         b.onclick = () => { setPageMode(b.dataset.pm); syncSettingsControls(); };
       });
+      // توزيع السور في الصفحة: توزيع المصحف / سورة مستقلة (يُحفظ)
+      document.querySelectorAll('#setPageDistSeg button').forEach(b => {
+        b.onclick = () => { setPageDist(b.dataset.pd); syncSettingsControls(); };
+      });
+
+      /* ══════════════════════════════════════════════════════════════
+         مركز التحميلات والتخزين للعمل بدون إنترنت (Downloads & Offline Center)
+         - يدعم الحفظ في ذاكرة المتصفح (Cache Storage) أو في مجلد محلي (File System Access API)
+         - يدعم تنزيل: الملفات الأساسية ونصوص الـ 114 سورة، الخطوط (QCF والتجويد)، الصور، والتلاوات الصوتية
+      ══════════════════════════════════════════════════════════════ */
+      let dlTargetMode = ls('dlTargetMode') === 'folder' ? 'folder' : 'browser'; // 'browser' | 'folder'
+      let dlDirHandle = null;
+      let dlAbortCtrl = null;
+      let dlRunning = false;
+
+      const DL_LABELS = {
+        ar: {
+          targetTitle: '💾 مكان الحفظ والتخزين',
+          targetBrowser: '🌐 ذاكرة المتصفح',
+          targetFolder: '📁 مجلد على الجهاز',
+          pickFolder: '📂 اختيار مجلد الحفظ...',
+          noFolder: 'لم يتم اختيار مجلد بعد (سيُحفظ أيضاً في ذاكرة المتصفح)',
+          itemsTitle: '📦 اختر ما تريد تنزيله',
+          selectAll: '☑️ تحديد الكل',
+          unselectAll: '⬜ إلغاء الكل',
+          coreLbl: '📦 الملفات الأساسية ونصوص القرآن (114 سورة)',
+          coreSub: 'ملفات المشغل + بيانات القراء + النصوص العثمانية والمطبوعة ومعلومات السور',
+          fontsLbl: '🔤 خطوط المصحف الشريف والتجويد (604 صفحة)',
+          fontsSub: 'لتشغيل رسم مصحف المدينة وخط التجويد الملوّن بدون إنترنت',
+          fontType: 'نوع الخط:',
+          fontTypes: ['🕋 خطوط المصحف (QCF)', '🎨 خط التجويد الملوّن', '✨ الخطان معاً (QCF + التجويد)'],
+          rangeLbl: 'النطاق:',
+          rangeOpts: ['كامل المصحف (1 – 604)', 'صفحات محددة...'],
+          fromPg: 'من صفحة:', toPg: 'إلى:',
+          imagesLbl: '🖼️ صور صفحات المصحف المصوّر (604 صفحة)',
+          imagesSub: 'تنزيل صفحات المصحف المصوّرة لتصفحها بدون إنترنت',
+          imgSrc: 'المصدر:',
+          audioLbl: '🎧 التلاوات الصوتية للقراء (MP3 + التوقيتات)',
+          audioSub: 'تنزيل تلاوات أي مقرئ لسور محددة أو كامل المصحف',
+          recLbl: 'المقرئ:', moshLbl: 'المصحف:', surahsLbl: 'السور:',
+          audRangeOpts: ['من سورة إلى سورة...', 'جميع السور المتاحة (الكل)'],
+          fromSurah: 'من:', toSurah: 'إلى:',
+          startBtn: '⬇️ بدء التنزيل الآن',
+          cancelBtn: '⏹️ إيقاف',
+          clearCacheBtn: '🗑️ مسح التنزيلات المخزنة في المتصفح'
+        },
+        en: {
+          targetTitle: '💾 Storage Destination',
+          targetBrowser: '🌐 Browser Memory',
+          targetFolder: '📁 Device Folder',
+          pickFolder: '📂 Choose Save Folder...',
+          noFolder: 'No folder selected yet (also cached in browser memory)',
+          itemsTitle: '📦 Select Items to Download',
+          selectAll: '☑️ Select All',
+          unselectAll: '⬜ Unselect All',
+          coreLbl: '📦 Core App & All 114 Surahs Text',
+          coreSub: 'App files + reciters data + Uthmani/print texts & surah info',
+          fontsLbl: '🔤 Mushaf & Tajweed Fonts (604 Pages)',
+          fontsSub: 'Run QCF Madinah & Colored Tajweed fonts offline',
+          fontType: 'Font Type:',
+          fontTypes: ['🕋 Mushaf Fonts (QCF)', '🎨 Colored Tajweed Font', '✨ Both (QCF + Tajweed)'],
+          rangeLbl: 'Range:',
+          rangeOpts: ['Full Mushaf (1 – 604)', 'Custom page range...'],
+          fromPg: 'From page:', toPg: 'To:',
+          imagesLbl: '🖼️ Illustrated Mushaf Pages (604 Pages)',
+          imagesSub: 'Download Mushaf page images for offline reading',
+          imgSrc: 'Source:',
+          audioLbl: '🎧 Audio Recitations (MP3 + Sync Timings)',
+          audioSub: 'Download recitations for any reciter (surah range or all)',
+          recLbl: 'Reciter:', moshLbl: 'Moshaf:', surahsLbl: 'Surahs:',
+          audRangeOpts: ['From surah to surah...', 'All available surahs'],
+          fromSurah: 'From:', toSurah: 'To:',
+          startBtn: '⬇️ Start Download Now',
+          cancelBtn: '⏹️ Stop',
+          clearCacheBtn: '🗑️ Clear Browser Offline Downloads'
+        }
+      };
+
+      function fillDownloadsLabels() {
+        const L = DL_LABELS[lang] || DL_LABELS.ar;
+        const setTxt = (id, v) => { const e = $(id); if (e && v != null) e.textContent = v; };
+        setTxt('dlTargetTitle', L.targetTitle);
+        setTxt('dlTargetBrowserBtn', L.targetBrowser);
+        setTxt('dlTargetFolderBtn', L.targetFolder);
+        setTxt('dlPickFolderBtn', L.pickFolder);
+        if (!dlDirHandle) setTxt('dlFolderNameLbl', L.noFolder);
+        setTxt('dlItemsTitle', L.itemsTitle);
+        setTxt('dlSelectAllBtn', L.selectAll);
+        setTxt('dlCoreLbl', L.coreLbl); setTxt('dlCoreSub', L.coreSub);
+        setTxt('dlFontsLbl', L.fontsLbl); setTxt('dlFontsSub', L.fontsSub);
+        setTxt('dlFontTypeLbl', L.fontType); setTxt('dlFontRangeLbl', L.rangeLbl);
+        setTxt('dlFontFromLbl', L.fromPg); setTxt('dlFontToLbl', L.toPg);
+        setTxt('dlImagesLbl', L.imagesLbl); setTxt('dlImagesSub', L.imagesSub);
+        setTxt('dlImgSrcLbl', L.imgSrc); setTxt('dlImgRangeLbl', L.rangeLbl);
+        setTxt('dlImgFromLbl', L.fromPg); setTxt('dlImgToLbl', L.toPg);
+        setTxt('dlAudioLbl', L.audioLbl); setTxt('dlAudioSub', L.audioSub);
+        setTxt('dlRecLbl', L.recLbl); setTxt('dlMoshLbl', L.moshLbl); setTxt('dlAudRangeLbl', L.surahsLbl);
+        setTxt('dlAudFromLbl', L.fromSurah); setTxt('dlAudToLbl', L.toSurah);
+        if (!dlRunning) setTxt('dlStartBtn', L.startBtn);
+        setTxt('dlCancelBtn', L.cancelBtn);
+        setTxt('dlClearCacheBtn', L.clearCacheBtn);
+
+        const ftSel = $('dlFontTypeSel');
+        if (ftSel) Array.from(ftSel.options).forEach((o, i) => { if (L.fontTypes[i]) o.textContent = L.fontTypes[i]; });
+        ['dlFontRangeMode', 'dlImgRangeMode'].forEach(id => {
+          const el = $(id);
+          if (el) Array.from(el.options).forEach((o, i) => { if (L.rangeOpts[i]) o.textContent = L.rangeOpts[i]; });
+        });
+        const arSel = $('dlAudioRangeMode');
+        if (arSel) Array.from(arSel.options).forEach((o, i) => { if (L.audRangeOpts[i]) o.textContent = L.audRangeOpts[i]; });
+        updateStorageEstimateUI();
+      }
+
+      async function updateStorageEstimateUI() {
+        const infoEl = $('dlStorageInfo');
+        if (!infoEl) return;
+        if (navigator.storage && navigator.storage.estimate) {
+          try {
+            const est = await navigator.storage.estimate();
+            const usedMB = ((est.usage || 0) / (1024 * 1024)).toFixed(1);
+            const quotaGB = est.quota ? ((est.quota / (1024 * 1024 * 1024)).toFixed(1) + ' GB') : '';
+            infoEl.textContent = lang === 'ar'
+              ? `📊 المساحة المخزنة في المتصفح: ${usedMB} ميجابايت${quotaGB ? ' (المتاح: ' + quotaGB + ')' : ''}`
+              : `📊 Browser offline storage used: ${usedMB} MB${quotaGB ? ' (Quota: ' + quotaGB + ')' : ''}`;
+            return;
+          } catch (e) {}
+        }
+        infoEl.textContent = lang === 'ar'
+          ? '📊 ذاكرة المتصفح جاهزة للتخزين والعمل دون اتصال'
+          : '📊 Browser memory ready for offline storage';
+      }
+
+      function populateDownloadControls() {
+        // 1. مصادر صور المصحف
+        const imgSel = $('dlImgSourceSel');
+        if (imgSel) {
+          imgSel.innerHTML = '';
+          MUSHAF_SOURCES.forEach((src, i) => {
+            const o = document.createElement('option'); o.value = i; o.textContent = src.label; imgSel.appendChild(o);
+          });
+          imgSel.value = mushafSourceIdx;
+        }
+        // 2. قائمة القراء للتنزيل
+        const recDlSel = $('dlReciterSel');
+        if (recDlSel && reciters.length) {
+          recDlSel.innerHTML = '';
+          reciters.forEach((r, i) => {
+            if (!r || !r.name) return;
+            const o = document.createElement('option'); o.value = i; o.textContent = r.name; recDlSel.appendChild(o);
+          });
+          recDlSel.value = rIdx !== null ? String(rIdx) : '0';
+          populateDlMoshafAndSurahs();
+        }
+      }
+
+      function populateDlMoshafAndSurahs() {
+        const recDlSel = $('dlReciterSel');
+        const moshDlSel = $('dlMoshafSel');
+        const fromSel = $('dlAudioFromSurah');
+        const toSel = $('dlAudioToSurah');
+        if (!recDlSel || !moshDlSel || !fromSel || !toSel) return;
+
+        const ri = parseInt(recDlSel.value || '0', 10);
+        const r = reciters[ri];
+        moshDlSel.innerHTML = '';
+        if (r && Array.isArray(r.moshaf)) {
+          r.moshaf.forEach((m, mi) => {
+            const o = document.createElement('option'); o.value = mi; o.textContent = m.name; moshDlSel.appendChild(o);
+          });
+        }
+        const updateSurahRangeForMoshaf = () => {
+          const mi = parseInt(moshDlSel.value || '0', 10);
+          const m = r?.moshaf?.[mi];
+          const availNums = m ? (m.surah_list || '').split(',').map(Number).filter(Boolean) : surahs.map(s => s.n);
+          fromSel.innerHTML = ''; toSel.innerHTML = '';
+          availNums.forEach(n => {
+            const sObj = surahs.find(x => x.n === n) || { n, name: String(n) };
+            const o1 = document.createElement('option'); o1.value = n; o1.textContent = `${n}. ${sObj.name}`;
+            const o2 = o1.cloneNode(true);
+            fromSel.appendChild(o1); toSel.appendChild(o2);
+          });
+          if (availNums.length) {
+            const curN = (sIdx !== null && surahs[sIdx] && availNums.includes(surahs[sIdx].n)) ? surahs[sIdx].n : availNums[0];
+            fromSel.value = String(curN);
+            toSel.value = String(availNums[availNums.length - 1]);
+          }
+        };
+        moshDlSel.onchange = updateSurahRangeForMoshaf;
+        updateSurahRangeForMoshaf();
+      }
+
+      if ($('dlReciterSel')) $('dlReciterSel').onchange = populateDlMoshafAndSurahs;
+
+      // تبديل تبويبات الإعدادات (الإعدادات العامة | التحميلات والتخزين)
+      document.querySelectorAll('#settingsTabs .set-tab-btn').forEach(btn => {
+        btn.onclick = () => {
+          const tab = btn.dataset.stab;
+          document.querySelectorAll('#settingsTabs .set-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+          const isDl = (tab === 'downloads');
+          if ($('setPaneGeneral')) {
+            $('setPaneGeneral').classList.toggle('active', !isDl);
+            $('setPaneGeneral').style.display = isDl ? 'none' : 'block';
+          }
+          if ($('setPaneDownloads')) {
+            $('setPaneDownloads').classList.toggle('active', isDl);
+            $('setPaneDownloads').style.display = isDl ? 'block' : 'none';
+          }
+          if (isDl) {
+            fillDownloadsLabels();
+            populateDownloadControls();
+          }
+        };
+      });
+
+      // اختيار وجهة الحفظ (ذاكرة المتصفح | مجلد على الجهاز)
+      function syncDlTargetUI() {
+        document.querySelectorAll('#dlTargetSeg button').forEach(b =>
+          b.classList.toggle('active', b.dataset.dlt === dlTargetMode));
+        const row = $('dlFolderPickRow');
+        if (row) row.style.display = (dlTargetMode === 'folder') ? 'flex' : 'none';
+      }
+      document.querySelectorAll('#dlTargetSeg button').forEach(b => {
+        b.onclick = () => {
+          dlTargetMode = b.dataset.dlt === 'folder' ? 'folder' : 'browser';
+          lsSave('dlTargetMode', dlTargetMode);
+          syncDlTargetUI();
+        };
+      });
+      syncDlTargetUI();
+
+      // اختيار مجلد على الجهاز عبر File System Access API
+      if ($('dlPickFolderBtn')) {
+        $('dlPickFolderBtn').onclick = async () => {
+          if (typeof window.showDirectoryPicker === 'function') {
+            try {
+              dlDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+              if ($('dlFolderNameLbl')) {
+                $('dlFolderNameLbl').textContent = `✅ ${dlDirHandle.name}`;
+                $('dlFolderNameLbl').style.color = 'var(--acc1)';
+              }
+              showToast(lang === 'ar' ? `📁 تم اختيار المجلد: ${dlDirHandle.name}` : `📁 Folder selected: ${dlDirHandle.name}`, 'info');
+            } catch (e) {
+              if (e && e.name !== 'AbortError') {
+                showToast(lang === 'ar' ? '⚠️ تعذّر فتح المجلد، سيتم الحفظ في ذاكرة المتصفح' : '⚠️ Could not open folder, using browser memory', 'warn');
+              }
+            }
+          } else {
+            showToast(
+              lang === 'ar'
+                ? 'ℹ️ متصفحك الحالي يحفظ الملفات مباشرة في ذاكرة المتصفح ومجلد التنزيلات التلقائي للجهاز'
+                : 'ℹ️ Your browser saves files directly to browser memory and your device Downloads folder',
+              'info',
+              3800
+            );
+          }
+        };
+      }
+
+      // إظهار/إخفاء حقول النطاق المخصص للخطوط والصور والصوتيات
+      if ($('dlFontRangeMode')) $('dlFontRangeMode').onchange = function () {
+        if ($('dlFontRangeCustom')) $('dlFontRangeCustom').style.display = (this.value === 'custom') ? 'flex' : 'none';
+      };
+      if ($('dlImgRangeMode')) $('dlImgRangeMode').onchange = function () {
+        if ($('dlImgRangeCustom')) $('dlImgRangeCustom').style.display = (this.value === 'custom') ? 'flex' : 'none';
+      };
+      if ($('dlAudioRangeMode')) $('dlAudioRangeMode').onchange = function () {
+        if ($('dlAudioRangeCustom')) $('dlAudioRangeCustom').style.display = (this.value === 'custom') ? 'flex' : 'none';
+      };
+
+      // زر تحديد / إلغاء تحديد الكل
+      if ($('dlSelectAllBtn')) {
+        $('dlSelectAllBtn').onclick = () => {
+          const chks = ['dlChkCore', 'dlChkFonts', 'dlChkImages', 'dlChkAudio'].map(id => $(id)).filter(Boolean);
+          const allChecked = chks.every(c => c.checked);
+          chks.forEach(c => { c.checked = !allChecked; });
+          const L = DL_LABELS[lang] || DL_LABELS.ar;
+          $('dlSelectAllBtn').textContent = !allChecked ? L.unselectAll : L.selectAll;
+        };
+      }
+
+      // مساعد لحفظ ملف داخل المجلد المحلي المختار (إن وُجد)
+      async function saveBlobToFolder(subPathArr, fileName, blob) {
+        if (dlTargetMode !== 'folder' || !dlDirHandle || !blob) return false;
+        try {
+          let dir = dlDirHandle;
+          for (const sub of subPathArr) {
+            const safeSub = String(sub).replace(/[\\/:*?"<>|]/g, '_').trim() || 'files';
+            dir = await dir.getDirectoryHandle(safeSub, { create: true });
+          }
+          const safeFile = String(fileName).replace(/[\\/:*?"<>|]/g, '_').trim();
+          const fh = await dir.getFileHandle(safeFile, { create: true });
+          const writable = await fh.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      // مساعد لجلب رابط وتخزينه في الكاش المحدد + المجلد المحلي إن طُلب
+      async function fetchAndStoreAsset(url, cacheName, subPathArr, fileName, signal) {
+        const resp = await fetch(url, { signal });
+        if (!resp.ok && resp.type !== 'opaque') throw new Error('HTTP ' + resp.status);
+        if ('caches' in window && cacheName) {
+          try {
+            const cache = await caches.open(cacheName);
+            await cache.put(url, resp.clone());
+          } catch (e) {}
+        }
+        if (dlTargetMode === 'folder' && dlDirHandle && resp.ok) {
+          try {
+            const blob = await resp.clone().blob();
+            await saveBlobToFolder(subPathArr, fileName, blob);
+          } catch (e) {}
+        }
+      }
+
+      // تنفيذ التنزيل الشامل
+      async function startBatchDownload() {
+        if (dlRunning) return;
+        const chkCore = $('dlChkCore')?.checked;
+        const chkFonts = $('dlChkFonts')?.checked;
+        const chkImages = $('dlChkImages')?.checked;
+        const chkAudio = $('dlChkAudio')?.checked;
+
+        if (!chkCore && !chkFonts && !chkImages && !chkAudio) {
+          showToast(lang === 'ar' ? '⚠️ الرجاء تحديد عنصر واحد على الأقل لتنزيله' : '⚠️ Please select at least one item to download', 'warn');
+          return;
+        }
+
+        // إذا اختار المستخدم مجلداً على الجهاز ولم يختر المجلد بعد، نفتح نافذة اختيار المجلد تلقائياً
+        if (dlTargetMode === 'folder' && !dlDirHandle && typeof window.showDirectoryPicker === 'function') {
+          try {
+            dlDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+            if ($('dlFolderNameLbl')) {
+              $('dlFolderNameLbl').textContent = `✅ ${dlDirHandle.name}`;
+              $('dlFolderNameLbl').style.color = 'var(--acc1)';
+            }
+          } catch (e) {
+            if (e && e.name === 'AbortError') return;
+          }
+        }
+
+        // طلب تخزين دائم في المتصفح لئلا يحذفه النظام تلقائياً
+        if (navigator.storage && navigator.storage.persist) {
+          try { await navigator.storage.persist(); } catch (e) {}
+        }
+
+        const tasks = [];
+
+        // 1. مهام الملفات الأساسية ونصوص الـ 114 سورة
+        if (chkCore) {
+          const coreFiles = ['index.html', 'style.css', 'script.js', 'qcf-data.js', 'manifest.json', 'icon.svg', 'icon.png'];
+          coreFiles.forEach(fn => {
+            tasks.push({
+              label: lang === 'ar' ? `ملف أساسي: ${fn}` : `Core file: ${fn}`,
+              run: sig => fetchAndStoreAsset('./' + fn, 'quran-app-v24', ['app'], fn, sig)
+            });
+          });
+          for (let sn = 1; sn <= 114; sn++) {
+            const sName = surahs[sn - 1]?.name || String(sn);
+            tasks.push({
+              label: lang === 'ar' ? `نص ومعلومات سورة ${sName} (${sn}/114)` : `Surah ${sName} text & info (${sn}/114)`,
+              run: async sig => {
+                const ayahs = await fetchSurahText(sn);
+                const info = await fetchSurahInfo(sn);
+                if (dlTargetMode === 'folder' && dlDirHandle && ayahs && ayahs.length) {
+                  const blob = new Blob([JSON.stringify({ surah: sn, name: sName, ayahs, info }, null, 2)], { type: 'application/json' });
+                  await saveBlobToFolder(['surah_texts'], `${String(sn).padStart(3, '0')}_${sName}.json`, blob);
+                }
+              }
+            });
+          }
+        }
+
+        // 2. مهام الخطوط القرآنية (QCF / Tajweed)
+        if (chkFonts) {
+          const fType = $('dlFontTypeSel')?.value || 'qcf';
+          const isCustom = $('dlFontRangeMode')?.value === 'custom';
+          const pFrom = isCustom ? Math.max(1, Math.min(604, parseInt($('dlFontFromPg')?.value || '1', 10))) : 1;
+          const pTo = isCustom ? Math.max(1, Math.min(604, parseInt($('dlFontToPg')?.value || '604', 10))) : 604;
+          const lo = Math.min(pFrom, pTo), hi = Math.max(pFrom, pTo);
+          const modes = fType === 'both' ? ['qcf', 'tajweed'] : [fType];
+
+          modes.forEach(m => {
+            const cfg = FONT_ENGINES[m];
+            for (let pg = lo; pg <= hi; pg++) {
+              const fn = cfg.fileFn(pg);
+              const url = cfg.sources[0] + fn;
+              tasks.push({
+                label: lang === 'ar' ? `خط ${m === 'tajweed' ? 'التجويد' : 'المصحف'} — صفحة ${pg}` : `${m.toUpperCase()} font — Page ${pg}`,
+                run: sig => fetchAndStoreAsset(url, 'quran-qcf-v24', ['fonts', m], fn, sig)
+              });
+            }
+          });
+        }
+
+        // 3. مهام صور صفحات المصحف
+        if (chkImages) {
+          const srcIdx = parseInt($('dlImgSourceSel')?.value || '0', 10);
+          const srcObj = MUSHAF_SOURCES[srcIdx] || MUSHAF_SOURCES[0];
+          const isCustom = $('dlImgRangeMode')?.value === 'custom';
+          const pFrom = isCustom ? Math.max(1, Math.min(604, parseInt($('dlImgFromPg')?.value || '1', 10))) : 1;
+          const pTo = isCustom ? Math.max(1, Math.min(604, parseInt($('dlImgToPg')?.value || '604', 10))) : 604;
+          const lo = Math.min(pFrom, pTo), hi = Math.max(pFrom, pTo);
+
+          for (let pg = lo; pg <= hi; pg++) {
+            const url = srcObj.urlFn(pg);
+            const ext = (url.split('.').pop() || 'jpg').split('?')[0];
+            const fn = `page_${String(pg).padStart(3, '0')}.${ext}`;
+            tasks.push({
+              label: lang === 'ar' ? `صورة مصحف (${srcObj.label}) — صفحة ${pg}` : `Mushaf image (${srcObj.label}) — Page ${pg}`,
+              run: sig => fetchAndStoreAsset(url, 'quran-img-v24', ['mushaf_images', srcObj.id], fn, sig)
+            });
+          }
+        }
+
+        // 4. مهام التلاوات الصوتية للقراء
+        if (chkAudio && reciters.length) {
+          const ri = parseInt($('dlReciterSel')?.value || '0', 10);
+          const mi = parseInt($('dlMoshafSel')?.value || '0', 10);
+          const r = reciters[ri];
+          const m = r?.moshaf?.[mi];
+          if (r && m) {
+            const availNums = (m.surah_list || '').split(',').map(Number).filter(Boolean);
+            const isAll = $('dlAudioRangeMode')?.value === 'all';
+            const sFrom = isAll ? 1 : parseInt($('dlAudioFromSurah')?.value || '1', 10);
+            const sTo = isAll ? 114 : parseInt($('dlAudioToSurah')?.value || '114', 10);
+            const lo = Math.min(sFrom, sTo), hi = Math.max(sFrom, sTo);
+            const targetSurahs = availNums.filter(n => n >= lo && n <= hi);
+            const recFolder = r.cleanName || r.name;
+
+            targetSurahs.forEach(sNum => {
+              const sName = surahs.find(x => x.n === sNum)?.name || String(sNum);
+              const fn = `${String(sNum).padStart(3, '0')}_${sName}.mp3`;
+              tasks.push({
+                label: lang === 'ar' ? `تلاوة ${recFolder} — سورة ${sName}` : `Audio ${recFolder} — Surah ${sName}`,
+                run: async sig => {
+                  let mp3Url = '';
+                  if (r.isPrecision && !r.audioServer) {
+                    const pData = await fetchPrecisionAudioData(r.precisionQid, sNum);
+                    if (pData && pData.audioUrl) mp3Url = pData.audioUrl;
+                  } else {
+                    mp3Url = (r.audioServer || m.server) + String(sNum).padStart(3, '0') + '.mp3';
+                  }
+                  if (!mp3Url) throw new Error('No audio URL');
+                  await fetchAndStoreAsset(mp3Url, 'quran-audio-v24', ['audio', recFolder], fn, sig);
+                }
+              });
+            });
+          }
+        }
+
+        if (!tasks.length) return;
+
+        dlRunning = true;
+        dlAbortCtrl = new AbortController();
+        const sig = dlAbortCtrl.signal;
+
+        const startBtn = $('dlStartBtn'), cancelBtn = $('dlCancelBtn');
+        const progWrap = $('dlProgressWrap'), progFill = $('dlProgBarFill');
+        const progStatus = $('dlProgStatus'), progCount = $('dlProgCount'), progPct = $('dlProgPct');
+
+        if (startBtn) startBtn.disabled = true;
+        if (cancelBtn) cancelBtn.style.display = 'inline-block';
+        if (progWrap) progWrap.style.display = 'block';
+
+        let completed = 0, failed = 0;
+        const total = tasks.length;
+        const updateProgView = (curLabel) => {
+          const pct = Math.round((completed / total) * 100);
+          if (progFill) progFill.style.width = pct + '%';
+          if (progPct) progPct.textContent = pct + '%';
+          if (progCount) progCount.textContent = `${completed} / ${total}`;
+          if (progStatus && curLabel) progStatus.textContent = curLabel;
+        };
+
+        updateProgView(lang === 'ar' ? '⏳ جاري بدء التنزيل...' : '⏳ Starting download...');
+
+        // تنفيذ المهام بـ 3 عمال متوازيين لسرعة عالية دون إغراق الشبكة
+        let cursor = 0;
+        const workers = Array.from({ length: Math.min(3, total) }, async () => {
+          while (cursor < total && !sig.aborted) {
+            const task = tasks[cursor++];
+            updateProgView(task.label);
+            try {
+              await task.run(sig);
+            } catch (e) {
+              if (sig.aborted) break;
+              failed++;
+            }
+            completed++;
+            updateProgView(task.label);
+          }
+        });
+
+        await Promise.all(workers);
+
+        dlRunning = false;
+        if (startBtn) startBtn.disabled = false;
+        if (cancelBtn) cancelBtn.style.display = 'none';
+        await updateStorageEstimateUI();
+
+        if (sig.aborted) {
+          updateProgView(lang === 'ar' ? '⏹️ تم إيقاف التنزيل' : '⏹️ Download stopped');
+          showToast(lang === 'ar' ? '⏹️ تم إيقاف التنزيل' : '⏹️ Download stopped', 'warn');
+        } else {
+          const okCount = total - failed;
+          updateProgView(lang === 'ar'
+            ? `✅ اكتمل التنزيل بنجاح (${okCount} من ${total})`
+            : `✅ Download complete (${okCount} of ${total})`);
+          showToast(lang === 'ar' ? `✅ تم تنزيل وحفظ ${okCount} ملف بنجاح` : `✅ Downloaded & saved ${okCount} files`, 'info', 3500);
+        }
+      }
+
+      if ($('dlStartBtn')) $('dlStartBtn').onclick = startBatchDownload;
+      if ($('dlCancelBtn')) $('dlCancelBtn').onclick = () => {
+        if (dlAbortCtrl) dlAbortCtrl.abort();
+      };
+      if ($('dlClearCacheBtn')) $('dlClearCacheBtn').onclick = async () => {
+        if (!confirm(lang === 'ar' ? 'هل تريد مسح جميع الملفات والخطوط والتلاوات المنزّلة في ذاكرة المتصفح؟' : 'Clear all offline downloaded files, fonts & audio from browser memory?')) return;
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.filter(k => !k.startsWith('quran-app-')).map(k => caches.delete(k)));
+        }
+        await updateStorageEstimateUI();
+        showToast(lang === 'ar' ? '🗑️ تم مسح التنزيلات المخزنة في المتصفح' : '🗑️ Cleared offline downloads from browser', 'info');
+      };
       // مصدر المصحف الافتراضي
       $('setMushafSel').onchange = function () {
         mushafSourceIdx = parseInt(this.value) || 0;

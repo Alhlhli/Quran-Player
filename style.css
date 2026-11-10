@@ -5115,3 +5115,306 @@
         padding-bottom: 12px !important;
       }
     }
+
+
+    /* =======================================================
+       ✦ إخفاء المشغل المصغر مع زر إخفاء الأدوات + تبويب التحميلات + توزيع المصحف
+    ======================================================= */
+    body.qp-immersive-clean #floatingBar,
+    body.qp-immersive-clean #toggleFloatBtn {
+      transform: translateY(calc(100% + 45px)) !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    body.qp-immersive-clean .qp-body {
+      padding-bottom: calc(14px + var(--safe-bottom, 0px)) !important;
+    }
+
+    body.qp-immersive-clean #qpTextPageNav,
+    body.qp-immersive-clean #mushafNav {
+      margin-bottom: 0 !important;
+    }
+
+    /* تبويبات نافذة الإعدادات */
+    .settings-tabs {
+      display: flex;
+      background: var(--input-bg);
+      border-bottom: 1.5px solid var(--input-border);
+      padding: 0 10px;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .set-tab-btn {
+      flex: 1;
+      padding: 10px 8px;
+      border: none;
+      background: none;
+      color: var(--text-soft);
+      font-size: 13px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -1.5px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .set-tab-btn.active {
+      color: var(--acc1);
+      border-bottom-color: var(--acc1);
+    }
+
+    .set-tab-pane {
+      display: none;
+    }
+
+    .set-tab-pane.active {
+      display: block;
+    }
+
+    /* عناصر مركز التحميلات والأوفلاين */
+    .dl-target-seg {
+      width: 100%;
+      display: flex;
+    }
+
+    .dl-target-seg button {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 12.5px;
+    }
+
+    .dl-folder-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      background: var(--badge-bg);
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px dashed var(--acc1);
+    }
+
+    .dl-pick-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(135deg, var(--acc1), var(--acc2));
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .dl-folder-name {
+      font-size: 11.5px;
+      color: var(--text-soft);
+      font-weight: 600;
+      flex: 1;
+      min-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dl-storage-info {
+      font-size: 11.5px;
+      color: var(--text-soft);
+      background: var(--input-bg);
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .dl-mini-btn {
+      padding: 3px 9px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--card);
+      color: var(--acc1);
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .dl-item-card {
+      background: var(--card);
+      border: 1.5px solid var(--input-border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+
+    .dl-chk-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .dl-chk-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: var(--acc1);
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .dl-chk-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .dl-chk-info strong {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .dl-chk-info small {
+      font-size: 11px;
+      color: var(--text-soft);
+      line-height: 1.4;
+    }
+
+    .dl-sub-opts {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--input-border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .dl-opt-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-soft);
+      flex-wrap: wrap;
+    }
+
+    .dl-opt-line .set-select {
+      flex: 1;
+      min-width: 120px;
+      max-width: 220px;
+    }
+
+    .dl-range-inputs .set-select {
+      max-width: 135px;
+    }
+
+    .dl-num-input {
+      width: 72px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      border: 1.5px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 12.5px;
+      font-weight: 700;
+      text-align: center;
+      font-family: inherit;
+    }
+
+    .dl-actions-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .dl-start-btn {
+      flex: 1;
+      padding: 11px 16px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+      transition: transform 0.15s, filter 0.15s;
+    }
+
+    .dl-start-btn:hover {
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+    }
+
+    .dl-start-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .dl-cancel-btn {
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: none;
+      background: #ef4444;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .dl-progress-wrap {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: var(--input-bg);
+      border-radius: 10px;
+      border: 1px solid var(--input-border);
+    }
+
+    .dl-prog-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .dl-prog-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--track);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .dl-prog-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--acc1), #10b981);
+      border-radius: 4px;
+      transition: width 0.2s ease;
+    }
+
+    .dl-prog-pct {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--acc1);
+      margin-top: 4px;
+    }
+
+    /* سورة مجاورة مشتركة في نفس صفحة المصحف */
+    .mushaf-neighbor-surah {
+      opacity: 0.94;
+    }

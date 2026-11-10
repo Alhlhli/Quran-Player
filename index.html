@@ -64,7 +64,13 @@
         <h3 id="settingsTitle">⚙️ الإعدادات</h3>
         <button class="settings-close" id="settingsClose" title="إغلاق">✕</button>
       </div>
+      <!-- تبويبات الإعدادات: الإعدادات العامة | التحميلات والأوفلاين -->
+      <div class="settings-tabs" id="settingsTabs">
+        <button class="set-tab-btn active" id="setTabGeneral" data-stab="general">⚙️ الإعدادات العامة</button>
+        <button class="set-tab-btn" id="setTabDownloads" data-stab="downloads">📥 التحميلات والتخزين</button>
+      </div>
       <div class="settings-scroll">
+        <div class="set-tab-pane active" id="setPaneGeneral">
 
         <!-- المظهر واللغة -->
         <div class="set-group">
@@ -133,6 +139,13 @@
               <button data-pm="pages">↔ صفحات مستقلة</button>
             </div>
           </div>
+          <div class="set-row">
+            <span id="setPageDistLbl">توزيع السور في الصفحة</span>
+            <div class="set-seg" id="setPageDistSeg">
+              <button data-pd="mushaf">📖 توزيع المصحف</button>
+              <button data-pd="surah">📄 سورة مستقلة</button>
+            </div>
+          </div>
         </div>
 
         <!-- المصحف المصور -->
@@ -199,7 +212,164 @@
             <a id="setCredit" href="https://alhlhli.github.io/" target="_blank" rel="noopener noreferrer">✦ تطوير وبرمجة عامر الحلحلي</a>
           </div>
         </div>
+        </div><!-- /setPaneGeneral -->
 
+        <!-- ===== تبويب التحميلات والتخزين للعمل بدون إنترنت ===== -->
+        <div class="set-tab-pane" id="setPaneDownloads" style="display:none">
+
+          <!-- 1. وجهة الحفظ والتخزين -->
+          <div class="set-group">
+            <div class="set-group-title" id="dlTargetTitle">💾 مكان الحفظ والتخزين</div>
+            <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
+              <div class="set-seg dl-target-seg" id="dlTargetSeg">
+                <button data-dlt="browser" class="active" id="dlTargetBrowserBtn">🌐 ذاكرة المتصفح</button>
+                <button data-dlt="folder" id="dlTargetFolderBtn">📁 مجلد على الجهاز</button>
+              </div>
+              <div id="dlFolderPickRow" class="dl-folder-row" style="display:none">
+                <button class="dl-pick-btn" id="dlPickFolderBtn">📂 اختيار مجلد الحفظ...</button>
+                <span class="dl-folder-name" id="dlFolderNameLbl">لم يتم اختيار مجلد بعد</span>
+              </div>
+              <div class="dl-storage-info" id="dlStorageInfo">📊 ذاكرة المتصفح جاهزة للتخزين والعمل دون اتصال</div>
+            </div>
+          </div>
+
+          <!-- 2. تحديد العناصر المراد تنزيلها -->
+          <div class="set-group">
+            <div class="set-group-title" style="display:flex;justify-content:space-between;align-items:center">
+              <span id="dlItemsTitle">📦 اختر ما تريد تنزيله</span>
+              <button class="dl-mini-btn" id="dlSelectAllBtn">☑️ تحديد الكل</button>
+            </div>
+
+            <!-- أ) الملفات الأساسية ونصوص السور -->
+            <div class="dl-item-card">
+              <label class="dl-chk-row">
+                <input type="checkbox" id="dlChkCore" checked>
+                <div class="dl-chk-info">
+                  <strong id="dlCoreLbl">📦 الملفات الأساسية ونصوص القرآن (114 سورة)</strong>
+                  <small id="dlCoreSub">ملفات المشغل + بيانات القراء + النصوص العثمانية والمطبوعة ومعلومات السور</small>
+                </div>
+              </label>
+            </div>
+
+            <!-- ب) الخطوط القرآنية -->
+            <div class="dl-item-card">
+              <label class="dl-chk-row">
+                <input type="checkbox" id="dlChkFonts">
+                <div class="dl-chk-info">
+                  <strong id="dlFontsLbl">🔤 خطوط المصحف الشريف والتجويد (604 صفحة)</strong>
+                  <small id="dlFontsSub">لتشغيل رسم مصحف المدينة وخط التجويد الملوّن بدون إنترنت</small>
+                </div>
+              </label>
+              <div class="dl-sub-opts" id="dlFontsOpts">
+                <div class="dl-opt-line">
+                  <span id="dlFontTypeLbl">نوع الخط:</span>
+                  <select id="dlFontTypeSel" class="set-select">
+                    <option value="qcf">🕋 خطوط المصحف (QCF)</option>
+                    <option value="tajweed">🎨 خط التجويد الملوّن</option>
+                    <option value="both">✨ الخطان معاً (QCF + التجويد)</option>
+                  </select>
+                </div>
+                <div class="dl-opt-line">
+                  <span id="dlFontRangeLbl">النطاق:</span>
+                  <select id="dlFontRangeMode" class="set-select">
+                    <option value="all">كامل المصحف (1 – 604)</option>
+                    <option value="custom">صفحات محددة...</option>
+                  </select>
+                </div>
+                <div class="dl-opt-line dl-range-inputs" id="dlFontRangeCustom" style="display:none">
+                  <span id="dlFontFromLbl">من صفحة:</span>
+                  <input type="number" id="dlFontFromPg" min="1" max="604" value="1" class="dl-num-input">
+                  <span id="dlFontToLbl">إلى:</span>
+                  <input type="number" id="dlFontToPg" min="1" max="604" value="604" class="dl-num-input">
+                </div>
+              </div>
+            </div>
+
+            <!-- ج) صور صفحات المصحف -->
+            <div class="dl-item-card">
+              <label class="dl-chk-row">
+                <input type="checkbox" id="dlChkImages">
+                <div class="dl-chk-info">
+                  <strong id="dlImagesLbl">🖼️ صور صفحات المصحف المصوّر (604 صفحة)</strong>
+                  <small id="dlImagesSub">تنزيل صفحات المصحف المصوّرة لتصفحها بدون إنترنت</small>
+                </div>
+              </label>
+              <div class="dl-sub-opts" id="dlImagesOpts">
+                <div class="dl-opt-line">
+                  <span id="dlImgSrcLbl">المصدر:</span>
+                  <select id="dlImgSourceSel" class="set-select"></select>
+                </div>
+                <div class="dl-opt-line">
+                  <span id="dlImgRangeLbl">النطاق:</span>
+                  <select id="dlImgRangeMode" class="set-select">
+                    <option value="all">كامل المصحف (1 – 604)</option>
+                    <option value="custom">صفحات محددة...</option>
+                  </select>
+                </div>
+                <div class="dl-opt-line dl-range-inputs" id="dlImgRangeCustom" style="display:none">
+                  <span id="dlImgFromLbl">من صفحة:</span>
+                  <input type="number" id="dlImgFromPg" min="1" max="604" value="1" class="dl-num-input">
+                  <span id="dlImgToLbl">إلى:</span>
+                  <input type="number" id="dlImgToPg" min="1" max="604" value="604" class="dl-num-input">
+                </div>
+              </div>
+            </div>
+
+            <!-- د) التلاوات الصوتية -->
+            <div class="dl-item-card">
+              <label class="dl-chk-row">
+                <input type="checkbox" id="dlChkAudio">
+                <div class="dl-chk-info">
+                  <strong id="dlAudioLbl">🎧 التلاوات الصوتية للقراء (MP3 + التوقيتات)</strong>
+                  <small id="dlAudioSub">تنزيل تلاوات أي مقرئ لسور محددة أو كامل المصحف</small>
+                </div>
+              </label>
+              <div class="dl-sub-opts" id="dlAudioOpts">
+                <div class="dl-opt-line">
+                  <span id="dlRecLbl">المقرئ:</span>
+                  <select id="dlReciterSel" class="set-select"></select>
+                </div>
+                <div class="dl-opt-line">
+                  <span id="dlMoshLbl">المصحف:</span>
+                  <select id="dlMoshafSel" class="set-select"></select>
+                </div>
+                <div class="dl-opt-line">
+                  <span id="dlAudRangeLbl">السور:</span>
+                  <select id="dlAudioRangeMode" class="set-select">
+                    <option value="custom">من سورة إلى سورة...</option>
+                    <option value="all">جميع السور المتاحة (الكل)</option>
+                  </select>
+                </div>
+                <div class="dl-opt-line dl-range-inputs" id="dlAudioRangeCustom">
+                  <span id="dlAudFromLbl">من:</span>
+                  <select id="dlAudioFromSurah" class="set-select"></select>
+                  <span id="dlAudToLbl">إلى:</span>
+                  <select id="dlAudioToSurah" class="set-select"></select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. أزرار التنفيذ وشريط التقدم -->
+          <div class="set-group">
+            <div class="dl-actions-row">
+              <button class="dl-start-btn" id="dlStartBtn">⬇️ بدء التنزيل الآن</button>
+              <button class="dl-cancel-btn" id="dlCancelBtn" style="display:none">⏹️ إيقاف</button>
+            </div>
+            <div class="dl-progress-wrap" id="dlProgressWrap" style="display:none">
+              <div class="dl-prog-top">
+                <span id="dlProgStatus">جاري التحضير...</span>
+                <span id="dlProgCount">0 / 0</span>
+              </div>
+              <div class="dl-prog-bar">
+                <div class="dl-prog-fill" id="dlProgBarFill" style="width:0%"></div>
+              </div>
+              <div class="dl-prog-pct" id="dlProgPct">0%</div>
+            </div>
+            <button class="set-danger" id="dlClearCacheBtn" style="margin-top:10px">🗑️ مسح التنزيلات المخزنة في المتصفح</button>
+          </div>
+
+        </div><!-- /setPaneDownloads -->
       </div>
     </div>
   </div>

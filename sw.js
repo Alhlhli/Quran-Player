@@ -1,16 +1,17 @@
 /* =============================================================
-   Service Worker — مشغل القرآن الكريم (الإصدار المحترف v23)
+   Service Worker — مشغل القرآن الكريم (الإصدار المحترف v24)
    - ملفات التطبيق: Stale-While-Revalidate (عرض فوري + تحديث بالخلفية)
    - بيانات APIs (mp3quran / quran.com): Network-First مع رجوع للكاش عند انقطاع الإنترنت
-   - خطوط المصحف (QCF Fonts) وخط التجويد الملوّن: Cache-First بسعة تخزين موسعة (400 صفحة)
-   - صور المصحف: Cache-First مع حد أقصى للعدد
-   - الملفات الصوتية mp3: تمرير مباشر لدعم طلبات التجزئة (HTTP Byte-Range)
+   - خطوط المصحف (QCF Fonts) وخط التجويد الملوّن: Cache-First بسعة تخزين موسعة (604 صفحة)
+   - صور المصحف: Cache-First بسعة تخزين موسعة (604 صفحة)
+   - الملفات الصوتية mp3: تقديم فوري من AUDIO_CACHE إن تم تنزيلها مسبقاً، وإلا تمرير مباشر للتدفق
 ============================================================= */
-const VERSION = 'v23';
+const VERSION = 'v24';
 const APP_CACHE = 'quran-app-' + VERSION;
 const DATA_CACHE = 'quran-data-' + VERSION;
 const IMG_CACHE = 'quran-img-' + VERSION;
 const QCF_CACHE = 'quran-qcf-' + VERSION;
+const AUDIO_CACHE = 'quran-audio-' + VERSION;
 
 const APP_ASSETS = [
   './',
@@ -42,8 +43,6 @@ const IMG_HOSTS = [
 ];
 
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
-
-// خطوط المصحف الشريف QCF وخط التجويد الملوّن (604 ملف صفحة): تخزين Cache-First بسعة حتى 400 صفحة
 const QCF_HOSTS = ['cdn.jsdelivr.net', 'raw.githubusercontent.com', 'quranpedia.net'];
 
 self.addEventListener('install', e => {
@@ -59,7 +58,7 @@ self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => ![APP_CACHE, DATA_CACHE, IMG_CACHE, QCF_CACHE].includes(k)).map(k => caches.delete(k))
+        keys.filter(k => ![APP_CACHE, DATA_CACHE, IMG_CACHE, QCF_CACHE, AUDIO_CACHE].includes(k)).map(k => caches.delete(k))
       ))
       .then(() => self.clients.claim())
   );
@@ -124,8 +123,16 @@ self.addEventListener('fetch', e => {
   let url;
   try { url = new URL(req.url); } catch (err) { return; }
 
-  // الملفات الصوتية: لا تُعترض — المتصفح يدير طلبات HTTP Range والتدفق بنفسه
+  // الملفات الصوتية: إن كانت منزّلة مسبقاً في AUDIO_CACHE نقدّمها فوراً (يدعم العمل بلا إنترنت)، وإلا يمررها المتصفح مباشرة
   if (url.pathname.endsWith('.mp3') || url.hostname === 'download.quranicaudio.com' || url.hostname.includes('cdn.mp3quran.net')) {
+    e.respondWith((async () => {
+      try {
+        const audioCache = await caches.open(AUDIO_CACHE);
+        const cachedResp = await audioCache.match(req.url, { ignoreSearch: true });
+        if (cachedResp) return cachedResp;
+      } catch (err) {}
+      return fetch(req);
+    })());
     return;
   }
 
@@ -145,21 +152,21 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // خطوط المصحف من jsDelivr
+  // خطوط المصحف والتجويد (سعة كاملة حتى 650 ملفاً لـ 604 صفحة)
   if (QCF_HOSTS.includes(url.hostname) && (/\.(woff2?|otf|ttf)$/i.test(url.pathname) || url.pathname.includes('/fonts/'))) {
-    e.respondWith(cacheFirst(req, QCF_CACHE, 300).catch(() => Response.error()));
+    e.respondWith(cacheFirst(req, QCF_CACHE, 650).catch(() => Response.error()));
     return;
   }
 
   // خطوط جوجل والخطوط الأخرى
   if (FONT_HOSTS.includes(url.hostname) || /\.(woff2?|otf|ttf)$/i.test(url.pathname)) {
-    e.respondWith(cacheFirst(req, QCF_CACHE, 100).catch(() => Response.error()));
+    e.respondWith(cacheFirst(req, QCF_CACHE, 650).catch(() => Response.error()));
     return;
   }
 
-  // صور المصحف
+  // صور المصحف (سعة كاملة حتى 650 صفحة)
   if (IMG_HOSTS.includes(url.hostname)) {
-    e.respondWith(cacheFirst(req, IMG_CACHE, 150).catch(() => Response.error()));
+    e.respondWith(cacheFirst(req, IMG_CACHE, 650).catch(() => Response.error()));
     return;
   }
 });
