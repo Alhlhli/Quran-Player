@@ -126,6 +126,13 @@
               <button data-lm="inline">⋯ متتاليات</button>
             </div>
           </div>
+          <div class="set-row">
+            <span id="setPageModeLbl">طريقة عرض صفحات السورة</span>
+            <div class="set-seg" id="setPageModeSeg">
+              <button data-pm="scroll">↕ تمرير لأسفل</button>
+              <button data-pm="pages">↔ صفحات مستقلة</button>
+            </div>
+          </div>
         </div>
 
         <!-- المصحف المصور -->
@@ -201,18 +208,32 @@
   <div class="dialog-overlay" id="shareOverlay">
     <div class="share-dialog" role="dialog" aria-modal="true" aria-labelledby="shareDlgTitle">
       <h3 id="shareDlgTitle">مشاركة</h3>
-      <div class="share-option" id="shareWebsite">
-        <div class="share-opt-icon">🌐</div>
+      <div class="share-option" id="shareDeepLink">
+        <div class="share-opt-icon">🔗</div>
         <div class="share-opt-info">
-          <strong id="shareWebLbl">مشاركة رابط التطبيق</strong>
-          <span id="shareWebSub">يفتح مشغل القرآن الكريم</span>
+          <strong id="shareDeepLbl">مشاركة التلاوة في التطبيق</strong>
+          <span id="shareDeepSub">يفتح نفس القارئ والسورة والآية مباشرة</span>
+        </div>
+      </div>
+      <div class="share-option" id="shareAyah">
+        <div class="share-opt-icon">📖</div>
+        <div class="share-opt-info">
+          <strong id="shareAyahLbl">مشاركة نص الآية الحالية</strong>
+          <span id="shareAyahSub">نسخ ومشاركة الآية بالرسم العثماني مع الرابط</span>
         </div>
       </div>
       <div class="share-option" id="shareSurah">
         <div class="share-opt-icon">🎵</div>
         <div class="share-opt-info">
-          <strong id="shareSurahLbl">مشاركة رابط السورة</strong>
-          <span id="shareSurahSub">رابط تحميل / استماع مباشر</span>
+          <strong id="shareSurahLbl">مشاركة ملف الصوت المباشر (MP3)</strong>
+          <span id="shareSurahSub">رابط استماع وتحميل مباشر لملف السورة</span>
+        </div>
+      </div>
+      <div class="share-option" id="shareWebsite">
+        <div class="share-opt-icon">🌐</div>
+        <div class="share-opt-info">
+          <strong id="shareWebLbl">مشاركة رابط التطبيق العام</strong>
+          <span id="shareWebSub">يفتح الصفحة الرئيسية لمشغل القرآن الكريم</span>
         </div>
       </div>
       <button class="share-cancel" id="shareCancel">إلغاء</button>
@@ -298,14 +319,38 @@
 
       <!-- رأس اللوحة -->
       <div class="qp-header">
-        <div>
+        <div class="qp-header-titles">
           <div class="qp-title" id="qpTitle">القرآن الكريم</div>
           <div class="qp-meta" id="qpMeta"></div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center">
-          <button class="qp-close" id="qpShareBtn" title="مشاركة" onclick="shareApp()" style="font-size:15px">📤</button>
-          <button class="qp-close" id="qpClearBtn" title="مسح البيانات" onclick="clearData()" style="font-size:15px">🗑️</button>
+        <div class="qp-header-actions">
+          <!-- أزرار تكبير وتصغير الخط الظاهرة دائماً في الجوال -->
+          <div class="qp-mob-font-grp qp-mobile-only">
+            <button class="qp-close qp-font-ctrl" id="qpMobFontMinus" title="تصغير خط النص" aria-label="تصغير خط النص">A−</button>
+            <button class="qp-close qp-font-ctrl" id="qpMobFontPlus" title="تكبير خط النص" aria-label="تكبير خط النص">A+</button>
+          </div>
+          <!-- بقية الأزرار القابلة للإظهار والإخفاء بزر الركن -->
+          <div class="qp-collapsible-btns" id="qpCollapsibleBtns">
+            <button class="qp-close qp-mobile-only" id="qpSearchToggleBtn" title="بحث في السورة" aria-label="بحث في السورة">🔍</button>
+            <button class="qp-close qp-mobile-only" id="qpSettingsBtn" title="الإعدادات" aria-label="الإعدادات" onclick="openSettings()">⚙️</button>
+            <button class="qp-close" id="qpShareBtn" title="مشاركة" onclick="openShare()" style="font-size:15px">📤</button>
+            <button class="qp-close qp-desktop-only" id="qpClearBtn" title="مسح البيانات" onclick="clearData()" style="font-size:15px">🗑️</button>
+          </div>
+          <!-- زر الركن الواحد لإظهار أو إخفاء بقية الأزرار والأشرطة -->
+          <button class="qp-close qp-corner-toggle" id="qpCornerToggleBtn" title="إظهار / إخفاء الأزرار والأدوات" aria-label="إظهار أو إخفاء الأزرار" aria-expanded="false">☰</button>
           <button class="qp-close" id="qpClose" title="إغلاق">✕</button>
+        </div>
+      </div>
+
+      <!-- شريط اختيار القارئ والسورة المباشر (يظهر في عرض الجوال فقط) -->
+      <div class="qp-mobile-nav qp-mobile-only" id="qpMobileNav">
+        <div class="qp-mnav-field">
+          <span class="qp-mnav-icon" aria-hidden="true">🎙️</span>
+          <select id="qpReciterSel" class="qp-mnav-select" aria-label="اختر القارئ"></select>
+        </div>
+        <div class="qp-mnav-field">
+          <span class="qp-mnav-icon" aria-hidden="true">📖</span>
+          <select id="qpSurahSel" class="qp-mnav-select" aria-label="اختر السورة"></select>
         </div>
       </div>
 
@@ -413,6 +458,12 @@
         </div>
         <!-- محتوى النص -->
         <div class="qp-body" id="qpBody"></div>
+        <!-- شريط تقليب الصفحات المستقلة (يظهر عند اختيار وضع الصفحات المستقلة) -->
+        <div class="mushaf-nav" id="qpTextPageNav" style="display:none">
+          <button class="mushaf-nav-btn" id="qpTextPrev" aria-label="الصفحة السابقة">◀</button>
+          <span class="mushaf-page-label" id="qpTextPageLabel">—</span>
+          <button class="mushaf-nav-btn" id="qpTextNext" aria-label="الصفحة التالية">▶</button>
+        </div>
       </div>
 
       <!-- ===== تبويب المعلومات ===== -->
@@ -777,6 +828,7 @@
                   عشوائي</span><span class="next-opt-check" id="fb_ck3"></span></div>
             </div>
           </div>
+          <button class="fb-btn fb-repeat-btn" id="fbRepeat" title="تكرار" aria-label="تكرار">🔄</button>
           <button class="fb-btn" id="fbMute" title="كتم" aria-label="كتم">🔊</button>
           <!-- قارئ عشوائي -->
           <button class="fb-btn fb-extra-btn" id="fbRandRec" title="قارئ عشوائي" aria-label="قارئ عشوائي">🎙️</button>

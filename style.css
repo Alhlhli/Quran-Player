@@ -4547,15 +4547,13 @@
         padding: 8px 4px;
       }
 
-      .qp-text-wrap.qlines .mushaf-page-line {
-        font-size: clamp(14px, 4.4vw, 22px) !important;
-        line-height: 2 !important;
-      }
+      /* حجم خط أسطر المصحف يُضبط ديناميكياً عبر --page-fs لضمان ظهور 15 سطراً بدقة */
     }
 
     /* مسافة بعرضها صفري بين رموز المصحف: نقطة تبرير ونقطة كسر بلا فراغ مرئي */
     .qsp {
-      font-size: 0;
+      display: inline;
+      font-size: 0.16em;
     }
 
     /* حجم خط المصحف يُضبط من متغيّر على غلاف النص */
@@ -4648,10 +4646,472 @@
     }
 
     /* انسيابية أسطر المصحف بلا فواصل مصطنعة أو تمددات شاذة */
-    .qp-text-wrap.qcf-mode .si-ayah,
-    .qp-text-wrap.qcf-mode .si-ayah-text {
+    .qp-text-wrap.qcf-mode:not(.qlines) .si-ayah,
+    .qp-text-wrap.qcf-mode:not(.qlines) .si-ayah-text {
       white-space: normal !important;
     }
 
     /* رقم الآية داخل زخرفة نهاية الآية — لا حاجة لتراكب:
        خط المصحف (QCF) يرسم الرقم داخل الزخرفة أصلاً. */
+
+
+    /* عناصر خاصة بالجوال فقط داخل لوحة النص */
+    .qp-mobile-only {
+      display: none;
+    }
+
+    .qp-header-titles {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .qp-header-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 767px) {
+      .qp-desktop-only {
+        display: none !important;
+      }
+
+      .qp-mobile-only {
+        display: inline-flex;
+      }
+
+      /* تقليص رأس لوحة النص في الجوال وإخفاء السطر الوصفي المكرر */
+      .qp-header {
+        padding: calc(8px + env(safe-area-inset-top, 0px)) 10px 8px !important;
+        gap: 8px;
+      }
+
+      .qp-title {
+        font-size: 15.5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .qp-meta {
+        display: none !important;
+      }
+
+      .qp-close {
+        width: 31px;
+        height: 31px;
+        font-size: 14px;
+      }
+
+      .qp-close.active-search {
+        background: rgba(255, 255, 255, 0.42);
+        box-shadow: 0 0 0 1.5px #fff;
+      }
+
+      /* شريط اختيار القارئ والسورة المباشر في شاشة النص على الجوال */
+      .qp-mobile-nav.qp-mobile-only {
+        display: grid !important;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 6px;
+        padding: 6px 8px;
+        background: var(--input-bg);
+        border-bottom: 1px solid var(--input-border);
+        flex-shrink: 0;
+        direction: rtl;
+      }
+
+      html[dir=ltr] .qp-mobile-nav.qp-mobile-only {
+        direction: ltr;
+      }
+
+      .qp-mnav-field {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background: var(--card);
+        border: 1.5px solid var(--input-border);
+        border-radius: 9px;
+        padding: 3px 7px;
+        min-width: 0;
+      }
+
+      .qp-mnav-field:focus-within {
+        border-color: var(--acc1);
+      }
+
+      .qp-mnav-icon {
+        font-size: 13px;
+        flex-shrink: 0;
+      }
+
+      .qp-mnav-select {
+        width: 100%;
+        min-width: 0;
+        border: none !important;
+        background: transparent !important;
+        color: var(--text);
+        font-size: 13px !important;
+        font-weight: 700;
+        font-family: inherit;
+        padding: 2px 0 !important;
+        outline: none !important;
+        box-shadow: none !important;
+        text-overflow: ellipsis;
+      }
+
+      /* تبويبات وشريط خيارات رشيق لتوسيع مساحة القراءة */
+      .qp-tabs {
+        border-bottom: 1px solid var(--input-border);
+      }
+
+      .qp-tab {
+        padding: 8px 4px !important;
+        font-size: 12px !important;
+      }
+
+      .qp-opts {
+        padding: 5px 8px !important;
+        gap: 4px !important;
+      }
+
+      .qp-opt-btn {
+        padding: 4px 9px !important;
+        font-size: 11.5px !important;
+      }
+
+      /* إخفاء أزرار نمط السطر والفواصل من الشريط العلوي بالجوال (متوفرة في زر الإعدادات ⚙️) */
+      #optBlock,
+      #optInline,
+      .qp-opts-sep {
+        display: none !important;
+      }
+
+      /* إخفاء شريط التزامن التلقائي وشريط البحث افتراضياً بالجوال لتوسيع مساحة النص */
+      .qp-autoscroll {
+        display: none !important;
+      }
+
+      #qpSearchBar {
+        display: none !important;
+        padding: 6px 8px !important;
+      }
+
+      #qpSearchBar.mobile-open {
+        display: block !important;
+      }
+
+      #qpSearchBar input {
+        padding: 6px 10px !important;
+        font-size: 14px !important;
+      }
+
+      /* توسيع محتوى النص ليملأ كامل عرض شاشة الجوال بدون هوامش أو إطارات مزدوجة ضيقة */
+      .qp-body {
+        padding: 0 0 calc(92px + var(--safe-bottom, 0px)) 0 !important;
+      }
+
+      #qpTextWrap {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 8px 8px 18px !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
+
+      #qpTextWrap::before,
+      #qpTextWrap::after {
+        display: none !important;
+      }
+
+      .mushaf-surah-banner {
+        padding: 6px 10px !important;
+        margin: 0 auto 8px !important;
+        border-radius: 10px !important;
+      }
+
+      #qpTextWrap .si-basmalah {
+        margin: 6px auto 10px !important;
+        padding: 4px 8px 8px !important;
+      }
+
+      .qp-text-wrap.inline-mode {
+        padding: 2px 2px !important;
+        line-height: 2.22 !important;
+      }
+
+      .qp-text-wrap.block-mode .si-ayah {
+        padding: 8px 4px !important;
+      }
+
+      /* تخفيف الشريط العائم أثناء فتح شاشة النص على الجوال (إخفاء صف الصوت السفلي) */
+      body.text-open-mobile #floatingBar .fb-bottom-row {
+        display: none !important;
+      }
+
+      body.text-open-mobile #floatingBar {
+        padding: 7px 10px 8px !important;
+      }
+    }
+
+
+    /* =======================================================
+       ✦ ضبط أسطر المصحف الحقيقية والتظليل غير المتداخل وتقليب الصفحات
+    ======================================================= */
+    html,
+    body,
+    #qpTextWrap,
+    .mushaf-page-lines,
+    .mushaf-page-line {
+      -webkit-text-size-adjust: 100% !important;
+      text-size-adjust: 100% !important;
+    }
+
+    /* تظليل الآية في وضع التدفق وأسطر المصحف: شريط متناسق بدون تداخل رأسي وبدون إزاحة للكلمات */
+    :root {
+      --ayah-sync-band: rgba(16, 185, 129, 0.22);
+    }
+
+    body.dark {
+      --ayah-sync-band: rgba(167, 139, 250, 0.26);
+    }
+
+    body.emerald {
+      --ayah-sync-band: rgba(16, 185, 129, 0.24);
+    }
+
+    body.gold {
+      --ayah-sync-band: rgba(217, 119, 6, 0.24);
+    }
+
+    .qp-text-wrap.inline-mode .si-ayah.sync-active,
+    .mushaf-page-line .si-ayah.sync-active {
+      background: linear-gradient(
+        to bottom,
+        transparent 22%,
+        var(--ayah-sync-band) 22%,
+        var(--ayah-sync-band) 78%,
+        transparent 78%
+      ) !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: none !important;
+      border-right: none !important;
+      border-left: none !important;
+      box-shadow: none !important;
+      border-radius: 4px !important;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    /* ضبط أسطر المصحف الـ 15: كل سطر في سطر واحد مستقل بمقاس موحّد للصفحة */
+    .mushaf-page-lines {
+      --page-fs: var(--qcf-fs, 31px);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      width: 100%;
+    }
+
+    .qp-text-wrap.qcf-mode .mushaf-page-lines .mushaf-page-line,
+    .qp-text-wrap.qcf-mode .mushaf-page-lines .si-ayah.qcf-ayah {
+      font-size: var(--page-fs, var(--qcf-fs, 31px)) !important;
+      line-height: 2.05 !important;
+    }
+
+    .mushaf-page-line {
+      display: block;
+      width: 100%;
+      white-space: nowrap !important;
+      text-align: justify !important;
+      text-justify: inter-word !important;
+      text-align-last: justify !important;
+      overflow: visible;
+      box-sizing: border-box;
+    }
+
+    .mushaf-page-line.is-last-line {
+      text-align: center !important;
+      text-align-last: center !important;
+    }
+
+    /* حركة تقليب الصفحات باللمس يميناً ويساراً */
+    @keyframes pageFlipNext {
+      0% { opacity: 0.55; transform: translateX(-18px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes pageFlipPrev {
+      0% { opacity: 0.55; transform: translateX(18px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+
+    .page-flip-next {
+      animation: pageFlipNext 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .page-flip-prev {
+      animation: pageFlipPrev 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* زر التكرار في المشغل العائم المصغر */
+    .fb-btn.fb-repeat-btn {
+      position: relative;
+      font-size: 13px;
+      min-width: 36px;
+      padding: 0 5px;
+      gap: 2px;
+    }
+
+    .fb-btn.fb-repeat-btn.rep-active {
+      background: rgba(255, 255, 255, 0.32);
+      box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.65);
+    }
+
+    .fb-rep-badge {
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+
+    /* =======================================================
+       ✦ نظام الـ 15 سطراً المطابق للمصحف + زر الركن الموحّد + أزرار الخط للجوال
+    ======================================================= */
+    /* منع انكسار أي سطر مصحفي إلى سطرين إطلاقاً في الوضع القياسي */
+    .qp-text-wrap.qlines .mushaf-page-line,
+    .qp-text-wrap.qlines .mushaf-page-line .si-ayah,
+    .qp-text-wrap.qlines .mushaf-page-line .qsp {
+      white-space: nowrap !important;
+    }
+
+    /* عند تكبير الخط يدوياً فوق مقاس الصفحة (وضع التكبير القرائي) يُسمح بالتفاف السطر بدل قصّه */
+    .qp-text-wrap.qlines.user-zoomed-in .mushaf-page-line,
+    .qp-text-wrap.qlines.user-zoomed-in .mushaf-page-line .si-ayah,
+    .qp-text-wrap.qlines.user-zoomed-in .mushaf-page-line .qsp {
+      white-space: normal !important;
+    }
+
+    .qp-text-wrap.qcf-mode .mushaf-page-lines .mushaf-page-line,
+    .qp-text-wrap.qcf-mode .mushaf-page-lines .si-ayah.qcf-ayah {
+      font-size: var(--page-fs, var(--qcf-fs, 28px)) !important;
+      line-height: var(--page-lh, 1.82) !important;
+    }
+
+    /* مجموعة الأزرار القابلة للطي وزر الركن */
+    .qp-collapsible-btns {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .qp-mob-font-grp {
+      display: none;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .qp-close.qp-font-ctrl {
+      font-size: 12px !important;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      background: rgba(255, 255, 255, 0.24);
+    }
+
+    .qp-close.qp-corner-toggle {
+      font-size: 15px;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .qp-close.qp-corner-toggle.bars-open {
+      background: #ffffff;
+      color: var(--acc1);
+    }
+
+    /* حالة إخفاء بقية الأزرار والأشرطة (عرض المصحف الصافي ذو الـ 15 سطراً) */
+    .quran-panel.qp-bars-collapsed .qp-collapsible-btns,
+    .quran-panel.qp-bars-collapsed .qp-mobile-nav,
+    .quran-panel.qp-bars-collapsed .qp-tabs,
+    .quran-panel.qp-bars-collapsed .qp-opts,
+    .quran-panel.qp-bars-collapsed #qpSearchBar {
+      display: none !important;
+    }
+
+    @media (max-width: 767px) {
+      .qp-mob-font-grp.qp-mobile-only {
+        display: inline-flex !important;
+      }
+
+      /* في الجوال: تقليص المسافات العمودية لتظهر 15 سطراً كاملة بوضوح كما في المصحف */
+      .qp-header {
+        padding: calc(6px + env(safe-area-inset-top, 0px)) 8px 6px !important;
+      }
+
+      .qp-text-wrap.qcf-mode .mushaf-page-lines {
+        gap: 0px !important;
+      }
+
+      .qp-text-wrap.qcf-mode .mushaf-page-lines .mushaf-page-line,
+      .qp-text-wrap.qcf-mode .mushaf-page-lines .si-ayah.qcf-ayah {
+        line-height: var(--page-lh, 1.68) !important;
+      }
+
+      #qpTextWrap {
+        padding: 4px 6px 14px !important;
+      }
+
+      .mushaf-surah-banner {
+        padding: 4px 8px !important;
+        margin: 0 auto 4px !important;
+      }
+
+      .ms-name {
+        font-size: 17px !important;
+      }
+
+      #qpTextWrap .si-basmalah {
+        margin: 2px auto 6px !important;
+        padding: 2px 6px 4px !important;
+      }
+
+      .basmalah-text {
+        font-size: 19px !important;
+      }
+
+      .mushaf-page-sep {
+        margin: 10px 0 8px !important;
+      }
+    }
+
+
+    /* =======================================================
+       ✦ وضع الصفحات المستقلة لنص السورة (تقليب يميناً ويساراً كالصور)
+    ======================================================= */
+    .qp-text-page {
+      display: none;
+      width: 100%;
+    }
+
+    .qp-text-page.active {
+      display: block;
+    }
+
+    #qpTextPageNav {
+      z-index: 20;
+    }
+
+    @media (max-width: 767px) {
+      /* عند تفعيل شريط تقليب الصفحات المستقلة على الجوال، نرفعه فوق المشغل العائم */
+      body.bar-open #qpTextPageNav,
+      body.bar-open #mushafNav {
+        margin-bottom: calc(68px + var(--safe-bottom, 0px));
+      }
+
+      .quran-panel:has(#qpTextPageNav[style*="flex"]) .qp-body {
+        padding-bottom: 12px !important;
+      }
+    }
