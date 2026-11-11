@@ -78,10 +78,10 @@
           <div class="set-row">
             <span id="setThemeLbl">السمة</span>
             <div class="set-themes" id="setThemes">
-              <button class="set-theme-dot st-default" data-t="default" title="بنفسجي"></button>
-              <button class="set-theme-dot st-dark" data-t="dark" title="داكن"></button>
-              <button class="set-theme-dot st-emerald" data-t="emerald" title="أخضر"></button>
-              <button class="set-theme-dot st-gold" data-t="gold" title="ذهبي"></button>
+              <button class="set-theme-dot st-default" data-t="default" title="بنفسجي (فاتح / غامق)"></button>
+              <button class="set-theme-dot st-emerald" data-t="emerald" title="أخضر (فاتح / غامق)"></button>
+              <button class="set-theme-dot st-gold" data-t="gold" title="ذهبي (فاتح / غامق)"></button>
+              <button class="set-theme-dot st-beige" data-t="beige" title="بيج هادئ"></button>
             </div>
           </div>
           <div class="set-row">
@@ -111,8 +111,8 @@
             <label class="set-switch"><input type="checkbox" id="setAutoScroll"><span class="set-slider"></span></label>
           </div>
           <div class="set-row">
-            <span id="setAutoHiLbl">تظليل الآية مع القراءة</span>
-            <label class="set-switch"><input type="checkbox" id="setAutoHi"><span class="set-slider"></span></label>
+            <span id="setAutoHiLbl">تظليل الآية مع القراءة تلقائياً عند القراء المتزامنة أصواتهم</span>
+            <label class="set-switch"><input type="checkbox" id="setAutoHi" checked><span class="set-slider"></span></label>
           </div>
           <div class="set-row">
             <span id="setMushafLinesLbl">الأسطر كما في المصحف</span>
@@ -217,18 +217,10 @@
         <!-- ===== تبويب التحميلات والتخزين للعمل بدون إنترنت ===== -->
         <div class="set-tab-pane" id="setPaneDownloads" style="display:none">
 
-          <!-- 1. وجهة الحفظ والتخزين -->
+          <!-- 1. حالة ذاكرة المتصفح للتخزين دون اتصال -->
           <div class="set-group">
-            <div class="set-group-title" id="dlTargetTitle">💾 مكان الحفظ والتخزين</div>
-            <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
-              <div class="set-seg dl-target-seg" id="dlTargetSeg">
-                <button data-dlt="browser" class="active" id="dlTargetBrowserBtn">🌐 ذاكرة المتصفح</button>
-                <button data-dlt="folder" id="dlTargetFolderBtn">📁 مجلد على الجهاز</button>
-              </div>
-              <div id="dlFolderPickRow" class="dl-folder-row" style="display:none">
-                <button class="dl-pick-btn" id="dlPickFolderBtn">📂 اختيار مجلد الحفظ...</button>
-                <span class="dl-folder-name" id="dlFolderNameLbl">لم يتم اختيار مجلد بعد</span>
-              </div>
+            <div class="set-group-title" id="dlTargetTitle">💾 التخزين في ذاكرة المتصفح</div>
+            <div class="set-row" style="flex-direction:column;align-items:stretch;gap:6px">
               <div class="dl-storage-info" id="dlStorageInfo">📊 ذاكرة المتصفح جاهزة للتخزين والعمل دون اتصال</div>
             </div>
           </div>
@@ -504,7 +496,6 @@
             <button class="qp-close qp-mobile-only" id="qpSearchToggleBtn" title="بحث في السورة" aria-label="بحث في السورة">🔍</button>
             <button class="qp-close qp-mobile-only" id="qpSettingsBtn" title="الإعدادات" aria-label="الإعدادات" onclick="openSettings()">⚙️</button>
             <button class="qp-close" id="qpShareBtn" title="مشاركة" onclick="openShare()" style="font-size:15px">📤</button>
-            <button class="qp-close qp-desktop-only" id="qpClearBtn" title="مسح البيانات" onclick="clearData()" style="font-size:15px">🗑️</button>
           </div>
           <!-- زر الركن الواحد لإظهار أو إخفاء بقية الأزرار والأشرطة -->
           <button class="qp-close qp-corner-toggle" id="qpCornerToggleBtn" title="إظهار / إخفاء الأزرار والأدوات" aria-label="إظهار أو إخفاء الأزرار" aria-expanded="false">☰</button>
@@ -730,10 +721,10 @@
 
         <!-- Palette panel -->
         <div class="palette-panel" id="palettePanel">
-          <div class="t-dot active" data-t="default" title="بنفسجي"></div>
-          <div class="t-dot" data-t="dark" title="داكن"></div>
-          <div class="t-dot" data-t="emerald" title="أخضر"></div>
-          <div class="t-dot" data-t="gold" title="ذهبي"></div>
+          <div class="t-dot active" data-t="default" title="بنفسجي (فاتح / غامق)"></div>
+          <div class="t-dot" data-t="emerald" title="أخضر (فاتح / غامق)"></div>
+          <div class="t-dot" data-t="gold" title="ذهبي (فاتح / غامق)"></div>
+          <div class="t-dot" data-t="beige" title="بيج هادئ"></div>
         </div>
 
         <div class="app-title" id="appTitle">

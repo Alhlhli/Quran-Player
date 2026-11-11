@@ -713,14 +713,20 @@
 
       /* تحضير بيانات المزامنة والرابط الصوتي مسبقاً عند اختيار قارئ متزامن (حتى قبل ضغط تشغيل) */
       async function prefetchPrecisionCurrent() {
+        syncAutoScrollBanner();
         if (rIdx === null || sIdx === null) return;
         const r = reciters[rIdx];
         const s = surahs[sIdx];
-        if (!r || !s || !r.isPrecision) return;
+        if (!r || !s || !r.isPrecision) {
+          currentAyahTimestamps = null;
+          syncAutoScrollBanner();
+          return;
+        }
         if (r.audioServer) {
           precisionAudioUrl = r.audioServer + String(s.n).padStart(3, '0') + '.mp3';
           currentAyahTimestamps = null;
           updateDlLink();
+          syncAutoScrollBanner();
           return;
         }
         const pData = await fetchPrecisionAudioData(r.precisionQid, s.n);
@@ -728,6 +734,7 @@
           precisionAudioUrl = pData.audioUrl;
           currentAyahTimestamps = pData.timestamps || [];
           updateDlLink();
+          syncAutoScrollBanner();
         }
       }
 
@@ -754,10 +761,7 @@
               audio.src = precisionAudioUrl;
               audio.load();
             }
-            const syncEl = $('qpAutoScroll');
-            if (syncEl) syncEl.style.display = 'flex';
-            const syncLbl = $('qpAutoScrollLbl');
-            if (syncLbl) syncLbl.textContent = lang === 'ar' ? '⚠️ مزامنة تقريبية مع التلاوة' : '⚠️ Approximate Sync';
+            syncAutoScrollBanner();
           } else {
             statusDiv.innerHTML = `<span style="color:var(--primary)">⏳ ${lang === 'ar' ? 'جاري تجهيز التلاوة المتزامنة مع الآيات…' : 'Loading synchronized recitation…'}</span>`;
             const pData = await fetchPrecisionAudioData(r.precisionQid, surahN);
@@ -769,16 +773,17 @@
                 audio.src = pData.audioUrl;
                 audio.load();
               }
-              const syncEl = $('qpAutoScroll');
-              if (syncEl) syncEl.style.display = 'flex';
-              const syncLbl = $('qpAutoScrollLbl');
-              if (syncLbl) syncLbl.textContent = lang === 'ar' ? '🎯 متزامن بالمللي ثانية مع التلاوة' : '🎯 Millisecond Ayah Sync';
+              syncAutoScrollBanner();
+              if (autoHighlight && textPanelOpen && ayahsData.length) {
+                setTimeout(() => highlightCurrentPosition(), 60);
+              }
             } else {
               precisionAudioUrl = null;
               currentAyahTimestamps = null;
               const url = audioUrl();
               if (!url) { statusDiv.textContent = T[lang].statusDef; return; }
               if (audio.src !== url) { audio.src = url; audio.load(); }
+              syncAutoScrollBanner();
             }
           }
         } else {
@@ -787,8 +792,7 @@
           const url = audioUrl();
           if (!url) { statusDiv.textContent = T[lang].statusDef; return; }
           if (audio.src !== url) { audio.src = url; audio.load(); }
-          const syncEl = $('qpAutoScroll');
-          if (syncEl) syncEl.style.display = 'none';
+          syncAutoScrollBanner();
         }
 
         // استكمال التلاوة من نفس الآية عند تغيير القارئ أو النقر على آية قبل التشغيل
@@ -1661,16 +1665,71 @@
       }
 
       /* ============ THEME ============ */
-      function applyTheme(t) {
-        ['default', 'dark', 'emerald', 'gold'].forEach(x => document.body.classList.remove(x));
-        if (t !== 'default') document.body.classList.add(t);
-        document.querySelectorAll('.t-dot').forEach(d => d.classList.toggle('active', d.dataset.t === t));
-        themeBtn.textContent = (t === 'dark') ? '☀️' : '🌙';
+      function applyTheme(t, fromClick = false) {
+        if (fromClick && t === 'default') {
+          t = (theme === 'default') ? 'dark' : 'default';
+        } else if (fromClick && t === 'gold') {
+          t = (theme === 'gold') ? 'gold-dark' : 'gold';
+        } else if (fromClick && t === 'emerald') {
+          t = (theme === 'emerald') ? 'emerald-dark' : 'emerald';
+        }
+        ['default', 'dark', 'emerald', 'emerald-dark', 'gold', 'gold-dark', 'beige'].forEach(x => document.body.classList.remove(x));
+        if (t === 'gold-dark') {
+          document.body.classList.add('dark', 'gold-dark');
+        } else if (t === 'emerald-dark') {
+          document.body.classList.add('dark', 'emerald-dark');
+        } else if (t !== 'default') {
+          document.body.classList.add(t);
+        }
+        const dotKey = (t === 'dark') ? 'default' : ((t === 'gold-dark') ? 'gold' : ((t === 'emerald-dark') ? 'emerald' : t));
+        document.querySelectorAll('.t-dot').forEach(d => d.classList.toggle('active', d.dataset.t === dotKey));
+        document.querySelectorAll('.set-theme-dot').forEach(d => d.classList.toggle('active', d.dataset.t === dotKey));
+        const isDarkTheme = (t === 'dark' || t === 'gold-dark' || t === 'emerald-dark');
+        themeBtn.textContent = isDarkTheme ? '☀️' : '🌙';
         theme = t; lsSave('theme', t);
-        const col = { default: '#667eea', dark: '#1a1a2e', emerald: '#059669', gold: '#d97706' }[t] || '#667eea';
+        const col = {
+          default: '#667eea',
+          dark: '#1a1a2e',
+          emerald: '#059669',
+          'emerald-dark': '#041610',
+          gold: '#d97706',
+          'gold-dark': '#18130a',
+          beige: '#cbb89d'
+        }[t] || '#667eea';
         document.querySelector('meta[name=theme-color]').content = col;
+        if (fromClick && (t === 'default' || t === 'dark')) {
+          showToast(
+            t === 'dark'
+              ? (lang === 'ar' ? '🌙 الثيم البنفسجي الغامق' : '🌙 Dark Purple Theme')
+              : (lang === 'ar' ? '☀️ الثيم البنفسجي الفاتح' : '☀️ Light Purple Theme'),
+            'info',
+            1800
+          );
+        } else if (fromClick && (t === 'gold' || t === 'gold-dark')) {
+          showToast(
+            t === 'gold-dark'
+              ? (lang === 'ar' ? '🌙 الثيم الذهبي الغامق' : '🌙 Dark Gold Theme')
+              : (lang === 'ar' ? '☀️ الثيم الذهبي الفاتح' : '☀️ Light Gold Theme'),
+            'info',
+            1800
+          );
+        } else if (fromClick && (t === 'emerald' || t === 'emerald-dark')) {
+          showToast(
+            t === 'emerald-dark'
+              ? (lang === 'ar' ? '🌙 الثيم الأخضر الغامق' : '🌙 Dark Emerald Theme')
+              : (lang === 'ar' ? '☀️ الثيم الأخضر الفاتح' : '☀️ Light Emerald Theme'),
+            'info',
+            1800
+          );
+        }
       }
-      function toggleDark() { applyTheme(theme === 'dark' ? 'default' : 'dark'); }
+      function toggleDark() {
+        if (theme === 'gold') applyTheme('gold-dark');
+        else if (theme === 'gold-dark') applyTheme('gold');
+        else if (theme === 'emerald') applyTheme('emerald-dark');
+        else if (theme === 'emerald-dark') applyTheme('emerald');
+        else applyTheme(theme === 'dark' ? 'default' : 'dark');
+      }
 
       /* ============ SURAH TEXT PANEL LABELS ============ */
       function updateQpLabels() {
@@ -1683,7 +1742,7 @@
         set('qpAutoScrollLbl', t.qpAutoScrollLbl);
         const ps = $('qpSearch'); if (ps) ps.placeholder = t.qpSearchPh;
         const setTip = (id, v) => { const e = $(id); if (e && v) e.setAttribute('title', v); };
-        setTip('qpShareBtn', t.qpShare); setTip('qpClearBtn', t.qpClear); setTip('qpClose', t.qpClose);
+        setTip('qpShareBtn', t.qpShare); setTip('qpClose', t.qpClose);
         setTip('qpSettingsBtn', t.qpSettings); setTip('qpSearchToggleBtn', t.qpSearchToggle);
         setTip('qpCornerToggleBtn', t.qpCornerToggle);
         setTip('qpMobFontMinus', t.qpFontMinus); setTip('qpMobFontPlus', t.qpFontPlus);
@@ -1902,20 +1961,31 @@
         repeatCount = 0;
         const sv = stopSel?.value || 'none';
         if (sv === 'endSurah') { isPlaying = false; playBtn.textContent = T[lang].play; updateFloatingBar(); return; }
+
+        // عند انتهاء سورة الناس (114) ولا يوجد شرط آخر (تكرار أو وضع عشوائي): إظهار تنبيه انتهاء المصحف وإيقاف القراءة
+        const curSurahNum = (sIdx !== null && surahs[sIdx]) ? surahs[sIdx].n : 0;
+        const isSurahNasOrEnd = (curSurahNum === 114) || !hasNext();
+        if (isSurahNasOrEnd && nextMode === 0) {
+          audio.pause();
+          audio.currentTime = 0;
+          isPlaying = false;
+          playBtn.textContent = T[lang].play;
+          updateFloatingBar();
+          const khatmMsg = lang === 'ar'
+            ? '🎉 تم بحمد الله انتهاء المصحف الشريف — تم إيقاف القراءة'
+            : '🎉 Completed the Noble Mushaf — Playback stopped';
+          statusDiv.innerHTML = `<span style="color:var(--acc1);font-weight:700">${khatmMsg}</span>`;
+          showToast(khatmMsg, 'ok', 6000);
+          try { notify(lang === 'ar' ? 'انتهاء المصحف الشريف' : 'Completed the Noble Mushaf', khatmMsg); } catch (e) { }
+          return;
+        }
+
         if (autoNext) {
-          const isEndOfMoshaf = !hasNext();
-          if (isEndOfMoshaf && nextMode === 0) {
-            if (sv === 'endMoshaf' || !hasNextRec()) {
-              isPlaying = false; playBtn.textContent = T[lang].play; updateFloatingBar();
-              return;
-            }
-            setTimeout(() => {
-              if (nextReciter()) { playAudio(); onSurahChangeForText(); }
-              else { isPlaying = false; playBtn.textContent = T[lang].play; updateFloatingBar(); }
-            }, 400);
-          } else {
-            setTimeout(() => { executeNextMode(); }, 400);
+          if (sv === 'endMoshaf' && !hasNext()) {
+            isPlaying = false; playBtn.textContent = T[lang].play; updateFloatingBar();
+            return;
           }
+          setTimeout(() => { executeNextMode(); }, 400);
         } else { isPlaying = false; playBtn.textContent = T[lang].play; updateFloatingBar(); }
       });
       audio.addEventListener('error', () => { statusDiv.textContent = lang === 'ar' ? '⚠️ خطأ في تحميل الملف الصوتي.' : '⚠️ Audio load error.'; isPlaying = false; playBtn.textContent = T[lang].play; });
@@ -2041,9 +2111,32 @@
         else $('introOverlay')?.classList.add('hidden');
       });
 
+      // التحقق مما إذا كان القارئ الحالي ذا تلاوة متزامنة مع الآيات
+      function isCurrentReciterSynced() {
+        const r = (rIdx !== null && reciters[rIdx]) ? reciters[rIdx] : null;
+        return Boolean((r && r.isPrecision && !r.audioServer) || (currentAyahTimestamps && currentAyahTimestamps.length));
+      }
+
+      // إخفاء توضيح "متزامن تقريباً مع التلاوة" عند القراء المتزامنة تلاوتهم
+      function syncAutoScrollBanner() {
+        if (!qpAutoScroll) return;
+        if (isCurrentReciterSynced() || !ayahsData.length || !isPlaying) {
+          qpAutoScroll.style.display = 'none';
+          return;
+        }
+        qpAutoScroll.style.display = 'flex';
+        const syncLbl = $('qpAutoScrollLbl');
+        if (syncLbl) syncLbl.textContent = T[lang].qpAutoScrollLbl;
+      }
+
       // auto-scroll indicator visibility
-      audio.addEventListener('play', () => { if (qpAutoScroll && ayahsData.length) qpAutoScroll.style.display = 'flex'; });
-      audio.addEventListener('pause', () => { /* keep visible */ });
+      audio.addEventListener('play', () => {
+        syncAutoScrollBanner();
+        if (autoHighlight && textPanelOpen && ayahsData.length) {
+          highlightCurrentPosition();
+        }
+      });
+      audio.addEventListener('pause', () => { syncAutoScrollBanner(); });
 
       /* ============ DESKTOP INSTALL BAR ============ */
       if (dInstallBtn) dInstallBtn.onclick = async () => {
@@ -2068,7 +2161,8 @@
       let scrollLock = false;
       let lastHighlightTime = 0;
       let autoScrollText = (localStorage.getItem('autoScrollText') ?? '1') === '1';
-      let autoHighlight = (localStorage.getItem('autoHighlight') ?? '0') === '1';
+      // تظليل الآية مع القراءة تلقائياً عند القراء المتزامنة أصواتهم (مفعل افتراضياً)
+      let autoHighlight = (localStorage.getItem('autoHighlightV2') ?? '1') === '1';
       let mushafLines = (localStorage.getItem('mushafLinesV2') ?? '1') === '1';
       let currentScript = localStorage.getItem('defaultScript') || 'qcf';
       let currentLineMode = ls('lineMode') === 'block' ? 'block' : 'inline';
@@ -2132,7 +2226,66 @@
         }
       };
 
-      function registerTajweedPalette(fam, page) {
+      // بناء نسخة غامقة من خط التجويد بعكس اللون الأسود في جدول CPAL الثنائي إلى أبيض ناصع (#FFFFFF)
+      function buildDarkTajweedFontBuffer(srcBuffer) {
+        try {
+          const buf = srcBuffer.slice(0);
+          const dv = new DataView(buf);
+          const numTables = dv.getUint16(4, false);
+          let cpalRecOffset = -1;
+          let cpalOffset = 0;
+          let cpalLength = 0;
+          for (let i = 0; i < numTables; i++) {
+            const rec = 12 + i * 16;
+            if (rec + 16 > buf.byteLength) break;
+            const tag = String.fromCharCode(
+              dv.getUint8(rec), dv.getUint8(rec + 1), dv.getUint8(rec + 2), dv.getUint8(rec + 3)
+            );
+            if (tag === 'CPAL') {
+              cpalRecOffset = rec;
+              cpalOffset = dv.getUint32(rec + 8, false);
+              cpalLength = dv.getUint32(rec + 12, false);
+              break;
+            }
+          }
+          const overriddenIndices = [];
+          if (cpalOffset > 0 && cpalLength >= 12) {
+            const numColorRecords = dv.getUint16(cpalOffset + 6, false);
+            const colorRecordsOffset = dv.getUint32(cpalOffset + 8, false);
+            const absRecordsStart = cpalOffset + colorRecordsOffset;
+            for (let c = 0; c < numColorRecords; c++) {
+              const pos = absRecordsStart + c * 4;
+              if (pos + 3 >= buf.byteLength) break;
+              const b = dv.getUint8(pos);
+              const g = dv.getUint8(pos + 1);
+              const r = dv.getUint8(pos + 2);
+              const a = dv.getUint8(pos + 3);
+              // أي لون أسود أو داكن جداً في لوحة ألوان الخط هو لون الحروف الأساسية -> يُعكس إلى أبيض ناصع
+              if (a > 0 && r < 65 && g < 65 && b < 65) {
+                dv.setUint8(pos, 255);     // Blue
+                dv.setUint8(pos + 1, 255); // Green
+                dv.setUint8(pos + 2, 255); // Red
+                overriddenIndices.push(c);
+              }
+            }
+            if (cpalRecOffset >= 0) {
+              let sum = 0;
+              const end = cpalOffset + cpalLength;
+              for (let p = cpalOffset; p < end; p += 4) {
+                if (p + 4 <= buf.byteLength) {
+                  sum = (sum + dv.getUint32(p, false)) >>> 0;
+                }
+              }
+              dv.setUint32(cpalRecOffset + 4, sum, false);
+            }
+          }
+          return { darkBuffer: buf, overriddenIndices: overriddenIndices.length ? overriddenIndices : [0] };
+        } catch (e) {
+          return { darkBuffer: null, overriddenIndices: [0] };
+        }
+      }
+
+      function registerTajweedPalette(fam, page, overriddenIndices = [0]) {
         let styleEl = document.getElementById('tajweedPalettes');
         if (!styleEl) {
           styleEl = document.createElement('style');
@@ -2141,7 +2294,9 @@
         }
         const ruleId = `--tajweed-dark-${String(page).padStart(3, '0')}`;
         if (!styleEl.textContent.includes(ruleId)) {
-          styleEl.textContent += `\\n@font-palette-values ${ruleId} { font-family: '${fam}'; base-palette: 1; }`;
+          const ovStr = (overriddenIndices && overriddenIndices.length ? overriddenIndices : [0])
+            .map(idx => `${idx} #ffffff`).join(', ');
+          styleEl.textContent += `\n@font-palette-values ${ruleId} { font-family: '${fam}'; base-palette: 0; override-colors: ${ovStr}; }`;
         }
       }
 
@@ -2158,14 +2313,34 @@
         const p = (async () => {
           let lastErr = null;
           for (const base of cfg.sources) {
+            const url = base + cfg.fileFn(page);
             for (let attempt = 0; attempt < 2; attempt++) {
               try {
-                const ff = new FontFace(fam, `url("${base + cfg.fileFn(page)}") format("${cfg.format}")`);
-                await ff.load();
-                document.fonts.add(ff);
-                if (cfg.onLoad) cfg.onLoad(fam, page);
-                cfg.readySet.add(fam);
-                return fam;
+                if (mode === 'tajweed') {
+                  const resp = await fetch(url);
+                  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                  const rawBuf = await resp.arrayBuffer();
+                  const ffLight = new FontFace(fam, rawBuf.slice(0));
+                  await ffLight.load();
+                  document.fonts.add(ffLight);
+
+                  const { darkBuffer, overriddenIndices } = buildDarkTajweedFontBuffer(rawBuf);
+                  if (darkBuffer) {
+                    const ffDark = new FontFace(fam + '_Dark', darkBuffer);
+                    await ffDark.load();
+                    document.fonts.add(ffDark);
+                  }
+                  registerTajweedPalette(fam, page, overriddenIndices);
+                  cfg.readySet.add(fam);
+                  return fam;
+                } else {
+                  const ff = new FontFace(fam, `url("${url}") format("${cfg.format}")`);
+                  await ff.load();
+                  document.fonts.add(ff);
+                  if (cfg.onLoad) cfg.onLoad(fam, page);
+                  cfg.readySet.add(fam);
+                  return fam;
+                }
               } catch (e) {
                 lastErr = e;
                 await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
@@ -2357,25 +2532,42 @@
         if (btn) btn.textContent = isCollapsed ? L.showBtn : L.hideBtn;
       }
 
+      let tajweedLegendTimer = null;
+
+      function scheduleTajweedLegendAutoHide() {
+        const leg = $('tajweedLegend');
+        if (!leg) return;
+        clearTimeout(tajweedLegendTimer);
+        if (currentScript !== 'tajweed') {
+          leg.style.display = 'none';
+          return;
+        }
+        leg.style.display = 'block';
+        leg.classList.remove('collapsed');
+        updateTajweedLegendLabels();
+        // إخفاء دليل الأحكام تلقائياً بعد 3 ثوانٍ
+        tajweedLegendTimer = setTimeout(() => {
+          if (leg && currentScript === 'tajweed') {
+            leg.style.display = 'none';
+          }
+        }, 3000);
+      }
+
       function initTajweedLegend() {
         const leg = $('tajweedLegend');
         const bar = $('tjLegendBar');
         const btn = $('tjToggleBtn');
         if (!leg || !bar || !btn) return;
 
-        const saved = ls('tajweedLegendOpen');
-        const isOpen = saved === null ? (window.innerWidth > 767) : saved === '1';
-        leg.classList.toggle('collapsed', !isOpen);
         updateTajweedLegendLabels();
 
-        const toggleLegend = () => {
-          const nowOpen = leg.classList.toggle('collapsed') === false;
-          lsSave('tajweedLegendOpen', nowOpen ? '1' : '0');
-          updateTajweedLegendLabels();
+        const hideNow = () => {
+          clearTimeout(tajweedLegendTimer);
+          leg.style.display = 'none';
         };
 
-        bar.onclick = toggleLegend;
-        btn.onclick = e => { e.stopPropagation(); toggleLegend(); };
+        bar.onclick = hideNow;
+        btn.onclick = e => { e.stopPropagation(); hideNow(); };
       }
 
       /* ── خيارات النص ── */
@@ -2386,11 +2578,14 @@
         $(ids[mode])?.classList.add('active');
         if (mode !== 'qcf' && mode !== 'tajweed') setQcfChip('');
 
-        // إظهار أو إخفاء دليل أحكام التجويد
-        const leg = $('tajweedLegend');
-        if (leg) {
-          leg.style.display = (mode === 'tajweed') ? 'block' : 'none';
-          if (mode === 'tajweed') initTajweedLegend();
+        // إظهار دليل أحكام التجويد عند اختيار خط التجويد ثم إخفاؤه تلقائياً بعد 3 ثوانٍ
+        if (mode === 'tajweed') {
+          initTajweedLegend();
+          scheduleTajweedLegendAutoHide();
+        } else {
+          clearTimeout(tajweedLegendTimer);
+          const leg = $('tajweedLegend');
+          if (leg) leg.style.display = 'none';
         }
 
         if (loadedSurahNum) {
@@ -2547,8 +2742,8 @@
         if (mobileTabBar) { $('mtabText')?.classList.add('active'); $('mtabPlayer')?.classList.remove('active'); }
         applyQpBarsState();
         switchQpTab('text');
-        const leg = $('tajweedLegend');
-        if (leg) leg.style.display = (currentScript === 'tajweed') ? 'block' : 'none';
+        if (currentScript === 'tajweed') scheduleTajweedLegendAutoHide();
+        else { const leg = $('tajweedLegend'); if (leg) leg.style.display = 'none'; }
         if (sIdx !== null) loadQuranText(surahs[sIdx].n);
       }
 
@@ -2603,7 +2798,7 @@
         ayahsData = ayahs;
         if (ayahs.length) surahCache[surahNum] = ayahs;
 
-        qpAutoScroll.style.display = ayahs.length ? 'flex' : 'none';
+        syncAutoScrollBanner();
 
         // رسم النص فوراً
         renderTextPane(surahNum, ayahs);
@@ -2902,7 +3097,7 @@
           if (pagesFailed.has(pg)) return plainCell(plain);
           const fam = isTajweed ? tajweedFontName(pg) : qcfFontName(pg);
           const pgStr = String(pg).padStart(3, '0');
-          const palStyle = isTajweed ? `--page-pal:--tajweed-dark-${pgStr};` : '';
+          const palStyle = isTajweed ? `--page-pal:--tajweed-dark-${pgStr};--tj-light-fam:'${fam}';--tj-dark-fam:'${fam}_Dark';` : '';
           const lines = raw.split('\n').map(s => Array.from(s).filter(ch => !/\s/.test(ch)));
           const parts = lines.map(arr => arr.join(QSP));
           const txt = parts.filter(p => p.length).join(QSP);
@@ -3040,7 +3235,7 @@
             if (isInline && isQcfLike && segQcfEntry && mushafLines) {
               const fam = isTajweed ? tajweedFontName(pageNum) : qcfFontName(pageNum);
               const pgStr = String(pageNum).padStart(3, '0');
-              const palStyle = isTajweed ? `--page-pal:--tajweed-dark-${pgStr};` : '';
+              const palStyle = isTajweed ? `--page-pal:--tajweed-dark-${pgStr};--tj-light-fam:'${fam}';--tj-dark-fam:'${fam}_Dark';` : '';
               const fontStyle = `font-family:'${fam}';${palStyle}`;
 
               const lines = [];
@@ -3263,7 +3458,7 @@
         if (textPanelOpen && ayahsData.length) { lastHighlightTime = audio.currentTime; highlightCurrentPosition(); }
       });
 
-      /* ── معايرة وتوحيد حجم الخط لأسطر صفحات المصحف (ضمان 15 سطراً كما بالمصحف + استجابة تكبير/تصغير الخط) ── */
+      /* ── معايرة وتوحيد حجم الخط لأسطر صفحات المصحف (احتواء 15 سطراً كاملاً داخل نافذة النص + استجابة التحكم اليدوي A+/A-) ── */
       function calibrateMushafLines() {
         const container = $('qpBody');
         if (!container) return;
@@ -3279,15 +3474,15 @@
 
         const availW = Math.max(120, wrap.clientWidth - 6);
         const isMob = window.innerWidth <= 767;
-        const availH = container.clientHeight || window.innerHeight;
+        const availH = container.clientHeight || (window.innerHeight - 160);
         const PROBE_FS = 28;
         const REF_DENSITY = 11.8;
-        const zoomRatio = qpFontSize / 24; // 24 = 100% ضبط المصحف القياسي (15 سطراً)
+        const zoomRatio = qpFontSize / 24; // 24 = 100% احتواء الـ 15 سطراً داخل نافذة النص
 
-        // حساب سقف الارتفاع الرأسي لـ 15 سطراً بحيث تتسع الصفحة لـ 15 سطراً كما بالمصحف
-        const lineHeightRatio = isMob ? 1.66 : 1.82;
-        const usableH = isMob ? Math.max(340, availH - 76) : Math.max(460, availH - 40);
-        const maxVerticalFs = Math.floor(usableH / (15 * lineHeightRatio));
+        // ضبط ارتفاع السطر ليسمح باحتواء 15 سطراً كاملاً داخل ارتفاع نافذة النص (#qpBody) على الكمبيوتر والجوال
+        const lineHeightRatio = isMob ? 1.56 : 1.58;
+        const usableH = Math.max(240, availH - (isMob ? 24 : 18));
+        const maxVerticalFs = Math.max(13, Math.floor(usableH / (15 * lineHeightRatio)));
 
         const pageMeasurements = [];
 
@@ -3303,16 +3498,18 @@
             if (lineEl.scrollWidth > maxScrollW) maxScrollW = lineEl.scrollWidth;
           });
 
-          // أقصى حجم خط يسمح ببقاء أطول سطر في الصفحة في سطر واحد كامل دون انكسار
+          // أقصى حجم خط يسمح ببقاء أطول سطر في الصفحة في سطر واحد كامل دون انكسار أفقي
           const widthFitFs = maxScrollW > 0
             ? Math.floor(PROBE_FS * (availW / maxScrollW) * 0.96)
-            : (isMob ? 21 : 30);
+            : (isMob ? 20 : 26);
 
           // موازنة الصفحات ذات الرموز القليلة في السطر لئلا تتضخم حروفها مقارنة بالصفحات الكاملة
           const densityScale = Math.max(0.78, Math.min(1.02, avgG / REF_DENSITY));
-          const idealBaseFs = isMob
-            ? Math.min(widthFitFs, Math.max(16, Math.round(maxVerticalFs * densityScale)))
-            : Math.min(widthFitFs, Math.round(32 * densityScale));
+          // الجمع بين الاحتواء الأفقي والاحتواء الرأسي لـ 15 سطراً بحسب حجم الشاشة الفعلي
+          const idealBaseFs = Math.min(
+            widthFitFs,
+            Math.max(13, Math.round(maxVerticalFs * densityScale))
+          );
 
           pageMeasurements.push({ block, widthFitFs, idealBaseFs, linesCount });
         });
@@ -3329,7 +3526,7 @@
           if (avgFullBaseFs !== null && pm.linesCount < 12 && baseFs > avgFullBaseFs) {
             baseFs = avgFullBaseFs;
           }
-          // تطبيق نسبة التكبير/التصغير التي اختارها المستخدم من أزرار A+ / A-
+          // تطبيق نسبة التكبير/التصغير اليدوي التي اختارها المستخدم من أزرار A+ / A- أو شريط الإعدادات
           let finalFs = Math.max(12, Math.round(baseFs * zoomRatio));
 
           // عند الوضع القياسي (zoomRatio <= 1.0) نضمن عدم تجاوز عرض السطر الواحد إطلاقاً
@@ -3345,6 +3542,13 @@
         if (anyOverflowZoom) {
           wrap.classList.add('user-zoomed-in');
         }
+      }
+
+      if (typeof ResizeObserver === 'function' && $('qpBody')) {
+        const qpRo = new ResizeObserver(() => {
+          if (textPanelOpen) requestAnimationFrame(calibrateMushafLines);
+        });
+        qpRo.observe($('qpBody'));
       }
 
       window.addEventListener('resize', () => {
@@ -3755,7 +3959,7 @@
 
       themeBtn.onclick = toggleDark;
       paletteBtn.onclick = () => palettePanel.classList.toggle('open');
-      document.querySelectorAll('.t-dot').forEach(d => d.onclick = () => applyTheme(d.dataset.t));
+      document.querySelectorAll('.t-dot').forEach(d => d.onclick = () => applyTheme(d.dataset.t, true));
       langBtn.onclick = () => { toggleLang(); updateNextMenuLabels(); };
       shareBtn.onclick = openShare;
       infoBtn.onclick = () => shortcutsPanel.classList.toggle('open');
@@ -4442,7 +4646,7 @@
         ar: {
           title: '⚙️ الإعدادات', appr: '🎨 المظهر واللغة', theme: 'السمة', langL: 'اللغة',
           text: '📜 نص السورة', script: 'الرسم الافتراضي', autoS: 'تمرير النص مع التلاوة',
-          autoHi: 'تظليل الآية مع القراءة',
+          autoHi: 'تظليل الآية مع القراءة تلقائياً عند القراء المتزامنة أصواتهم',
           mLines: 'الأسطر كما في المصحف',
           fs: 'حجم خط النص', lm: 'طريقة عرض الآيات',
           lmOpts: ['≡ كل آية بسطر', '⋯ متتاليات'],
@@ -4461,7 +4665,7 @@
         en: {
           title: '⚙️ Settings', appr: '🎨 Appearance & Language', theme: 'Theme', langL: 'Language',
           text: '📜 Surah Text', script: 'Default script', autoS: 'Auto-scroll text with audio',
-          autoHi: 'Highlight current ayah',
+          autoHi: 'Auto-highlight verse with recitation for synced reciters',
           mLines: 'Lines as in the mushaf',
           fs: 'Text font size', lm: 'Ayah layout',
           lmOpts: ['≡ One ayah per line', '⋯ Flowing text'],
@@ -4482,7 +4686,7 @@
       /* تلميحات (hints) لكل صف من إعدادات — تُترجم مع تبديل اللغة */
       const SET_TIPS = {
         ar: {
-          theme: 'اختر مظهر التطبيق: بنفسجي، داكن، أخضر زمردي أو ذهبي.',
+          theme: 'اختر مظهر التطبيق: بنفسجي، داكن، أخضر زمردي، ذهبي (فاتح/غامق) أو بيج هادئ.',
           lang: 'لغة الواجهة: العربية (يمين) أو الإنجليزية (يسار).',
           script: 'الرسم الافتراضي الذي يُعرض به نص السورة عند فتح لوحة النص.',
           autoS: 'يمرّر نص السورة تلقائياً ليتبع موضع التلاوة الحالي.',
@@ -4501,7 +4705,7 @@
           clear: 'يحذف المفضلة والإعدادات والإحصائيات نهائياً من هذا المتصفح.'
         },
         en: {
-          theme: 'Choose the app theme: purple, dark, emerald or gold.',
+          theme: 'Choose the app theme: purple, dark, emerald, gold (light/dark) or calm beige.',
           lang: 'Interface language: Arabic (RTL) or English (LTR).',
           script: 'Default script used for the surah text when the text panel opens.',
           autoS: 'Auto-scroll the surah text to follow the current recitation.',
@@ -4588,7 +4792,8 @@
 
       function syncSettingsControls() {
         // السمة
-        document.querySelectorAll('.set-theme-dot').forEach(d => d.classList.toggle('active', d.dataset.t === theme));
+        const activeThemeDot = (theme === 'dark') ? 'default' : ((theme === 'gold-dark') ? 'gold' : ((theme === 'emerald-dark') ? 'emerald' : theme));
+        document.querySelectorAll('.set-theme-dot').forEach(d => d.classList.toggle('active', d.dataset.t === activeThemeDot));
         // اللغة
         $('setLangSeg').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
         // الرسم
@@ -4642,7 +4847,7 @@
 
       // السمة
       $('setThemes').querySelectorAll('.set-theme-dot').forEach(d => {
-        d.onclick = () => { applyTheme(d.dataset.t); syncSettingsControls(); };
+        d.onclick = () => { applyTheme(d.dataset.t, true); syncSettingsControls(); };
       });
       // اللغة
       $('setLangSeg').querySelectorAll('button').forEach(b => {
@@ -4663,9 +4868,10 @@
         autoScrollText = this.checked;
         localStorage.setItem('autoScrollText', this.checked ? '1' : '0');
       };
-      // تظليل الآية مع القراءة (نعم / لا)
+      // تظليل الآية مع القراءة تلقائياً عند القراء المتزامنة أصواتهم (نعم / لا)
       $('setAutoHi').onchange = function () {
         autoHighlight = this.checked;
+        localStorage.setItem('autoHighlightV2', autoHighlight ? '1' : '0');
         localStorage.setItem('autoHighlight', autoHighlight ? '1' : '0');
         // إلغاء التظليل فوراً عند الإطفاء
         if (!autoHighlight) document.querySelectorAll('.si-ayah.sync-active').forEach(r => r.classList.remove('sync-active'));
@@ -4709,7 +4915,7 @@
 
       const DL_LABELS = {
         ar: {
-          targetTitle: '💾 مكان الحفظ والتخزين',
+          targetTitle: '💾 التخزين في ذاكرة المتصفح',
           targetBrowser: '🌐 ذاكرة المتصفح',
           targetFolder: '📁 مجلد على الجهاز',
           pickFolder: '📂 اختيار مجلد الحفظ...',
@@ -4739,7 +4945,7 @@
           clearCacheBtn: '🗑️ مسح التنزيلات المخزنة في المتصفح'
         },
         en: {
-          targetTitle: '💾 Storage Destination',
+          targetTitle: '💾 Browser Offline Storage',
           targetBrowser: '🌐 Browser Memory',
           targetFolder: '📁 Device Folder',
           pickFolder: '📂 Choose Save Folder...',
@@ -4777,7 +4983,7 @@
         setTxt('dlTargetBrowserBtn', L.targetBrowser);
         setTxt('dlTargetFolderBtn', L.targetFolder);
         setTxt('dlPickFolderBtn', L.pickFolder);
-        if (!dlDirHandle) setTxt('dlFolderNameLbl', L.noFolder);
+        setTxt('dlFolderNameLbl', dlDirHandle ? `✅ ${dlDirHandle.name}` : L.noFolder);
         setTxt('dlItemsTitle', L.itemsTitle);
         setTxt('dlSelectAllBtn', L.selectAll);
         setTxt('dlCoreLbl', L.coreLbl); setTxt('dlCoreSub', L.coreSub);
@@ -4906,50 +5112,6 @@
         };
       });
 
-      // اختيار وجهة الحفظ (ذاكرة المتصفح | مجلد على الجهاز)
-      function syncDlTargetUI() {
-        document.querySelectorAll('#dlTargetSeg button').forEach(b =>
-          b.classList.toggle('active', b.dataset.dlt === dlTargetMode));
-        const row = $('dlFolderPickRow');
-        if (row) row.style.display = (dlTargetMode === 'folder') ? 'flex' : 'none';
-      }
-      document.querySelectorAll('#dlTargetSeg button').forEach(b => {
-        b.onclick = () => {
-          dlTargetMode = b.dataset.dlt === 'folder' ? 'folder' : 'browser';
-          lsSave('dlTargetMode', dlTargetMode);
-          syncDlTargetUI();
-        };
-      });
-      syncDlTargetUI();
-
-      // اختيار مجلد على الجهاز عبر File System Access API
-      if ($('dlPickFolderBtn')) {
-        $('dlPickFolderBtn').onclick = async () => {
-          if (typeof window.showDirectoryPicker === 'function') {
-            try {
-              dlDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-              if ($('dlFolderNameLbl')) {
-                $('dlFolderNameLbl').textContent = `✅ ${dlDirHandle.name}`;
-                $('dlFolderNameLbl').style.color = 'var(--acc1)';
-              }
-              showToast(lang === 'ar' ? `📁 تم اختيار المجلد: ${dlDirHandle.name}` : `📁 Folder selected: ${dlDirHandle.name}`, 'info');
-            } catch (e) {
-              if (e && e.name !== 'AbortError') {
-                showToast(lang === 'ar' ? '⚠️ تعذّر فتح المجلد، سيتم الحفظ في ذاكرة المتصفح' : '⚠️ Could not open folder, using browser memory', 'warn');
-              }
-            }
-          } else {
-            showToast(
-              lang === 'ar'
-                ? 'ℹ️ متصفحك الحالي يحفظ الملفات مباشرة في ذاكرة المتصفح ومجلد التنزيلات التلقائي للجهاز'
-                : 'ℹ️ Your browser saves files directly to browser memory and your device Downloads folder',
-              'info',
-              3800
-            );
-          }
-        };
-      }
-
       // إظهار/إخفاء حقول النطاق المخصص للخطوط والصور والصوتيات
       if ($('dlFontRangeMode')) $('dlFontRangeMode').onchange = function () {
         if ($('dlFontRangeCustom')) $('dlFontRangeCustom').style.display = (this.value === 'custom') ? 'flex' : 'none';
@@ -4972,28 +5134,8 @@
         };
       }
 
-      // مساعد لحفظ ملف داخل المجلد المحلي المختار (إن وُجد)
-      async function saveBlobToFolder(subPathArr, fileName, blob) {
-        if (dlTargetMode !== 'folder' || !dlDirHandle || !blob) return false;
-        try {
-          let dir = dlDirHandle;
-          for (const sub of subPathArr) {
-            const safeSub = String(sub).replace(/[\\/:*?"<>|]/g, '_').trim() || 'files';
-            dir = await dir.getDirectoryHandle(safeSub, { create: true });
-          }
-          const safeFile = String(fileName).replace(/[\\/:*?"<>|]/g, '_').trim();
-          const fh = await dir.getFileHandle(safeFile, { create: true });
-          const writable = await fh.createWritable();
-          await writable.write(blob);
-          await writable.close();
-          return true;
-        } catch (e) {
-          return false;
-        }
-      }
-
-      // مساعد لجلب رابط وتخزينه في الكاش المحدد + المجلد المحلي إن طُلب
-      async function fetchAndStoreAsset(url, cacheName, subPathArr, fileName, signal) {
+      // مساعد لجلب رابط وتخزينه في ذاكرة المتصفح (Cache Storage)
+      async function fetchAndStoreAsset(url, cacheName, _subPathArr, _fileName, signal) {
         const resp = await fetch(url, { signal });
         if (!resp.ok && resp.type !== 'opaque') throw new Error('HTTP ' + resp.status);
         if ('caches' in window && cacheName) {
@@ -5002,15 +5144,9 @@
             await cache.put(url, resp.clone());
           } catch (e) {}
         }
-        if (dlTargetMode === 'folder' && dlDirHandle && resp.ok) {
-          try {
-            const blob = await resp.clone().blob();
-            await saveBlobToFolder(subPathArr, fileName, blob);
-          } catch (e) {}
-        }
       }
 
-      // تنفيذ التنزيل الشامل
+      // تنفيذ التنزيل الشامل إلى ذاكرة المتصفح
       async function startBatchDownload() {
         if (dlRunning) return;
         const chkCore = $('dlChkCore')?.checked;
@@ -5018,51 +5154,33 @@
         const chkImages = $('dlChkImages')?.checked;
         const chkAudio = $('dlChkAudio')?.checked;
 
+        const L = DL_LABELS[lang] || DL_LABELS.ar;
         if (!chkCore && !chkFonts && !chkImages && !chkAudio) {
-          showToast(lang === 'ar' ? '⚠️ الرجاء تحديد عنصر واحد على الأقل لتنزيله' : '⚠️ Please select at least one item to download', 'warn');
+          showToast(L.nothingSel, 'warn');
           return;
-        }
-
-        // إذا اختار المستخدم مجلداً على الجهاز ولم يختر المجلد بعد، نفتح نافذة اختيار المجلد تلقائياً
-        if (dlTargetMode === 'folder' && !dlDirHandle && typeof window.showDirectoryPicker === 'function') {
-          try {
-            dlDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-            if ($('dlFolderNameLbl')) {
-              $('dlFolderNameLbl').textContent = `✅ ${dlDirHandle.name}`;
-              $('dlFolderNameLbl').style.color = 'var(--acc1)';
-            }
-          } catch (e) {
-            if (e && e.name === 'AbortError') return;
-          }
-        }
-
-        // طلب تخزين دائم في المتصفح لئلا يحذفه النظام تلقائياً
-        if (navigator.storage && navigator.storage.persist) {
-          try { await navigator.storage.persist(); } catch (e) {}
         }
 
         const tasks = [];
 
         // 1. مهام الملفات الأساسية ونصوص الـ 114 سورة
         if (chkCore) {
-          const coreFiles = ['index.html', 'style.css', 'script.js', 'qcf-data.js', 'manifest.json', 'icon.svg', 'icon.png'];
-          coreFiles.forEach(fn => {
+          const coreAssets = ['./', './index.html', './style.css', './script.js', './qcf-data.js', './manifest.json', './icon.svg', './icon.png'];
+          coreAssets.forEach(u => {
+            const fn = u === './' ? 'root.html' : u.replace('./', '');
             tasks.push({
-              label: lang === 'ar' ? `ملف أساسي: ${fn}` : `Core file: ${fn}`,
-              run: sig => fetchAndStoreAsset('./' + fn, 'quran-app-v24', ['app'], fn, sig)
+              label: lang === 'ar' ? `الملف الأساسي: ${fn}` : `Core file: ${fn}`,
+              run: sig => fetchAndStoreAsset(u, 'quran-app-v28', ['core'], fn, sig)
             });
           });
           for (let sn = 1; sn <= 114; sn++) {
-            const sName = surahs[sn - 1]?.name || String(sn);
+            const sName = surahs.find(x => x.n === sn)?.name || String(sn);
             tasks.push({
               label: lang === 'ar' ? `نص ومعلومات سورة ${sName} (${sn}/114)` : `Surah ${sName} text & info (${sn}/114)`,
               run: async sig => {
-                const ayahs = await fetchSurahText(sn);
-                const info = await fetchSurahInfo(sn);
-                if (dlTargetMode === 'folder' && dlDirHandle && ayahs && ayahs.length) {
-                  const blob = new Blob([JSON.stringify({ surah: sn, name: sName, ayahs, info }, null, 2)], { type: 'application/json' });
-                  await saveBlobToFolder(['surah_texts'], `${String(sn).padStart(3, '0')}_${sName}.json`, blob);
-                }
+                await fetchAndStoreAsset(`https://api.alquran.cloud/v1/surah/${sn}/quran-uthmani`, 'quran-text-v28', ['texts'], `surah_${sn}_uthmani.json`, sig);
+                try {
+                  await fetchAndStoreAsset(`https://api.quranpedia.net/v1/surahs/${sn}`, 'quran-text-v28', ['texts'], `surah_${sn}_info.json`, sig);
+                } catch (_) {}
               }
             });
           }
@@ -5071,20 +5189,21 @@
         // 2. مهام الخطوط القرآنية (QCF / Tajweed)
         if (chkFonts) {
           const fType = $('dlFontTypeSel')?.value || 'qcf';
-          const isCustom = $('dlFontRangeMode')?.value === 'custom';
-          const pFrom = isCustom ? Math.max(1, Math.min(604, parseInt($('dlFontFromPg')?.value || '1', 10))) : 1;
-          const pTo = isCustom ? Math.max(1, Math.min(604, parseInt($('dlFontToPg')?.value || '604', 10))) : 604;
+          const isAll = ($('dlFontRangeMode')?.value || 'all') === 'all';
+          const pFrom = isAll ? 1 : Math.max(1, Math.min(604, parseInt($('dlFontFromPg')?.value || '1', 10)));
+          const pTo = isAll ? 604 : Math.max(1, Math.min(604, parseInt($('dlFontToPg')?.value || '604', 10)));
           const lo = Math.min(pFrom, pTo), hi = Math.max(pFrom, pTo);
           const modes = fType === 'both' ? ['qcf', 'tajweed'] : [fType];
 
           modes.forEach(m => {
             const cfg = FONT_ENGINES[m];
+            if (!cfg) return;
             for (let pg = lo; pg <= hi; pg++) {
               const fn = cfg.fileFn(pg);
               const url = cfg.sources[0] + fn;
               tasks.push({
                 label: lang === 'ar' ? `خط ${m === 'tajweed' ? 'التجويد' : 'المصحف'} — صفحة ${pg}` : `${m.toUpperCase()} font — Page ${pg}`,
-                run: sig => fetchAndStoreAsset(url, 'quran-qcf-v24', ['fonts', m], fn, sig)
+                run: sig => fetchAndStoreAsset(url, 'quran-qcf-v28', ['fonts', m], fn, sig)
               });
             }
           });
@@ -5094,98 +5213,108 @@
         if (chkImages) {
           const srcIdx = parseInt($('dlImgSourceSel')?.value || '0', 10);
           const srcObj = MUSHAF_SOURCES[srcIdx] || MUSHAF_SOURCES[0];
-          const isCustom = $('dlImgRangeMode')?.value === 'custom';
-          const pFrom = isCustom ? Math.max(1, Math.min(604, parseInt($('dlImgFromPg')?.value || '1', 10))) : 1;
-          const pTo = isCustom ? Math.max(1, Math.min(604, parseInt($('dlImgToPg')?.value || '604', 10))) : 604;
+          const isAll = ($('dlImgRangeMode')?.value || 'all') === 'all';
+          const pFrom = isAll ? 1 : Math.max(1, Math.min(604, parseInt($('dlImgFromPg')?.value || '1', 10)));
+          const pTo = isAll ? 604 : Math.max(1, Math.min(604, parseInt($('dlImgToPg')?.value || '604', 10)));
           const lo = Math.min(pFrom, pTo), hi = Math.max(pFrom, pTo);
 
           for (let pg = lo; pg <= hi; pg++) {
             const url = srcObj.urlFn(pg);
-            const ext = (url.split('.').pop() || 'jpg').split('?')[0];
+            const ext = (url.split('.').pop() || 'png').split('?')[0];
             const fn = `page_${String(pg).padStart(3, '0')}.${ext}`;
             tasks.push({
-              label: lang === 'ar' ? `صورة مصحف (${srcObj.label}) — صفحة ${pg}` : `Mushaf image (${srcObj.label}) — Page ${pg}`,
-              run: sig => fetchAndStoreAsset(url, 'quran-img-v24', ['mushaf_images', srcObj.id], fn, sig)
+              label: lang === 'ar' ? `صورة المصحف (${srcObj.label}) — صفحة ${pg}` : `Mushaf Image — Page ${pg}`,
+              run: sig => fetchAndStoreAsset(url, 'quran-img-v28', ['images', srcObj.id], fn, sig)
             });
           }
         }
 
-        // 4. مهام التلاوات الصوتية للقراء
-        if (chkAudio && reciters.length) {
+        // 4. مهام التلاوات الصوتية + التوقيتات الدقيقة
+        if (chkAudio) {
           const ri = parseInt($('dlReciterSel')?.value || '0', 10);
           const mi = parseInt($('dlMoshafSel')?.value || '0', 10);
           const r = reciters[ri];
           const m = r?.moshaf?.[mi];
           if (r && m) {
             const availNums = (m.surah_list || '').split(',').map(Number).filter(Boolean);
-            const isAll = $('dlAudioRangeMode')?.value === 'all';
+            const isAll = ($('dlAudioRangeMode')?.value || 'custom') === 'all';
             const sFrom = isAll ? 1 : parseInt($('dlAudioFromSurah')?.value || '1', 10);
             const sTo = isAll ? 114 : parseInt($('dlAudioToSurah')?.value || '114', 10);
             const lo = Math.min(sFrom, sTo), hi = Math.max(sFrom, sTo);
             const targetSurahs = availNums.filter(n => n >= lo && n <= hi);
-            const recFolder = r.cleanName || r.name;
 
-            targetSurahs.forEach(sNum => {
-              const sName = surahs.find(x => x.n === sNum)?.name || String(sNum);
-              const fn = `${String(sNum).padStart(3, '0')}_${sName}.mp3`;
+            targetSurahs.forEach(sn => {
+              const sName = surahs.find(x => x.n === sn)?.name || String(sn);
+              const pad3 = String(sn).padStart(3, '0');
               tasks.push({
-                label: lang === 'ar' ? `تلاوة ${recFolder} — سورة ${sName}` : `Audio ${recFolder} — Surah ${sName}`,
+                label: lang === 'ar' ? `تلاوة ${r.name} — سورة ${sName}` : `Audio ${r.name} — Surah ${sName}`,
                 run: async sig => {
-                  let mp3Url = '';
+                  let mp3Url = `${m.server}${pad3}.mp3`;
                   if (r.isPrecision && !r.audioServer) {
-                    const pData = await fetchPrecisionAudioData(r.precisionQid, sNum);
-                    if (pData && pData.audioUrl) mp3Url = pData.audioUrl;
-                  } else {
-                    mp3Url = (r.audioServer || m.server) + String(sNum).padStart(3, '0') + '.mp3';
+                    const syncApiUrl = `https://api.quran.com/api/v4/chapter_recitations/${r.precisionQid}/${sn}?segments=true`;
+                    try {
+                      await fetchAndStoreAsset(syncApiUrl, 'quran-text-v28', ['audio', r.name, 'timings'], `timings_${pad3}.json`, sig);
+                      const pData = await fetchPrecisionAudioData(r.precisionQid, sn);
+                      if (pData && pData.audioUrl) mp3Url = pData.audioUrl;
+                    } catch (_) {}
+                  } else if (r.audioServer) {
+                    mp3Url = `${r.audioServer}${pad3}.mp3`;
                   }
-                  if (!mp3Url) throw new Error('No audio URL');
-                  await fetchAndStoreAsset(mp3Url, 'quran-audio-v24', ['audio', recFolder], fn, sig);
+                  await fetchAndStoreAsset(mp3Url, 'quran-audio-v28', ['audio', r.name], `${pad3}_${sName}.mp3`, sig);
                 }
               });
             });
           }
         }
 
-        if (!tasks.length) return;
+        if (!tasks.length) {
+          showToast(L.nothingSel, 'warn');
+          return;
+        }
 
         dlRunning = true;
         dlAbortCtrl = new AbortController();
         const sig = dlAbortCtrl.signal;
 
-        const startBtn = $('dlStartBtn'), cancelBtn = $('dlCancelBtn');
-        const progWrap = $('dlProgressWrap'), progFill = $('dlProgBarFill');
-        const progStatus = $('dlProgStatus'), progCount = $('dlProgCount'), progPct = $('dlProgPct');
+        const progWrap = $('dlProgressWrap');
+        const progStatus = $('dlProgStatus');
+        const progCount = $('dlProgCount');
+        const progFill = $('dlProgBarFill');
+        const progPct = $('dlProgPct');
+        const startBtn = $('dlStartBtn');
+        const cancelBtn = $('dlCancelBtn');
 
-        if (startBtn) startBtn.disabled = true;
-        if (cancelBtn) cancelBtn.style.display = 'inline-block';
         if (progWrap) progWrap.style.display = 'block';
+        if (startBtn) startBtn.disabled = true;
+        if (cancelBtn) cancelBtn.style.display = 'inline-flex';
 
-        let completed = 0, failed = 0;
+        let completed = 0;
+        let failed = 0;
         const total = tasks.length;
-        const updateProgView = (curLabel) => {
+
+        const updateProgView = (txt) => {
           const pct = Math.round((completed / total) * 100);
-          if (progFill) progFill.style.width = pct + '%';
-          if (progPct) progPct.textContent = pct + '%';
+          if (progStatus && txt) progStatus.textContent = txt;
           if (progCount) progCount.textContent = `${completed} / ${total}`;
-          if (progStatus && curLabel) progStatus.textContent = curLabel;
+          if (progFill) progFill.style.width = `${pct}%`;
+          if (progPct) progPct.textContent = `${pct}%`;
         };
 
-        updateProgView(lang === 'ar' ? '⏳ جاري بدء التنزيل...' : '⏳ Starting download...');
+        updateProgView(tasks[0].label);
 
-        // تنفيذ المهام بـ 3 عمال متوازيين لسرعة عالية دون إغراق الشبكة
-        let cursor = 0;
+        let idx = 0;
         const workers = Array.from({ length: Math.min(3, total) }, async () => {
-          while (cursor < total && !sig.aborted) {
-            const task = tasks[cursor++];
-            updateProgView(task.label);
+          while (idx < total && !sig.aborted) {
+            const currentTask = tasks[idx++];
+            updateProgView(currentTask.label);
             try {
-              await task.run(sig);
+              await currentTask.run(sig);
             } catch (e) {
               if (sig.aborted) break;
               failed++;
             }
             completed++;
-            updateProgView(task.label);
+            updateProgView(currentTask.label);
           }
         });
 
@@ -5204,7 +5333,7 @@
           updateProgView(lang === 'ar'
             ? `✅ اكتمل التنزيل بنجاح (${okCount} من ${total})`
             : `✅ Download complete (${okCount} of ${total})`);
-          showToast(lang === 'ar' ? `✅ تم تنزيل وحفظ ${okCount} ملف بنجاح` : `✅ Downloaded & saved ${okCount} files`, 'info', 3500);
+          showToast(lang === 'ar' ? `✅ تم تنزيل وحفظ ${okCount} ملف في ذاكرة المتصفح` : `✅ Saved ${okCount} files in browser memory`, 'info', 3500);
         }
       }
 

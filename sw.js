@@ -1,12 +1,12 @@
 /* =============================================================
-   Service Worker — مشغل القرآن الكريم (الإصدار المحترف v24)
+   Service Worker — مشغل القرآن الكريم (الإصدار المحترف v28)
    - ملفات التطبيق: Stale-While-Revalidate (عرض فوري + تحديث بالخلفية)
    - بيانات APIs (mp3quran / quran.com): Network-First مع رجوع للكاش عند انقطاع الإنترنت
    - خطوط المصحف (QCF Fonts) وخط التجويد الملوّن: Cache-First بسعة تخزين موسعة (604 صفحة)
    - صور المصحف: Cache-First بسعة تخزين موسعة (604 صفحة)
    - الملفات الصوتية mp3: تقديم فوري من AUDIO_CACHE إن تم تنزيلها مسبقاً، وإلا تمرير مباشر للتدفق
 ============================================================= */
-const VERSION = 'v24';
+const VERSION = 'v28';
 const APP_CACHE = 'quran-app-' + VERSION;
 const DATA_CACHE = 'quran-data-' + VERSION;
 const IMG_CACHE = 'quran-img-' + VERSION;

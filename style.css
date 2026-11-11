@@ -101,26 +101,23 @@
       --mushaf-marker-bg: rgba(139, 121, 170, 0.2);
       --mushaf-marker-color: #d1c4e9;
     }
-      --section-h: #80d8ea;
-      --status-bg: linear-gradient(135deg, #1a2a4a, #12203a);
-      --status-border: #3a6aaa;
-      --status-text: #90c4f9;
-      --badge-bg: rgba(167, 139, 250, 0.15);
-      --badge-text: #c4b5fd;
-      --now-bg: linear-gradient(135deg, #2d1b69, #1e1b4b);
-      --now-text: #e0d7ff;
-      --bm-bg: linear-gradient(135deg, #1e4d47, #0d3832);
-    }
 
     body.emerald {
       --bg1: #059669;
-      --bg2: #064e3b;
+      --bg2: #065f46;
+      --card: rgba(244, 253, 249, 0.98);
+      --card-border: rgba(52, 211, 153, 0.45);
+      --text: #052e16;
+      --text-soft: #166534;
+      --label: #14532d;
+      --input-bg: #f8fefb;
+      --input-border: #86efac;
       --fill1: #059669;
       --fill2: #064e3b;
       --thumb: #047857;
       --btn-play: linear-gradient(135deg, #059669, #064e3b);
       --btn-nav: linear-gradient(135deg, #34d399, #059669);
-      --btn-shadow: 0 6px 20px rgba(5, 150, 105, 0.5);
+      --btn-shadow: 0 6px 20px rgba(5, 150, 105, 0.42);
       --card-shadow: 0 24px 64px rgba(4, 78, 59, 0.2);
       --acc1: #059669;
       --acc2: #064e3b;
@@ -137,10 +134,54 @@
       --section-h: #065f46;
       --badge-bg: rgba(5, 150, 105, 0.12);
       --badge-text: #065f46;
-      /* ورقة المصحف في ثيم الزمرد */
-      --mushaf-paper: #0b2218;
+      /* ورقة المصحف في الثيم الأخضر الفاتح */
+      --mushaf-paper: #f6fef9;
+      --mushaf-border: #10b981;
+      --mushaf-inner-border: rgba(16, 185, 129, 0.4);
+      --mushaf-banner-bg: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0.05) 100%);
+      --mushaf-banner-border: #10b981;
+      --mushaf-text: #052e16;
+      --mushaf-marker-bg: rgba(16, 185, 129, 0.16);
+      --mushaf-marker-color: #065f46;
+    }
+
+    body.emerald-dark {
+      --bg1: #041610;
+      --bg2: #07261c;
+      --card: rgba(7, 29, 21, 0.98);
+      --card-border: rgba(52, 211, 153, 0.28);
+      --text: #ecfdf5;
+      --text-soft: #86efac;
+      --label: #6ee7b7;
+      --input-bg: #0b291e;
+      --input-border: #16563f;
+      --acc1: #34d399;
+      --acc2: #059669;
+      --player-bg: linear-gradient(145deg, #0c2b20, #071e16);
+      --player-border: #1b5e45;
+      --track: #134633;
+      --fill1: #34d399;
+      --fill2: #059669;
+      --thumb: #10b981;
+      --btn-play: linear-gradient(135deg, #059669, #34d399);
+      --btn-nav: linear-gradient(135deg, #065f46, #059669);
+      --btn-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+      --card-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
+      --section-bg: linear-gradient(135deg, #0b291e, #071d15);
+      --section-border: #059669;
+      --section-h: #6ee7b7;
+      --status-bg: linear-gradient(135deg, #0c2b20, #081f17);
+      --status-border: #047857;
+      --status-text: #6ee7b7;
+      --badge-bg: rgba(52, 211, 153, 0.15);
+      --badge-text: #a7f3d0;
+      --now-bg: linear-gradient(135deg, #064e3b, #041f17);
+      --now-text: #ecfdf5;
+      --bm-bg: linear-gradient(135deg, #047857, #064e3b);
+      /* ورقة المصحف في الثيم الأخضر الغامق */
+      --mushaf-paper: #071912;
       --mushaf-border: #22c55e;
-      --mushaf-inner-border: rgba(34, 197, 94, 0.35);
+      --mushaf-inner-border: rgba(34, 197, 94, 0.38);
       --mushaf-banner-bg: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.05) 100%);
       --mushaf-banner-border: #22c55e;
       --mushaf-text: #f0fdf4;
@@ -149,15 +190,22 @@
     }
 
     body.gold {
-      --bg1: #b45309;
-      --bg2: #78350f;
+      --bg1: #d97706;
+      --bg2: #92400e;
+      --card: rgba(255, 252, 242, 0.98);
+      --card-border: rgba(245, 158, 11, 0.45);
+      --text: #271705;
+      --text-soft: #6b4c1b;
+      --label: #5c3f14;
+      --input-bg: #fffdf7;
+      --input-border: #f3d078;
       --fill1: #d97706;
       --fill2: #b45309;
       --thumb: #b45309;
       --btn-play: linear-gradient(135deg, #d97706, #b45309);
       --btn-nav: linear-gradient(135deg, #fbbf24, #d97706);
-      --btn-shadow: 0 6px 20px rgba(180, 83, 9, 0.5);
-      --card-shadow: 0 24px 64px rgba(120, 53, 15, 0.22);
+      --btn-shadow: 0 6px 20px rgba(180, 83, 9, 0.42);
+      --card-shadow: 0 24px 64px rgba(120, 53, 15, 0.2);
       --acc1: #d97706;
       --acc2: #b45309;
       --now-bg: linear-gradient(135deg, #d97706, #78350f);
@@ -173,8 +221,52 @@
       --section-h: #92400e;
       --badge-bg: rgba(217, 119, 6, 0.13);
       --badge-text: #92400e;
-      /* ورقة المصحف في ثيم الذهب */
-      --mushaf-paper: #1b160d;
+      /* ورقة المصحف في الثيم الذهبي الفاتح */
+      --mushaf-paper: #fffdf5;
+      --mushaf-border: #d4af37;
+      --mushaf-inner-border: rgba(212, 175, 55, 0.45);
+      --mushaf-banner-bg: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.06) 100%);
+      --mushaf-banner-border: #d4af37;
+      --mushaf-text: #1f160a;
+      --mushaf-marker-bg: rgba(212, 175, 55, 0.18);
+      --mushaf-marker-color: #854d0e;
+    }
+
+    body.gold-dark {
+      --bg1: #140f07;
+      --bg2: #261a09;
+      --card: rgba(26, 20, 11, 0.98);
+      --card-border: rgba(212, 175, 55, 0.3);
+      --text: #fef3c7;
+      --text-soft: #d4b982;
+      --label: #c2a366;
+      --input-bg: #241b0e;
+      --input-border: #543f1c;
+      --acc1: #fbbf24;
+      --acc2: #d97706;
+      --player-bg: linear-gradient(145deg, #241b0d, #191208);
+      --player-border: #5c4318;
+      --track: #3d2c10;
+      --fill1: #fbbf24;
+      --fill2: #d97706;
+      --thumb: #f59e0b;
+      --btn-play: linear-gradient(135deg, #d97706, #fbbf24);
+      --btn-nav: linear-gradient(135deg, #92400e, #d97706);
+      --btn-shadow: 0 6px 20px rgba(217, 119, 6, 0.45);
+      --card-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
+      --section-bg: linear-gradient(135deg, #261b0b, #1a1207);
+      --section-border: #b45309;
+      --section-h: #fcd34d;
+      --status-bg: linear-gradient(135deg, #281c0b, #1b1307);
+      --status-border: #78350f;
+      --status-text: #fcd34d;
+      --badge-bg: rgba(251, 191, 36, 0.15);
+      --badge-text: #fde68a;
+      --now-bg: linear-gradient(135deg, #451a03, #1f1407);
+      --now-text: #fef3c7;
+      --bm-bg: linear-gradient(135deg, #92400e, #451a03);
+      /* ورقة المصحف في الثيم الذهبي الغامق */
+      --mushaf-paper: #18130a;
       --mushaf-border: #d4af37;
       --mushaf-inner-border: rgba(212, 175, 55, 0.4);
       --mushaf-banner-bg: linear-gradient(135deg, rgba(212, 175, 55, 0.22) 0%, rgba(212, 175, 55, 0.06) 100%);
@@ -182,6 +274,50 @@
       --mushaf-text: #fefce8;
       --mushaf-marker-bg: rgba(212, 175, 55, 0.22);
       --mushaf-marker-color: #fde68a;
+    }
+
+    body.beige {
+      --bg1: #cbb89d;
+      --bg2: #a89070;
+      --card: rgba(249, 244, 234, 0.98);
+      --card-border: rgba(184, 156, 118, 0.5);
+      --text: #2c2218;
+      --text-soft: #6b5844;
+      --label: #594736;
+      --input-bg: #f4ede0;
+      --input-border: #d5c5ae;
+      --acc1: #8c6239;
+      --acc2: #604123;
+      --player-bg: linear-gradient(145deg, #f3ece0, #e6dac5);
+      --player-border: #cbb698;
+      --track: #d8c6ac;
+      --fill1: #8c6239;
+      --fill2: #604123;
+      --thumb: #734f2c;
+      --btn-play: linear-gradient(135deg, #8c6239, #604123);
+      --btn-nav: linear-gradient(135deg, #a67c52, #8c6239);
+      --btn-shadow: 0 6px 20px rgba(140, 98, 57, 0.32);
+      --card-shadow: 0 24px 64px rgba(96, 65, 35, 0.15);
+      --section-bg: linear-gradient(135deg, #f3ece0, #e5d8c1);
+      --section-border: #bfa682;
+      --section-h: #5a3c1e;
+      --status-bg: linear-gradient(135deg, #f3ece0, #e5d8c1);
+      --status-border: #bfa682;
+      --status-text: #5a3c1e;
+      --badge-bg: rgba(140, 98, 57, 0.12);
+      --badge-text: #5a3c1e;
+      --now-bg: linear-gradient(135deg, #8c6239, #5a3c1e);
+      --now-text: #fdfaf5;
+      --bm-bg: linear-gradient(135deg, #8c6239, #604123);
+      /* ورقة المصحف في ثيم البيج الهادئ */
+      --mushaf-paper: #f8f1e3;
+      --mushaf-border: #b59465;
+      --mushaf-inner-border: rgba(181, 148, 101, 0.42);
+      --mushaf-banner-bg: linear-gradient(135deg, rgba(181, 148, 101, 0.18) 0%, rgba(181, 148, 101, 0.05) 100%);
+      --mushaf-banner-border: #b59465;
+      --mushaf-text: #261c12;
+      --mushaf-marker-bg: rgba(181, 148, 101, 0.16);
+      --mushaf-marker-color: #6e4e27;
     }
 
     /*=======================================================
@@ -662,22 +798,22 @@
         pointer-events: auto;
       }
 
-      /* إصلاح field-row على الجوال — التفاف بدل الخروج */
+      /* تنظيم صف الحقول على الجوال في سطر واحد متناسق مع تصغير مربع البحث */
       .field-row {
-        flex-wrap: wrap;
-        gap: 6px;
+        flex-wrap: nowrap;
+        gap: 5px;
       }
 
       .field-row select {
-        flex: 1 1 100%;
-        /* السيليكت يأخذ كامل العرض */
+        flex: 1 1 auto;
         min-width: 0;
       }
 
       .mini-search {
-        flex: 1 1 calc(100% - 96px);
-        max-width: 100% !important;
-        min-width: 80px;
+        flex: 0 0 82px !important;
+        width: 82px !important;
+        max-width: 82px !important;
+        min-width: 68px !important;
       }
 
       .icon-btn {
@@ -1351,19 +1487,20 @@
     }
 
     .t-dot[data-t="default"] {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-    }
-
-    .t-dot[data-t="dark"] {
-      background: linear-gradient(135deg, #1a1a2e, #4a2080);
+      background: linear-gradient(135deg, #a78bfa 0%, #667eea 48%, #2d1b69 52%, #0d0d1a 100%);
     }
 
     .t-dot[data-t="emerald"] {
-      background: linear-gradient(135deg, #059669, #064e3b);
+      background: linear-gradient(135deg, #6ee7b7 0%, #10b981 48%, #064e3b 52%, #041912 100%);
     }
 
     .t-dot[data-t="gold"] {
-      background: linear-gradient(135deg, #d97706, #78350f);
+      background: linear-gradient(135deg, #fde68a 0%, #f59e0b 48%, #451a03 52%, #181209 100%);
+    }
+
+    .t-dot[data-t="beige"] {
+      background: linear-gradient(135deg, #f8f1e3, #c8b08e);
+      border-color: rgba(140, 98, 57, 0.35);
     }
 
     /* Shortcuts panel */
@@ -3359,9 +3496,24 @@
       border-left: 4px solid var(--acc1);
     }
 
+    .qp-text-wrap.block-mode .si-ayah.sync-active {
+      padding-top: 6px;
+      padding-bottom: 6px;
+    }
+
     body.dark .si-ayah.sync-active {
-      background: rgba(167, 139, 250, 0.18) !important;
-      box-shadow: 0 0 14px rgba(167, 139, 250, 0.2);
+      background: rgba(167, 139, 250, 0.14) !important;
+      box-shadow: none;
+    }
+
+    body.gold-dark .si-ayah.sync-active {
+      background: rgba(251, 191, 36, 0.14) !important;
+      box-shadow: none;
+    }
+
+    body.beige .si-ayah.sync-active {
+      background: rgba(140, 98, 57, 0.16) !important;
+      box-shadow: 0 0 10px rgba(140, 98, 57, 0.14);
     }
 
     body.emerald .si-ayah.sync-active {
@@ -3457,7 +3609,8 @@
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
       display: block;
       margin-bottom: 10px;
-      background: var(--input-bg);
+      background-color: #ffffff;
+      transition: filter 0.3s ease;
     }
 
     .mushaf-nav {
@@ -3609,19 +3762,20 @@
     }
 
     .st-default {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-    }
-
-    .st-dark {
-      background: linear-gradient(135deg, #1a1a2e, #0d0d1a);
+      background: linear-gradient(135deg, #a78bfa 0%, #667eea 48%, #2d1b69 52%, #0d0d1a 100%);
     }
 
     .st-emerald {
-      background: linear-gradient(135deg, #059669, #064e3b);
+      background: linear-gradient(135deg, #6ee7b7 0%, #10b981 48%, #064e3b 52%, #041912 100%);
     }
 
     .st-gold {
-      background: linear-gradient(135deg, #d97706, #92400e);
+      background: linear-gradient(135deg, #fde68a 0%, #f59e0b 48%, #451a03 52%, #181209 100%);
+    }
+
+    .st-beige {
+      background: linear-gradient(135deg, #f8f1e3, #c8b08e);
+      border-color: rgba(140, 98, 57, 0.35);
     }
 
     .set-seg {
@@ -4027,22 +4181,22 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* انقلاب اللون الأسود تلقائياً إلى أبيض ناصع فقط وحصراً في الثيم الغامق */
+    /* في الثيمات الفاتحة: استخدام خط التجويد الأساسي (النص الأساسي أسود والأحكام ملونة) */
+    body:not(.dark) .tajweed-mode .tajweed-ayah,
+    body:not(.dark) .tajweed-ayah,
+    body:not(.dark) .si-ayah.tajweed-ayah .si-ayah-text {
+      font-family: var(--tj-light-fam, inherit), 'Amiri Quran', 'Scheherazade New', serif !important;
+      font-palette: normal !important;
+    }
+
+    /* في جميع الثيمات الغامقة (dark, gold-dark, emerald-dark): عكس اللون الأسود إلى أبيض ناصع مع بقاء ألوان أحكام التجويد */
     body.dark .tajweed-mode .tajweed-ayah,
     body.dark .tajweed-ayah,
     body.dark .qp-text-wrap.inline-mode .tajweed-ayah,
     body.dark .si-ayah.tajweed-ayah .si-ayah-text {
-      font-palette: var(--page-pal, dark);
-    }
-
-    /* في الثيمين الذهبي والأخضر (الزمردي) والافتراضي: يبقى النص الأساسي أسود */
-    body.emerald .tajweed-mode .tajweed-ayah,
-    body.emerald .tajweed-ayah,
-    body.gold .tajweed-mode .tajweed-ayah,
-    body.gold .tajweed-ayah,
-    body:not(.dark) .tajweed-mode .tajweed-ayah,
-    body:not(.dark) .tajweed-ayah {
-      font-palette: normal !important;
+      font-family: var(--tj-dark-fam, var(--tj-light-fam, inherit)), 'Amiri Quran', 'Scheherazade New', serif !important;
+      font-palette: var(--page-pal, normal) !important;
+      color: #ffffff !important;
     }
 
     /* ── دليل أحكام التجويد الملوّن ── */
@@ -4634,11 +4788,27 @@
       text-align: center;
     }
 
-    /* الوضع الداكن: تعكس خلفية صور المصحف الوضع الغامق بدل التوهج الأبيض */
+    /* الوضع الداكن (الداكن، الذهبي الغامق، الأخضر الغامق):
+       - خلفية #ffffff تملأ الصور الشفافة (مثل Islam-DB و Aayaat و SurahQ) باللون الأبيض قبل الفلتر
+       - ثم يعكس الفلتر الخلفية البيضاء إلى داكنة مريحة (#141418) والخط الأسود إلى أبيض ناصع (#ebebeb)
+       - مع hue-rotate(180deg) للحفاظ على الألوان الحقيقية للزخارف وأحكام التجويد */
     body.dark .mushaf-page-img {
-      filter: brightness(0.84) contrast(1.04) saturate(0.92);
-      background: #12121c;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+      background-color: #ffffff !important;
+      filter: invert(0.92) hue-rotate(180deg) brightness(0.98) contrast(1.06) !important;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.65);
+    }
+
+    body.gold-dark .mushaf-page-img {
+      background-color: #fffdf8 !important;
+    }
+
+    body.emerald-dark .mushaf-page-img {
+      background-color: #f8fffb !important;
+    }
+
+    body.beige .mushaf-page-img {
+      background-color: #f8f1e3 !important;
+      filter: sepia(0.14) brightness(0.98);
     }
 
     body.dark #qpMushafBody {
@@ -4869,31 +5039,59 @@
       text-size-adjust: 100% !important;
     }
 
-    /* تظليل الآية في وضع التدفق وأسطر المصحف: شريط متناسق بدون تداخل رأسي وبدون إزاحة للكلمات */
+    /* تظليل الآية في وضع التدفق وأسطر المصحف:
+       - تكبير ارتفاع التظليل قليلاً في الوضع النهاري (14% إلى 86%)
+       - تقليل تداخل التظليل في الوضع الليلي (29% إلى 71%) لمنع التداخل الرأسي بين الأسطر */
     :root {
       --ayah-sync-band: rgba(16, 185, 129, 0.22);
+      --ayah-band-top: 14%;
+      --ayah-band-btm: 86%;
     }
 
     body.dark {
-      --ayah-sync-band: rgba(167, 139, 250, 0.26);
+      --ayah-sync-band: rgba(167, 139, 250, 0.19);
+      --ayah-band-top: 29%;
+      --ayah-band-btm: 71%;
+    }
+
+    body.gold-dark {
+      --ayah-sync-band: rgba(251, 191, 36, 0.19);
+      --ayah-band-top: 29%;
+      --ayah-band-btm: 71%;
+    }
+
+    body.emerald-dark {
+      --ayah-sync-band: rgba(52, 211, 153, 0.19);
+      --ayah-band-top: 29%;
+      --ayah-band-btm: 71%;
     }
 
     body.emerald {
       --ayah-sync-band: rgba(16, 185, 129, 0.24);
+      --ayah-band-top: 14%;
+      --ayah-band-btm: 86%;
     }
 
     body.gold {
       --ayah-sync-band: rgba(217, 119, 6, 0.24);
+      --ayah-band-top: 14%;
+      --ayah-band-btm: 86%;
+    }
+
+    body.beige {
+      --ayah-sync-band: rgba(140, 98, 57, 0.22);
+      --ayah-band-top: 14%;
+      --ayah-band-btm: 86%;
     }
 
     .qp-text-wrap.inline-mode .si-ayah.sync-active,
     .mushaf-page-line .si-ayah.sync-active {
       background: linear-gradient(
         to bottom,
-        transparent 22%,
-        var(--ayah-sync-band) 22%,
-        var(--ayah-sync-band) 78%,
-        transparent 78%
+        transparent var(--ayah-band-top, 14%),
+        var(--ayah-sync-band) var(--ayah-band-top, 14%),
+        var(--ayah-sync-band) var(--ayah-band-btm, 86%),
+        transparent var(--ayah-band-btm, 86%)
       ) !important;
       padding: 0 !important;
       margin: 0 !important;
@@ -5417,4 +5615,226 @@
     /* سورة مجاورة مشتركة في نفس صفحة المصحف */
     .mushaf-neighbor-surah {
       opacity: 0.94;
+    }
+
+    /* احتواء الـ 15 سطراً داخل نافذة النص بأقل هوامش رأسية مهدرة */
+    .qp-text-wrap.qlines {
+      padding: 6px 14px !important;
+    }
+
+    .qp-text-wrap.qlines .mushaf-page-lines {
+      gap: 0px !important;
+    }
+
+    .qp-text-wrap.qlines .mushaf-surah-banner {
+      margin: 4px 0 4px !important;
+      padding: 4px 10px !important;
+    }
+
+    .qp-text-wrap.qlines .mushaf-basmalah {
+      margin: 2px 0 4px !important;
+      padding: 2px 0 !important;
+    }
+
+    /* =======================================================
+       ✦ تنظيم وضغط واجهة الجوال وتصغير مربع البحث
+    ======================================================= */
+    @media (max-width: 767px) {
+      body {
+        padding: 4px 6px calc(6px + var(--safe-bottom)) !important;
+      }
+
+      .mobile-tab-bar {
+        margin-bottom: 6px !important;
+      }
+
+      .mtab {
+        padding: 9px 4px !important;
+        font-size: 13px !important;
+      }
+
+      .container {
+        padding: 12px 12px 14px !important;
+        border-radius: 20px !important;
+      }
+
+      /* جمع أزرار الشريط العلوي في صف واحد أنيق دون التفاف */
+      .top-bar {
+        flex-wrap: nowrap !important;
+        gap: 4px !important;
+        margin-bottom: 8px !important;
+      }
+
+      .top-bar-right {
+        flex-wrap: nowrap !important;
+        gap: 4px !important;
+      }
+
+      .top-btn {
+        padding: 6px 9px !important;
+        font-size: 12.5px !important;
+        border-radius: 14px !important;
+        min-width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .app-title {
+        font-size: 17px !important;
+        margin-bottom: 6px !important;
+        gap: 6px !important;
+      }
+
+      .app-logo {
+        width: 26px !important;
+        height: 26px !important;
+      }
+
+      .projects-bar {
+        margin-bottom: 8px !important;
+        gap: 6px !important;
+      }
+
+      .proj-btn {
+        padding: 4px 10px !important;
+        font-size: 11.5px !important;
+      }
+
+      /* ضغط بطاقة التلاوة الحالية */
+      .np-card {
+        padding: 9px 12px !important;
+        margin-bottom: 9px !important;
+        border-radius: 14px !important;
+        gap: 8px !important;
+      }
+
+      .np-surah {
+        font-size: 15px !important;
+      }
+
+      .np-reciter {
+        font-size: 12px !important;
+      }
+
+      /* ضغط مجموعات الحقول وتصغير مربع البحث ليصطف في سطر واحد */
+      .fg {
+        margin-bottom: 8px !important;
+      }
+
+      .lbl {
+        font-size: 12px !important;
+        margin-bottom: 3px !important;
+      }
+
+      .field-row {
+        flex-wrap: nowrap !important;
+        gap: 5px !important;
+      }
+
+      .field-row select {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        padding: 7px 8px !important;
+        font-size: 13.5px !important;
+        height: 36px !important;
+        border-radius: 9px !important;
+      }
+
+      .field-row .mini-search {
+        flex: 0 0 80px !important;
+        width: 80px !important;
+        max-width: 80px !important;
+        min-width: 66px !important;
+        padding: 6px 7px !important;
+        font-size: 12.5px !important;
+        height: 36px !important;
+        border-radius: 9px !important;
+      }
+
+      .field-row .icon-btn {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 15px !important;
+        border-radius: 9px !important;
+      }
+
+      .next-row {
+        margin-top: 5px !important;
+        gap: 5px !important;
+      }
+
+      .next-main-btn {
+        padding: 6px 10px !important;
+        font-size: 12.5px !important;
+        height: 34px !important;
+        border-radius: 9px !important;
+      }
+
+      .search-note {
+        display: none !important;
+      }
+
+      .surah-range-row {
+        margin-top: 5px !important;
+        padding: 5px 8px !important;
+        gap: 4px !important;
+        font-size: 11.5px !important;
+      }
+
+      .surah-range-select {
+        padding: 4px 6px !important;
+        font-size: 12.5px !important;
+        height: 30px !important;
+      }
+
+      .status {
+        padding: 7px 10px !important;
+        margin: 8px 0 !important;
+        font-size: 12px !important;
+        border-radius: 10px !important;
+      }
+
+      .player-card {
+        padding: 12px 12px 10px !important;
+        border-radius: 16px !important;
+        margin-bottom: 8px !important;
+      }
+
+      .ctrl-row {
+        margin: 10px 0 8px !important;
+        gap: 8px !important;
+      }
+
+      .c-btn.sm {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 15px !important;
+      }
+
+      .c-btn.md {
+        width: 46px !important;
+        height: 46px !important;
+        font-size: 18px !important;
+      }
+
+      .c-btn.lg {
+        width: 56px !important;
+        height: 56px !important;
+        font-size: 24px !important;
+      }
+
+      .slider-row {
+        margin: 5px 0 !important;
+      }
+
+      .stop-row {
+        margin-top: 6px !important;
+      }
+
+      .stop-row select {
+        padding: 5px 8px !important;
+        font-size: 13px !important;
+      }
     }
