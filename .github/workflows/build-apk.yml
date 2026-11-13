@@ -45,6 +45,17 @@ jobs:
             fi
           done
 
+          # Fix duplicate class kotlin-stdlib-jdk7 / jdk8 conflict automatically in app/build.gradle
+          if [ -f "$TARGET_DIR/app/build.gradle" ] && ! grep -q "kotlin-stdlib-jdk8" "$TARGET_DIR/app/build.gradle"; then
+            cat << 'EOF' >> "$TARGET_DIR/app/build.gradle"
+
+          configurations.configureEach {
+              exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+              exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+          }
+          EOF
+          fi
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
