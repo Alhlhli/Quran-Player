@@ -1,0 +1,227 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradients -->
+    <radialGradient id="bgGlow" cx="50%" cy="38%" r="65%">
+      <stop offset="0%" stop-color="#10324a"/>
+      <stop offset="55%" stop-color="#081827"/>
+      <stop offset="100%" stop-color="#030a10"/>
+    </radialGradient>
+
+    <!-- App Border Gradient -->
+    <linearGradient id="goldBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe8a3"/>
+      <stop offset="25%" stop-color="#d4af37"/>
+      <stop offset="60%" stop-color="#936d13"/>
+      <stop offset="85%" stop-color="#dfbc4c"/>
+      <stop offset="100%" stop-color="#fff0b8"/>
+    </linearGradient>
+
+    <!-- Page Gradients -->
+    <linearGradient id="pageLeft" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ebd8b5"/>
+      <stop offset="70%" stop-color="#fffcf5"/>
+      <stop offset="100%" stop-color="#e2cfab"/>
+    </linearGradient>
+
+    <linearGradient id="pageRight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e2cfab"/>
+      <stop offset="30%" stop-color="#fffcf5"/>
+      <stop offset="100%" stop-color="#ebd8b5"/>
+    </linearGradient>
+
+    <!-- Page Thickness -->
+    <linearGradient id="pageStack" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#d6c4a1"/>
+      <stop offset="100%" stop-color="#9e8a65"/>
+    </linearGradient>
+
+    <!-- Cover Leather -->
+    <linearGradient id="coverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#126e4f"/>
+      <stop offset="50%" stop-color="#0a4430"/>
+      <stop offset="100%" stop-color="#04261a"/>
+    </linearGradient>
+
+    <!-- Gold Foil Ornamentation -->
+    <linearGradient id="goldDeco" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff3bd"/>
+      <stop offset="40%" stop-color="#d4af37"/>
+      <stop offset="70%" stop-color="#9e7714"/>
+      <stop offset="100%" stop-color="#ffd56b"/>
+    </linearGradient>
+
+    <!-- Wooden Stand Gradients -->
+    <linearGradient id="woodFront" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b0743b"/>
+      <stop offset="40%" stop-color="#7a4718"/>
+      <stop offset="80%" stop-color="#4d2907"/>
+      <stop offset="100%" stop-color="#341902"/>
+    </linearGradient>
+
+    <linearGradient id="woodBack" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8b5523"/>
+      <stop offset="50%" stop-color="#5a310d"/>
+      <stop offset="100%" stop-color="#2c1402"/>
+    </linearGradient>
+
+    <linearGradient id="woodCarving" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e0a359"/>
+      <stop offset="100%" stop-color="#8c531d"/>
+    </linearGradient>
+
+    <!-- Play Button Gradients -->
+    <radialGradient id="btnSphere" cx="38%" cy="32%" r="68%">
+      <stop offset="0%" stop-color="#fff6cc"/>
+      <stop offset="28%" stop-color="#f5c742"/>
+      <stop offset="68%" stop-color="#b88319"/>
+      <stop offset="92%" stop-color="#694604"/>
+      <stop offset="100%" stop-color="#3b2500"/>
+    </radialGradient>
+
+    <linearGradient id="btnRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#f5ce53"/>
+      <stop offset="70%" stop-color="#8c610d"/>
+      <stop offset="100%" stop-color="#ffd56b"/>
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="strongGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="15" flood-color="#000000" flood-opacity="0.65"/>
+    </filter>
+
+    <filter id="btnShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.75"/>
+    </filter>
+  </defs>
+
+  <!-- App Icon Base -->
+  <rect x="18" y="18" width="476" height="476" rx="108" fill="url(#bgGlow)"/>
+  <rect x="18" y="18" width="476" height="476" rx="108" fill="none" stroke="url(#goldBorder)" stroke-width="7"/>
+
+  <!-- Halo Aura -->
+  <circle cx="256" cy="220" r="145" fill="#13bfab" opacity="0.14" filter="url(#strongGlow)"/>
+  <circle cx="256" cy="220" r="100" fill="#ffd97d" opacity="0.16" filter="url(#strongGlow)"/>
+
+  <!-- Audio Waves & Visualizer Bars -->
+  <g filter="url(#softGlow)" opacity="0.75">
+    <path d="M 36 215 C 65 155, 95 155, 125 215 C 145 255, 175 255, 195 215" fill="none" stroke="#5de0e6" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 45 225 C 75 180, 105 180, 135 225 C 155 255, 175 255, 190 225" fill="none" stroke="#fcd56a" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>
+    <path d="M 317 215 C 337 255, 367 255, 387 215 C 417 155, 447 155, 476 215" fill="none" stroke="#5de0e6" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 322 225 C 337 255, 357 255, 377 225 C 407 180, 437 180, 467 225" fill="none" stroke="#fcd56a" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>
+
+    <!-- Left Sound Bars -->
+    <line x1="58" y1="205" x2="58" y2="235" stroke="#fcd56a" stroke-width="3" stroke-linecap="round"/>
+    <line x1="72" y1="185" x2="72" y2="255" stroke="#5de0e6" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="86" y1="165" x2="86" y2="275" stroke="#5de0e6" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="100" y1="180" x2="100" y2="260" stroke="#fcd56a" stroke-width="3" stroke-linecap="round"/>
+    <line x1="114" y1="195" x2="114" y2="245" stroke="#48cae4" stroke-width="3" stroke-linecap="round"/>
+    <line x1="128" y1="175" x2="128" y2="265" stroke="#fcd56a" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Right Sound Bars -->
+    <line x1="384" y1="175" x2="384" y2="265" stroke="#fcd56a" stroke-width="3" stroke-linecap="round"/>
+    <line x1="398" y1="195" x2="398" y2="245" stroke="#48cae4" stroke-width="3" stroke-linecap="round"/>
+    <line x1="412" y1="180" x2="412" y2="260" stroke="#fcd56a" stroke-width="3" stroke-linecap="round"/>
+    <line x1="426" y1="165" x2="426" y2="275" stroke="#5de0e6" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="440" y1="185" x2="440" y2="255" stroke="#5de0e6" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="454" y1="205" x2="454" y2="235" stroke="#fcd56a" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- Wooden Stand (الرحلة) -->
+  <g filter="url(#dropShadow)">
+    <path d="M 160 305 L 340 435 C 330 445 295 445 280 432 L 205 375 L 145 425 C 130 438 98 438 92 422 C 88 412 94 402 108 390 L 175 330 Z" fill="url(#woodBack)"/>
+    <path d="M 352 305 L 172 435 C 182 445 217 445 232 432 L 307 375 L 367 425 C 382 438 414 438 420 422 C 424 412 418 402 404 390 L 337 330 Z" fill="url(#woodFront)"/>
+    <g fill="none" stroke="url(#woodCarving)" stroke-width="2.2" stroke-linecap="round" opacity="0.85">
+      <path d="M 125 408 Q 145 385 168 405"/>
+      <circle cx="146" cy="397" r="3" fill="url(#woodCarving)"/>
+      <path d="M 387 408 Q 367 385 344 405"/>
+      <circle cx="366" cy="397" r="3" fill="url(#woodCarving)"/>
+    </g>
+  </g>
+
+  <!-- Open Quran (المصحف الشريف) -->
+  <g filter="url(#dropShadow)">
+    <path d="M 104 150 C 145 168, 205 200, 256 226 L 256 348 C 205 320, 145 285, 96 264 Z" fill="url(#coverGrad)"/>
+    <path d="M 408 150 C 367 168, 307 200, 256 226 L 256 348 C 307 320, 367 285, 416 264 Z" fill="url(#coverGrad)"/>
+    <path d="M 96 264 L 104 272 C 153 293, 210 327, 256 355 C 302 327, 359 293, 408 272 L 416 264" fill="none" stroke="url(#goldDeco)" stroke-width="3" stroke-linejoin="round"/>
+
+    <!-- Thickness -->
+    <path d="M 104 150 L 98 256 C 146 277, 204 311, 254 338 L 254 232 C 204 206, 146 172, 104 150 Z" fill="url(#pageStack)"/>
+    <path d="M 408 150 L 414 256 C 366 277, 308 311, 258 338 L 258 232 C 308 206, 366 172, 408 150 Z" fill="url(#pageStack)"/>
+
+    <!-- Open Pages -->
+    <path d="M 256 222 C 210 195, 150 160, 114 140 C 108 180, 102 220, 104 250 C 145 272, 208 308, 256 332 Z" fill="url(#pageLeft)"/>
+    <path d="M 256 222 C 302 195, 362 160, 398 140 C 404 180, 410 220, 408 250 C 367 272, 304 308, 256 332 Z" fill="url(#pageRight)"/>
+
+    <!-- Spine -->
+    <path d="M 255 222 L 255 332" stroke="#8a704a" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 257 222 L 257 332" stroke="#fff9e8" stroke-width="1.8" stroke-linecap="round"/>
+
+    <!-- Gold Borders on Pages -->
+    <path d="M 124 238 C 160 258, 210 288, 245 311 L 245 237 C 210 216, 168 186, 132 160 Z" fill="none" stroke="url(#goldDeco)" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 130 234 C 164 253, 208 282, 241 304 L 241 242 C 208 223, 172 194, 138 170 Z" fill="none" stroke="#aa7f13" stroke-width="1" stroke-dasharray="4,2.5"/>
+    <path d="M 388 238 C 352 258, 302 288, 267 311 L 267 237 C 302 216, 344 186, 380 160 Z" fill="none" stroke="url(#goldDeco)" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M 382 234 C 348 253, 304 282, 271 304 L 271 242 C 304 223, 340 194, 374 170 Z" fill="none" stroke="#aa7f13" stroke-width="1" stroke-dasharray="4,2.5"/>
+
+    <!-- Surah Header Crowns -->
+    <path d="M 148 174 Q 188 204, 230 228" stroke="url(#goldDeco)" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <circle cx="189" cy="201" r="3.5" fill="#d4af37"/>
+    <path d="M 364 174 Q 324 204, 282 228" stroke="url(#goldDeco)" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <circle cx="323" cy="201" r="3.5" fill="#d4af37"/>
+
+    <!-- Verses Lines -->
+    <g stroke="#4f3f26" stroke-width="2.2" stroke-linecap="round" opacity="0.85">
+      <line x1="148" y1="192" x2="232" y2="251"/>
+      <line x1="144" y1="204" x2="232" y2="263"/>
+      <line x1="140" y1="216" x2="232" y2="275"/>
+      <line x1="136" y1="228" x2="232" y2="287"/>
+      <line x1="364" y1="192" x2="280" y2="251"/>
+      <line x1="368" y1="204" x2="280" y2="263"/>
+      <line x1="372" y1="216" x2="280" y2="275"/>
+      <line x1="376" y1="228" x2="280" y2="287"/>
+    </g>
+
+    <!-- Ayah Marks -->
+    <circle cx="185" cy="221" r="2.2" fill="#d4af37"/>
+    <circle cx="212" cy="240" r="2.2" fill="#d4af37"/>
+    <circle cx="168" cy="242" r="2.2" fill="#d4af37"/>
+    <circle cx="327" cy="221" r="2.2" fill="#d4af37"/>
+    <circle cx="300" cy="240" r="2.2" fill="#d4af37"/>
+    <circle cx="344" cy="242" r="2.2" fill="#d4af37"/>
+
+    <!-- Bookmark Ribbon -->
+    <path d="M 256 330 Q 266 375, 252 418 L 260 426 L 272 415 Q 262 375, 256 330 Z" fill="url(#goldDeco)" filter="url(#dropShadow)"/>
+  </g>
+
+  <!-- Glowing Play Button -->
+  <g filter="url(#btnShadow)">
+    <circle cx="256" cy="406" r="56" fill="#061624" stroke="url(#goldBorder)" stroke-width="4.5"/>
+    <circle cx="256" cy="406" r="47" fill="url(#btnSphere)"/>
+    <circle cx="256" cy="406" r="45" fill="none" stroke="url(#btnRing)" stroke-width="1.8" opacity="0.8"/>
+    <path d="M 216 392 A 44 44 0 0 1 296 392 A 44 24 0 0 0 216 392 Z" fill="#ffffff" opacity="0.45"/>
+    <polygon points="246,387 276,406 246,425" fill="#000000" opacity="0.2"/>
+    <polygon points="245,386 275,406 245,424" fill="#ffffff" filter="url(#softGlow)"/>
+    <polygon points="245,386 275,406 245,424" fill="#ffffff"/>
+  </g>
+
+  <!-- Spiritual Sparkles -->
+  <g filter="url(#softGlow)">
+    <circle cx="256" cy="115" r="3.2" fill="#ffeaa7"/>
+    <circle cx="215" cy="135" r="2" fill="#ffd97d"/>
+    <circle cx="297" cy="135" r="2" fill="#ffd97d"/>
+    <circle cx="178" cy="120" r="1.5" fill="#ffeaa7"/>
+    <circle cx="334" cy="120" r="1.5" fill="#ffeaa7"/>
+    <circle cx="95" cy="155" r="2.2" fill="#5de0e6"/>
+    <circle cx="417" cy="155" r="2.2" fill="#5de0e6"/>
+  </g>
+</svg>

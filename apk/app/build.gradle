@@ -1,0 +1,47 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.alhlhli.quranplayer'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.alhlhli.quranplayer"
+        // Universal support: Android 5.0 Lollipop (API 21) up to Android 15/16+ (API 35+)
+        minSdk 21
+        targetSdk 35
+        versionCode 30
+        versionName "3.0.0"
+        vectorDrawables.useSupportLibrary = true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            // Signed with debug key by default so the release APK is immediately installable on all phones
+            signingConfig signingConfigs.debug
+        }
+        debug {
+            applicationIdSuffix ""
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    packaging {
+        resources {
+            excludes += ['/META-INF/{AL2.0,LGPL2.1}']
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.webkit:webkit:1.11.0'
+    implementation 'androidx.core:core:1.13.1'
+}
