@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.QuranPlayer" parent="Theme.AppCompat.DayNight.NoActionBar">
-        <item name="android:statusBarColor">#e9dec7</item>
-        <item name="android:navigationBarColor">#e9dec7</item>
-        <item name="android:windowBackground">#f3ead8</item>
-    </style>
-</resources>
