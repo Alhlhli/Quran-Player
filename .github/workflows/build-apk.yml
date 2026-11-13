@@ -1,4 +1,4 @@
-name: Build Universal Android APK & Publish Release
+name: Build Pure Native Android APK & Publish Release
 
 on:
   push:
@@ -17,49 +17,43 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Locate or Auto-Extract Android Project & Sync Web Files
+      - name: Locate or Auto-Extract Native Android Project
         run: |
+          ZIP_FILE=$(find . -maxdepth 3 -name "*Native*.zip" | head -n 1)
+          if [ -n "$ZIP_FILE" ]; then
+            echo "Extracting Native Android project from $ZIP_FILE into apk/"
+            rm -rf apk/app apk/build.gradle apk/settings.gradle
+            mkdir -p apk
+            unzip -o "$ZIP_FILE" -d apk
+          fi
+
           FOUND_GRADLE=$(find . -maxdepth 4 -name "settings.gradle" | head -n 1)
           if [ -n "$FOUND_GRADLE" ]; then
             TARGET_DIR=$(dirname "$FOUND_GRADLE")
-            echo "Found Android project at: $TARGET_DIR"
+            echo "Found Native Android project at: $TARGET_DIR"
           else
-            ZIP_FILE=$(find . -maxdepth 3 \( -name "*Android*.zip" -o -name "*Project*.zip" \) | head -n 1)
-            if [ -n "$ZIP_FILE" ]; then
-              echo "Extracting Android project from $ZIP_FILE"
-              mkdir -p apk_build_project
-              unzip -o "$ZIP_FILE" -d apk_build_project
-              SUB_GRADLE=$(find apk_build_project -maxdepth 3 -name "settings.gradle" | head -n 1)
-              TARGET_DIR=$(dirname "$SUB_GRADLE")
-            else
-              echo "Error: Could not find settings.gradle or project zip"
-              exit 1
-            fi
+            echo "Error: Could not find settings.gradle"
+            exit 1
           fi
 
           echo "PROJECT_DIR=$TARGET_DIR" >> $GITHUB_ENV
-          mkdir -p "$TARGET_DIR/app/src/main/assets"
-          for f in index.html style.css script.js qcf-data.js sw.js manifest.json icon.png icon.svg README.md; do
-            if [ -f "$f" ]; then
-              cp -f "$f" "$TARGET_DIR/app/src/main/assets/"
-            fi
-          done
 
-          # 1. Fix case-sensitive 'SmallestScreenSize' -> 'smallestScreenSize' in AndroidManifest.xml
-          if [ -f "$TARGET_DIR/app/src/main/AndroidManifest.xml" ]; then
-            sed -i 's/SmallestScreenSize/smallestScreenSize/g' "$TARGET_DIR/app/src/main/AndroidManifest.xml"
+          # If root qcf-data.js exists, convert it into pure JSON asset qcf_data.json automatically
+          if [ -f "qcf-data.js" ]; then
+            mkdir -p "$TARGET_DIR/app/src/main/assets"
+            python3 -c '
+          import json
+          raw = open("qcf-data.js", "r", encoding="utf-8").read()
+          js = raw.split("window.QCF_DATA = ", 1)[1].strip()
+          if js.endswith(";"): js = js[:-1]
+          obj = json.loads(js)
+          with open("'"$TARGET_DIR"'/app/src/main/assets/qcf_data.json", "w", encoding="utf-8") as f:
+              json.dump(obj, f, ensure_ascii=False, separators=(",", ":"))
+          '
           fi
 
-          # 2. Fix duplicate class kotlin-stdlib-jdk7 / jdk8 conflict automatically in app/build.gradle
-          if [ -f "$TARGET_DIR/app/build.gradle" ] && ! grep -q "kotlin-stdlib-jdk8" "$TARGET_DIR/app/build.gradle"; then
-            cat << 'EOF' >> "$TARGET_DIR/app/build.gradle"
-
-          configurations.configureEach {
-              exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
-              exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
-          }
-          EOF
-          fi
+          # Remove any legacy WebView HTML/CSS/JS assets if present so APK is 100% pure Native Java
+          rm -f "$TARGET_DIR/app/src/main/assets/index.html"                 "$TARGET_DIR/app/src/main/assets/style.css"                 "$TARGET_DIR/app/src/main/assets/script.js"                 "$TARGET_DIR/app/src/main/assets/sw.js"                 "$TARGET_DIR/app/src/main/assets/qcf-data.js"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -81,7 +75,7 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Build Universal Release APK
+      - name: Build Pure Native Release APK
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
           gradle assembleRelease --no-daemon
@@ -90,28 +84,28 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/apk"
           cp "$APK_OUT" "$GITHUB_WORKSPACE/apk/Quran-Player-Universal.apk"
 
-      - name: Upload APK Artifact (Always Available in Actions Tab)
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Quran-Player-Universal-APK
+          name: Quran-Player-Native-APK
           path: Quran-Player-Universal.apk
 
-      - name: Commit Built APK & Fixes to apk/ Folder in Repository
+      - name: Commit Built Native APK to apk/ Folder
         continue-on-error: true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f apk/Quran-Player-Universal.apk "${{ env.PROJECT_DIR }}/app/src/main/AndroidManifest.xml" "${{ env.PROJECT_DIR }}/app/build.gradle"
-          git diff --staged --quiet || git commit -m "chore: build Quran-Player-Universal.apk and persist manifest/gradle fixes [skip ci]"
+          git add -f apk/Quran-Player-Universal.apk
+          git diff --staged --quiet || git commit -m "chore: update pure native Quran-Player-Universal.apk [skip ci]"
           git push
 
       - name: Create or Update GitHub Release via GH CLI
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="v3.0-universal"
-          TITLE="المصحف المرتل — تطبيق أندرويد الشامل (Quran-Player.apk)"
-          NOTES="نسخة شاملة جاهزة للتثبيت على جميع الجوالات والأجهزة اللوحية والشاشات الذكية (Android 5.0 إلى Android 16+)."
+          TAG="v3.1-native"
+          TITLE="المصحف المرتل — تطبيق أندرويد أصلي بالكامل (Pure Native APK)"
+          NOTES="تطبيق أندرويد أصلي 100% (Java Native UI & MediaPlayer) بدون WebView أو HTML، متوافق مع جميع الجوالات والأجهزة اللوحية والشاشات (Android 5.0 إلى Android 16+)."
           git tag -f "$TAG"
           git push origin "$TAG" --force
           if gh release view "$TAG" >/dev/null 2>&1; then
