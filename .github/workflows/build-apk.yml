@@ -45,7 +45,12 @@ jobs:
             fi
           done
 
-          # Fix duplicate class kotlin-stdlib-jdk7 / jdk8 conflict automatically in app/build.gradle
+          # 1. Fix case-sensitive 'SmallestScreenSize' -> 'smallestScreenSize' in AndroidManifest.xml
+          if [ -f "$TARGET_DIR/app/src/main/AndroidManifest.xml" ]; then
+            sed -i 's/SmallestScreenSize/smallestScreenSize/g' "$TARGET_DIR/app/src/main/AndroidManifest.xml"
+          fi
+
+          # 2. Fix duplicate class kotlin-stdlib-jdk7 / jdk8 conflict automatically in app/build.gradle
           if [ -f "$TARGET_DIR/app/build.gradle" ] && ! grep -q "kotlin-stdlib-jdk8" "$TARGET_DIR/app/build.gradle"; then
             cat << 'EOF' >> "$TARGET_DIR/app/build.gradle"
 
@@ -91,13 +96,13 @@ jobs:
           name: Quran-Player-Universal-APK
           path: Quran-Player-Universal.apk
 
-      - name: Commit Built APK to apk/ Folder in Repository
+      - name: Commit Built APK & Fixes to apk/ Folder in Repository
         continue-on-error: true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f apk/Quran-Player-Universal.apk
-          git diff --staged --quiet || git commit -m "chore: update compiled Quran-Player-Universal.apk [skip ci]"
+          git add -f apk/Quran-Player-Universal.apk "${{ env.PROJECT_DIR }}/app/src/main/AndroidManifest.xml" "${{ env.PROJECT_DIR }}/app/build.gradle"
+          git diff --staged --quiet || git commit -m "chore: build Quran-Player-Universal.apk and persist manifest/gradle fixes [skip ci]"
           git push
 
       - name: Create or Update GitHub Release via GH CLI
