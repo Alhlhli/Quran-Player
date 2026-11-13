@@ -1,8 +1,8 @@
-name: Build Universal Android APK (From apk/ Folder)
+name: Build Universal Android APK & Publish Release
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "*" ]
   workflow_dispatch:
 
 permissions:
@@ -14,31 +14,30 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Locate Android Project & Sync Latest Web Files
+      - name: Locate or Auto-Generate Android Project & Sync Web Files
         run: |
-          if [ -f "apk/settings.gradle" ]; then
-            echo "PROJECT_DIR=apk" >> $GITHUB_ENV
-            TARGET_DIR="apk"
-          elif [ -f "apk/QuranPlayer/settings.gradle" ]; then
-            echo "PROJECT_DIR=apk/QuranPlayer" >> $GITHUB_ENV
-            TARGET_DIR="apk/QuranPlayer"
-          elif [ -f "settings.gradle" ]; then
-            echo "PROJECT_DIR=." >> $GITHUB_ENV
-            TARGET_DIR="."
+          FOUND_GRADLE=$(find . -maxdepth 4 -name "settings.gradle" | head -n 1)
+          if [ -n "$FOUND_GRADLE" ]; then
+            TARGET_DIR=$(dirname "$FOUND_GRADLE")
+            echo "Found Android project at: $TARGET_DIR"
           else
-            # In case a zip file was uploaded inside apk/
-            ZIP_FILE=$(find apk -maxdepth 2 -name "*.zip" | head -n 1)
+            ZIP_FILE=$(find . -maxdepth 3 -name "*Android*.zip" -o -name "*Project*.zip" | head -n 1)
             if [ -n "$ZIP_FILE" ]; then
-              unzip -o "$ZIP_FILE" -d apk/extracted
-              echo "PROJECT_DIR=apk/extracted" >> $GITHUB_ENV
-              TARGET_DIR="apk/extracted"
+              echo "Extracting Android project from $ZIP_FILE"
+              mkdir -p apk_build_project
+              unzip -o "$ZIP_FILE" -d apk_build_project
+              SUB_GRADLE=$(find apk_build_project -maxdepth 3 -name "settings.gradle" | head -n 1)
+              TARGET_DIR=$(dirname "$SUB_GRADLE")
             else
-              echo "Error: Could not find settings.gradle in apk/"
+              echo "Error: Could not find settings.gradle or project zip"
               exit 1
             fi
           fi
 
+          echo "PROJECT_DIR=$TARGET_DIR" >> $GITHUB_ENV
           mkdir -p "$TARGET_DIR/app/src/main/assets"
           for f in index.html style.css script.js qcf-data.js sw.js manifest.json icon.png icon.svg README.md; do
             if [ -f "$f" ]; then
@@ -51,6 +50,14 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK Licenses & Install Platform 35
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -65,26 +72,33 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/apk"
           cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/apk/Quran-Player-Universal.apk"
 
-      - name: Commit Built APK to apk/ Folder in Repository
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apk/Quran-Player-Universal.apk
-          git diff --staged --quiet || git commit -m "chore: update compiled Quran-Player-Universal.apk [skip ci]"
-          git push || true
-
-      - name: Upload APK Artifact
+      - name: Upload APK Artifact (Always Available in Actions Tab)
         uses: actions/upload-artifact@v4
         with:
           name: Quran-Player-Universal-APK
           path: Quran-Player-Universal.apk
 
-      - name: Publish APK to GitHub Releases
-        uses: softprops/action-gh-release@v2
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        with:
-          tag_name: v3.0-universal
-          name: "المصحف المرتل — تطبيق أندرويد الشامل (Quran-Player.apk)"
-          body: "نسخة شاملة جاهزة للتثبيت على جميع الجوالات والأجهزة اللوحية والشاشات الذكية (Android 5.0 إلى Android 16+)."
-          files: Quran-Player-Universal.apk
-          overwrite: true
+      - name: Commit Built APK to apk/ Folder in Repository
+        continue-on-error: true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f apk/Quran-Player-Universal.apk
+          git diff --staged --quiet || git commit -m "chore: update compiled Quran-Player-Universal.apk [skip ci]"
+          git push
+
+      - name: Create or Update GitHub Release via GH CLI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v3.0-universal"
+          TITLE="المصحف المرتل — تطبيق أندرويد الشامل (Quran-Player.apk)"
+          NOTES="نسخة شاملة جاهزة للتثبيت على جميع الجوالات والأجهزة اللوحية والشاشات الذكية (Android 5.0 إلى Android 16+)."
+          git tag -f "$TAG"
+          git push origin "$TAG" --force
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" Quran-Player-Universal.apk --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes "$NOTES"
+          else
+            gh release create "$TAG" Quran-Player-Universal.apk --title "$TITLE" --notes "$NOTES"
+          fi
